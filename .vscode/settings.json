@@ -1,7 +1,0 @@
-{
-    "python.linting.enabled": true,
-    "python.linting.pycodestyleEnabled": true,
-    "python.autoComplete.extraPaths": [
-        "D:\\BitCake\\BlenderAutoComplete\\2.91"
-    ]
-}
