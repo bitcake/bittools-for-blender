@@ -1,18 +1,11 @@
 import bpy
 from bpy.types import Panel, PropertyGroup, Scene
-from bpy.props import FloatProperty
-
 
 
 class PanelProperties(PropertyGroup):
     custom_keymap: bpy.props.StringProperty(name="CurrentKeymapLabel", default="Custom Keymap")
     default_keymap: bpy.props.StringProperty(name="KeymapLabel", default="Default Keymap")
-    Breakdowner: FloatProperty(
-        name="Breakdowner",
-        description="Set breakdown value towards either the last frame or the next, in percentage",
-        min=0.0, max=1.0,
-        default=0.5,
-        )
+
 
 class BITCAKE_PT_menu(Panel):
     bl_idname = "BITCAKE_PT_menu"
@@ -23,7 +16,7 @@ class BITCAKE_PT_menu(Panel):
 
     def draw(self, context):
         scene = context.scene
-        mytool = scene.my_tool
+        mytool = scene.menu_props
 
         addonPrefs = context.preferences.addons[__package__].preferences
 
@@ -44,30 +37,29 @@ class BITCAKE_PT_menu(Panel):
 
 class BITCAKE_PT_animtools(Panel):
     bl_idname = "BITCAKE_PT_animtools"
-    bl_label = "Test Menu"
+    bl_label = "Anim Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
+    bl_context = "posemode"
     bl_category = "Item"
 
-
-
     def draw(self, context):
-        scene = context.scene
-        mytool = scene.my_tool
-        slider = mytool.Breakdowner
+        properties = context.scene.menu_props
+        animtool_props = context.scene.animtool_props
 
-        print(slider)
         addonPrefs = context.preferences.addons[__package__].preferences
 
         layout = self.layout
+        layout.label(text='Breakdowner')
         row = layout.row()
-        row.prop(mytool, 'slider', slider=True)
+        row.prop(animtool_props, 'breakdowner', slider=True)
         row = layout.row()
-        row.operator('pose.breakdown', text='0')
-        row.operator('pose.breakdown', text='25')
-        row.operator('pose.breakdown', text='50')
-        row.operator('pose.breakdown', text='75')
-        row.operator('pose.breakdown', text='100')
+        row.operator('bitcake.breakdowner', text='0').breakdown_value=0.0
+        row.operator('bitcake.breakdowner', text='25').breakdown_value=0.25
+        row.operator('bitcake.breakdowner', text='50').breakdown_value=0.5
+        row.operator('bitcake.breakdowner', text='75').breakdown_value=0.75
+        row.operator('bitcake.breakdowner', text='100').breakdown_value=1.0
+
 
 # bpy.ops.pose.breakdown(factor=0.733291, prev_frame=0, next_frame=30)
 
@@ -77,11 +69,11 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    Scene.my_tool = bpy.props.PointerProperty(type=PanelProperties)
+    Scene.menu_props = bpy.props.PointerProperty(type=PanelProperties)
 
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
 
-    del Scene.my_tool
+    del Scene.menu_props

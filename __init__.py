@@ -13,18 +13,21 @@ bl_info = {
 from . import menu_prefs
 from . import menu_side
 from . import hotkey_manager
+from . import anim_tools
 
 
 def register():
     menu_prefs.register()
     menu_side.register()
     hotkey_manager.register()
+    anim_tools.register()
 
 
 def unregister():
     menu_prefs.unregister()
     menu_side.unregister()
     hotkey_manager.unregister()
+    anim_tools.unregister()
 
 
 # bpy.ops.bitcake.addon_prefs_setup('EXEC_DEFAULT')
