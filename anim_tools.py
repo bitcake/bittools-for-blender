@@ -1,34 +1,44 @@
 import bpy
-from bpy.props import BoolProperty, FloatProperty, IntProperty, StringProperty
+from bpy.props import BoolProperty, FloatProperty, IntProperty
 from bpy.types import Operator, PropertyGroup, Scene
-from bpy.app.handlers import persistent
+from bpy.app.handlers import frame_change_post
+from bpy.app import driver_namespace
 
-breakdowner_status = True
+
+# This here below is so that the Handler frame_change_post do not end up with
+# many version of the same function runing inside it. If this is not here
+# every time you save and update the scene, a new handler will be added and various
+# versions of the same function will be playing when the callback is called
+# Just print out the list frame_change_post to check if everything is correct
+
+breakdowner_handler_key = 'BREAKDOWNER_HANDLER'
+
+if breakdowner_handler_key in driver_namespace:
+    if driver_namespace[breakdowner_handler_key] in frame_change_post:
+        frame_change_post.remove(driver_namespace[breakdowner_handler_key])
+    del driver_namespace[breakdowner_handler_key]
 
 
-@persistent
 def reset_breakdowner(self, context):
-    boolean = bpy.context.scene.animtool_props
-    boolean.bool_prop = False
-    boolean.c += 1
-    print("Chamou? {}".format(boolean.c))
+    animtool_props = bpy.context.scene.animtool_props
+    animtool_props.breakdowner_bool = False
     update_property_value(0.5)
-    print("Foi agora?{}".format(boolean.c))
-    boolean.c -= 1
-    boolean.bool_prop = True
+    animtool_props.breakdowner_bool = True
 
 def update_breakdowner(self, context):
-    properties = bpy.context.scene.animtool_props
-    if properties.bool_prop:
-        properties = context.scene.animtool_props
-        print("Update Real {} c = {}".format(properties.breakdowner, properties.c))
+    animtool_props = bpy.context.scene.animtool_props
+    if animtool_props.breakdowner_bool:
+        animtool_props = context.scene.animtool_props
+        bpy.ops.pose.breakdown(factor=animtool_props.breakdowner, prev_frame=0, next_frame=30)
 
 def update_property_value(value):
-    properties = bpy.context.scene.animtool_props
-    properties.breakdowner = value
+    animtool_props = bpy.context.scene.animtool_props
+    animtool_props.breakdowner = value
 
 
-# bpy.ops.pose.breakdown(factor=self.breakdown_value, prev_frame=0, next_frame=30)
+frame_change_post.append(reset_breakdowner)
+driver_namespace[breakdowner_handler_key] = reset_breakdowner
+
 class AnimToolProperties(PropertyGroup):
         breakdowner: FloatProperty(
         name="Lean Percentage",
@@ -38,9 +48,7 @@ class AnimToolProperties(PropertyGroup):
         update=update_breakdowner,
         )
 
-        bool_prop: BoolProperty(default=True)
-
-        c: IntProperty()
+        breakdowner_bool: BoolProperty(default=True)
 
 class BITCAKE_OT_breakdowner(Operator):
     bl_idname = "bitcake.breakdowner"
@@ -61,14 +69,21 @@ class BITCAKE_OT_breakdowner(Operator):
         bpy.ops.pose.breakdown(factor=self.breakdown_value, prev_frame=0, next_frame=30)
         return {'FINISHED'}
 
-bpy.app.handlers.frame_change_post.append(reset_breakdowner)
+# Keyframes live in fcurves and each fcurve has a bunch of keyframe_points
+# You can iterate fcurves's keyframe_points to find all keyframes in that curve
+# Keep in mind each object might have a lot of fcurves, for instance each Translation axis
+# is an fcurve, so there's 3 FCurves there + Quaternion + Scale + Custom Attrs.
+# Here is an example on how to acess a specific keyframe inside an FCurve:
+# bpy.data.actions[1].fcurves[1].keyframe_points[0].co
+# Function to iterate over fcurves and find all keyframe on all channels:
 
-# bpy.msgbus.subscribe_rna(
-#      key=(bpy.types.LayerObjects, "active"),
-#      owner=object(),
-#      args=tuple(),
-#      notify=textTry,
-# )
+# action = bpy.data.actions[0]
+# for fcu in action.fcurves:
+#     print(fcu.data_path + " channel " + str(fcu.array_index))
+#     for keyframe in fcu.keyframe_points:
+#         print(keyframe.co) #coordinates x,y
+
+
 
 classes = (BITCAKE_OT_breakdowner, AnimToolProperties)
 
