@@ -29,11 +29,49 @@ def update_breakdowner(self, context):
     animtool_props = bpy.context.scene.animtool_props
     if animtool_props.breakdowner_bool:
         animtool_props = context.scene.animtool_props
-        bpy.ops.pose.breakdown(factor=animtool_props.breakdowner, prev_frame=0, next_frame=30)
+        selected_bones_fcurves = get_fcurves_from_selected_bones()
+        nearest_frames = get_nearest_frames_from_current_frame(selected_bones_fcurves)
+        if nearest_frames[0] == None or nearest_frames[1] == None:
+            return
+        bpy.ops.pose.breakdown(factor=animtool_props.breakdowner, prev_frame=nearest_frames[0], next_frame=nearest_frames[1])
 
 def update_property_value(value):
     animtool_props = bpy.context.scene.animtool_props
     animtool_props.breakdowner = value
+
+def get_fcurves_from_selected_bones():
+    selected_bones = [b.name for b in bpy.context.selected_pose_bones]
+    selected_fcurves = []
+
+    for obj in bpy.context.selected_objects:
+        # Check if selected object is animated (check for null)
+        if obj.animation_data:
+            for fcurve in obj.animation_data.action.fcurves:
+                # Check the name of the bone that owns that fcurve. If it's inside
+                # the selected_bones list, add the fcurve to the selected_fcurves list
+                if fcurve.data_path.split('"')[1] in selected_bones:
+                    selected_fcurves.append(fcurve)
+
+    return selected_fcurves
+
+def get_nearest_frames_from_current_frame(fcurves):
+    min = None
+    max = None
+    for fcurve in fcurves:
+        for keyframes in fcurve.keyframe_points.values():
+            check = keyframes.co[0] - bpy.context.scene.frame_current
+
+            if min == None and check < 0:
+                min = keyframes.co[0]
+            if check < 0 and keyframes.co[0] >= min:
+                min = keyframes.co[0]
+
+            if max == None and check > 0:
+                max = keyframes.co[0]
+            if check > 0 and keyframes.co[0] <= max:
+                max = keyframes.co[0]
+
+    return (min, max)
 
 
 frame_change_post.append(reset_breakdowner)
@@ -62,12 +100,13 @@ class BITCAKE_OT_breakdowner(Operator):
     def poll(cls, context):
         return context.mode == 'POSE'
 
-
     def execute(self, context):
+        # This execute method just changes the value of the float. The float itself then calls
+        # its update function to run the breakdowner code.
         properties = context.scene.animtool_props
         properties.breakdowner = self.breakdown_value
-        bpy.ops.pose.breakdown(factor=self.breakdown_value, prev_frame=0, next_frame=30)
         return {'FINISHED'}
+
 
 # Keyframes live in fcurves and each fcurve has a bunch of keyframe_points
 # You can iterate fcurves's keyframe_points to find all keyframes in that curve
