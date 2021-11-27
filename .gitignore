@@ -2,3 +2,5 @@
 Keymaps/__pycache__
 /.vscode
 /.idea
+/BlenderTestFiles
+registered_projects.json

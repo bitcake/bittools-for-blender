@@ -9,10 +9,10 @@ class PanelProperties(PropertyGroup):
 
 class BITCAKE_PT_menu(Panel):
     bl_idname = "BITCAKE_PT_menu"
-    bl_label = "BitCake Menu"
+    bl_label = "Hotkey Changer"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "BitCake Tools"
+    bl_category = "BitTools"
 
     def draw(self, context):
         scene = context.scene
@@ -34,6 +34,27 @@ class BITCAKE_PT_menu(Panel):
         row.label(text='Current Keymap: ' + current_label)
         row = layout.row()
         row.operator('bitcake.hotkeychanger',text=button_label)
+
+class BITCAKE_PT_send_to_engine(Panel):
+    bl_idname = "BITCAKE_PT_send_to_engine"
+    bl_label = "BitCake Exporter"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "BitTools"
+
+    def draw(self, context):
+        scene = context.scene
+        mytool = scene.menu_props
+
+        addonPrefs = context.preferences.addons[__package__].preferences
+
+        layout = self.layout
+        row = layout.row()
+        row.label(text="Send to Engine")
+        row = layout.row()
+        row.operator('bitcake.register_project',text='Register Project')
+        row = layout.row()
+        row.operator('bitcake.send_to_unity',text='Send to Unity')
 
 class BITCAKE_PT_animtools(Panel):
     bl_idname = "BITCAKE_PT_animtools"
@@ -63,7 +84,7 @@ class BITCAKE_PT_animtools(Panel):
 
 # bpy.ops.pose.breakdown(factor=0.733291, prev_frame=0, next_frame=30)
 
-classes = (PanelProperties, BITCAKE_PT_menu, BITCAKE_PT_animtools)
+classes = (PanelProperties, BITCAKE_PT_menu, BITCAKE_PT_send_to_engine, BITCAKE_PT_animtools)
 
 def register():
     for cls in classes:
