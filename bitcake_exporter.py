@@ -72,7 +72,7 @@ class BITCAKE_OT_register_project(Operator, ImportHelper):
 
 
 class BITCAKE_OT_unregister_project(Operator):
-    bl_idname = "bitcake.register_project"
+    bl_idname = "bitcake.unregister_project"
     bl_label = "Register Project"
     bl_description = "Register a new project within blender to work with using BitCake Exporter"
 
