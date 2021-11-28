@@ -16,8 +16,18 @@ class BITCAKE_OT_send_to_unity(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
+        scene = context.scene
+        panel_prefs = scene.menu_props
+
         path = 'D:\\GitProjects\\Bitstrap\\Assets\\DoNotVersionControlThis\\macaco.fbx'
-        bpy.ops.export_scene.fbx(filepath=path, bake_space_transform=True, axis_forward='-Z', axis_up='Y')
+        bpy.ops.export_scene.fbx(
+            filepath=path,
+            bake_space_transform=True,
+            axis_forward='-Z',
+            axis_up='Y',
+            use_selection=panel_prefs.export_selected,
+            use_active_collection=panel_prefs.export_collection,
+            )
         return {'FINISHED'}
 
 

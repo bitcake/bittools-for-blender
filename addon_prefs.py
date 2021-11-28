@@ -34,13 +34,15 @@ class BitCakeToolsPreferences(AddonPreferences):
 
     registered_projects: EnumProperty(items=update_registered_projects, name='')
 
+    # Prefixes Setup (user changeable)
     static_mesh_prefix: StringProperty(name='Static Mesh Prefix', default='SM_')
     skeletal_mesh_prefix: StringProperty(name='Skeletal Mesh Prefix', default='SK_')
     animation_prefix: StringProperty(name='Animation Prefix', default='Anim_')
     pose_prefix: StringProperty(name='Pose Prefix', default='Pose_')
     camera_prefix: StringProperty(name='Camera Prefix', default='Cam_')
 
-    static_mesh_path: StringProperty(name='Static Mesh Path', default='/Art/StaticMeshes/', subtype='DIR_PATH')
+    # Folder Paths (not user changeable)
+    static_mesh_path: StringProperty(name='Static Mesh Path', default='/Art/StaticMeshes/',)
     skeletal_mesh_path: StringProperty(name='Skeletal Mesh Path', default='/Art/SkeletalMeshes/')
     animation_path: StringProperty(name='Animation Path', default='/Art/Animations/')
     pose_path: StringProperty(name='Pose Path', default='/Art/Poses/')

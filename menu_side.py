@@ -4,11 +4,14 @@ import addon_utils
 import json
 from pathlib   import Path
 from bpy.types import Panel, PropertyGroup, Scene
+from bpy.props import StringProperty, BoolProperty
 
 
 class PanelProperties(PropertyGroup):
-    custom_keymap: bpy.props.StringProperty(name="CurrentKeymapLabel", default="Custom Keymap")
-    default_keymap: bpy.props.StringProperty(name="KeymapLabel", default="Default Keymap")
+    custom_keymap: StringProperty(name="CurrentKeymapLabel", default="Custom Keymap")
+    default_keymap: StringProperty(name="KeymapLabel", default="Default Keymap")
+    export_selected: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
+    export_collection: BoolProperty(name="Collection", description="Exports entire collection", default=False)
 
 class BITCAKE_PT_menu(Panel):
     bl_idname = "BITCAKE_PT_menu"
@@ -19,16 +22,16 @@ class BITCAKE_PT_menu(Panel):
 
     def draw(self, context):
         scene = context.scene
-        mytool = scene.menu_props
+        panel_prefs = scene.menu_props
 
         addonPrefs = context.preferences.addons[__package__].preferences
 
         if not addonPrefs.isDefaultKeymaps:
-            button_label = mytool.default_keymap
-            current_label = mytool.custom_keymap
+            button_label = panel_prefs.default_keymap
+            current_label = panel_prefs.custom_keymap
         else:
-            button_label = mytool.custom_keymap
-            current_label = mytool.default_keymap
+            button_label = panel_prefs.custom_keymap
+            current_label = panel_prefs.default_keymap
 
         layout = self.layout
         row = layout.row()
@@ -47,7 +50,7 @@ class BITCAKE_PT_send_to_engine(Panel):
 
     def draw(self, context):
         scene = context.scene
-        mytool = scene.menu_props
+        panel_prefs = scene.menu_props
 
         addonPrefs = context.preferences.addons[__package__].preferences
 
@@ -81,6 +84,9 @@ class BITCAKE_PT_send_to_engine(Panel):
         elif current_engine == 'Cocos':
             row = layout.row()
             row.operator('bitcake.send_to_unity', text='Send to Cocos', icon_value=cocos_logo.icon_id)
+        row = layout.row()
+        row.prop(panel_prefs, 'export_selected')
+        row.prop(panel_prefs, 'export_collection')
         row = layout.row()
         row.operator('bitcake.custom_butten', text='Custom Butten')
 
