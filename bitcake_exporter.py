@@ -1,9 +1,9 @@
 import bpy
 import json
 import addon_utils
-from bpy.types import Operator
+from bpy.types           import Operator
 from bpy_extras.io_utils import ImportHelper
-from pathlib import Path
+from pathlib             import Path
 
 
 class BITCAKE_OT_send_to_unity(Operator):
@@ -18,6 +18,22 @@ class BITCAKE_OT_send_to_unity(Operator):
     def execute(self, context):
         path = 'D:\\GitProjects\\Bitstrap\\Assets\\DoNotVersionControlThis\\macaco.fbx'
         bpy.ops.export_scene.fbx(filepath=path, bake_space_transform=True, axis_forward='-Z', axis_up='Y')
+        return {'FINISHED'}
+
+
+class BITCAKE_OT_custom_butten(Operator):
+    bl_idname = "bitcake.custom_butten"
+    bl_label = "Do test stuff"
+    bl_description = "Just test stuff"
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT'
+
+    def execute(self, context):
+        addonPrefs = context.preferences.addons[__package__].preferences
+        print(addonPrefs.registered_projects)
         return {'FINISHED'}
 
 
@@ -54,6 +70,21 @@ class BITCAKE_OT_register_project(Operator, ImportHelper):
 
         return {'FINISHED'}
 
+
+class BITCAKE_OT_unregister_project(Operator):
+    bl_idname = "bitcake.register_project"
+    bl_label = "Register Project"
+    bl_description = "Register a new project within blender to work with using BitCake Exporter"
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT'
+
+    def execute(self, context):
+        self.report({"ERROR"}, "Button Not Implemented.")
+        return {'FINISHED'}
+
+
 def project_definitions(path_string, engine):
     # print("THIS IS THE CURRENT ENGINE: {}".format(engine))
     project_name = path_string.split('\\')
@@ -80,10 +111,9 @@ def register_project(project):
     else:
         with open(projects_file_path, 'w') as projects_file:
             json.dump(project, projects_file, indent=4)
-        return
 
 
-classes = (BITCAKE_OT_send_to_unity, BITCAKE_OT_register_project)
+classes = (BITCAKE_OT_send_to_unity, BITCAKE_OT_register_project, BITCAKE_OT_unregister_project, BITCAKE_OT_custom_butten)
 
 def register():
     for cls in classes:

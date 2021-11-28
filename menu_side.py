@@ -1,11 +1,14 @@
 import bpy
+import os
+import addon_utils
+import json
+from pathlib   import Path
 from bpy.types import Panel, PropertyGroup, Scene
 
 
 class PanelProperties(PropertyGroup):
     custom_keymap: bpy.props.StringProperty(name="CurrentKeymapLabel", default="Custom Keymap")
     default_keymap: bpy.props.StringProperty(name="KeymapLabel", default="Default Keymap")
-
 
 class BITCAKE_PT_menu(Panel):
     bl_idname = "BITCAKE_PT_menu"
@@ -48,13 +51,38 @@ class BITCAKE_PT_send_to_engine(Panel):
 
         addonPrefs = context.preferences.addons[__package__].preferences
 
+        pcoll = preview_collections["main"]
+        unity_logo = pcoll["unity"]
+        unreal_logo = pcoll["unreal"]
+        cocos_logo = pcoll["cocos"]
+
+        for mod in addon_utils.modules():
+            if mod.bl_info['name'] == __package__:
+                addon_path = Path(mod.__file__)
+
+        projects_file_path = Path(addon_path.parent / 'registered_projects.json')
+
+        if projects_file_path.is_file():
+            projects_json = json.load(projects_file_path.open())
+            current_engine = projects_json[addonPrefs.registered_projects]['engine']
+
         layout = self.layout
         row = layout.row()
         row.label(text="Send to Engine")
         row = layout.row()
-        row.operator('bitcake.register_project',text='Register Project')
+        row.prop(addonPrefs, 'registered_projects')
+        row.operator('bitcake.register_project', icon='ADD', text='')
+        if current_engine == 'Unity':
+            row = layout.row()
+            row.operator('bitcake.send_to_unity', text='Send to Unity', icon_value=unity_logo.icon_id)
+        elif current_engine == 'Unreal':
+            row = layout.row()
+            row.operator('bitcake.send_to_unity', text='Send to Unreal', icon_value=unreal_logo.icon_id)
+        elif current_engine == 'Cocos':
+            row = layout.row()
+            row.operator('bitcake.send_to_unity', text='Send to Cocos', icon_value=cocos_logo.icon_id)
         row = layout.row()
-        row.operator('bitcake.send_to_unity',text='Send to Unity')
+        row.operator('bitcake.custom_butten', text='Custom Butten')
 
 class BITCAKE_PT_animtools(Panel):
     bl_idname = "BITCAKE_PT_animtools"
@@ -82,13 +110,21 @@ class BITCAKE_PT_animtools(Panel):
         row.operator('bitcake.breakdowner', text='100').breakdown_value=1.0
 
 
-# bpy.ops.pose.breakdown(factor=0.733291, prev_frame=0, next_frame=30)
-
 classes = (PanelProperties, BITCAKE_PT_menu, BITCAKE_PT_send_to_engine, BITCAKE_PT_animtools)
+preview_collections = {}
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+
+
+    # Register Custom Icons
+    pcoll = bpy.utils.previews.new()
+    bittools_icons_dir = os.path.join(os.path.dirname(__file__), "icons")
+    pcoll.load("unity", os.path.join(bittools_icons_dir, "unity_logo.png"), 'IMAGE')
+    pcoll.load("unreal", os.path.join(bittools_icons_dir, "unreal_logo.png"), 'IMAGE')
+    pcoll.load("cocos", os.path.join(bittools_icons_dir, "cocos_logo.png"), 'IMAGE')
+    preview_collections["main"] = pcoll
 
     Scene.menu_props = bpy.props.PointerProperty(type=PanelProperties)
 
@@ -96,5 +132,10 @@ def register():
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+
+    # UnRegister Custom Icons
+    for pcoll in preview_collections.values():
+        bpy.utils.previews.remove(pcoll)
+    preview_collections.clear()
 
     del Scene.menu_props

@@ -24,7 +24,6 @@ def register():
     anim_tools.register()
     bitcake_exporter.register()
 
-
 def unregister():
     addon_prefs.unregister()
     menu_side.unregister()
