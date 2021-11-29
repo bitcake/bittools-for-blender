@@ -2,6 +2,7 @@ import bpy
 import os
 import addon_utils
 import json
+import bpy.utils.previews
 from pathlib   import Path
 from bpy.types import Panel, PropertyGroup, Scene
 from bpy.props import StringProperty, BoolProperty

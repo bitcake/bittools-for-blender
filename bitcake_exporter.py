@@ -19,6 +19,9 @@ class BITCAKE_OT_send_to_unity(Operator):
         scene = context.scene
         panel_prefs = scene.menu_props
 
+        if panel_prefs.export_collection:
+            change_active_collection()
+
         path = 'D:\\GitProjects\\Bitstrap\\Assets\\DoNotVersionControlThis\\macaco.fbx'
         bpy.ops.export_scene.fbx(
             filepath=path,
@@ -94,6 +97,14 @@ class BITCAKE_OT_unregister_project(Operator):
         self.report({"ERROR"}, "Button Not Implemented.")
         return {'FINISHED'}
 
+
+def change_active_collection():
+    active_collection = bpy.context.active_object.users_collection[0].name
+    layer_collections = bpy.context.view_layer.layer_collection.children
+
+    for i in layer_collections:
+        if i.name == active_collection:
+            bpy.context.view_layer.active_layer_collection = i
 
 def project_definitions(path_string, engine):
     # print("THIS IS THE CURRENT ENGINE: {}".format(engine))
