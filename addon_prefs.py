@@ -32,7 +32,7 @@ class BitCakeToolsPreferences(AddonPreferences):
         default=False,
     )
 
-    registered_projects: EnumProperty(items=update_registered_projects, name='')
+    registered_projects: EnumProperty(items=update_registered_projects, name='', description='Register projects here before starting. Current Active project')
 
     # Prefixes Setup (user changeable)
     static_mesh_prefix: StringProperty(name='Static Mesh Prefix', default='SM_')

@@ -66,6 +66,7 @@ class BITCAKE_PT_send_to_engine(Panel):
 
         projects_file_path = Path(addon_path.parent / 'registered_projects.json')
 
+        current_engine = None
         if projects_file_path.is_file():
             projects_json = json.load(projects_file_path.open())
             current_engine = projects_json[addonPrefs.registered_projects]['engine']
@@ -76,15 +77,19 @@ class BITCAKE_PT_send_to_engine(Panel):
         row = layout.row()
         row.prop(addonPrefs, 'registered_projects')
         row.operator('bitcake.register_project', icon='ADD', text='')
+
+        if not current_engine:
+            return
+
         if current_engine == 'Unity':
             row = layout.row()
-            row.operator('bitcake.send_to_unity', text='Send to Unity', icon_value=unity_logo.icon_id)
+            row.operator('bitcake.send_to_engine', text='Send to Unity', icon_value=unity_logo.icon_id)
         elif current_engine == 'Unreal':
             row = layout.row()
-            row.operator('bitcake.send_to_unity', text='Send to Unreal', icon_value=unreal_logo.icon_id)
+            row.operator('bitcake.send_to_engine', text='Send to Unreal', icon_value=unreal_logo.icon_id)
         elif current_engine == 'Cocos':
             row = layout.row()
-            row.operator('bitcake.send_to_unity', text='Send to Cocos', icon_value=cocos_logo.icon_id)
+            row.operator('bitcake.send_to_engine', text='Send to Cocos', icon_value=cocos_logo.icon_id)
         row = layout.row()
         row.prop(panel_prefs, 'export_selected')
         row.prop(panel_prefs, 'export_collection')
