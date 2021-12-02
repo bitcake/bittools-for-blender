@@ -18,7 +18,10 @@ class BITCAKE_OT_send_to_engine(Operator):
     def execute(self, context):
         scene = context.scene
         panel_prefs = scene.menu_props
-        addonPrefs = context.preferences.addons[__package__].preferences
+
+        # Save current file
+        original_path = Path(bpy.data.filepath)
+        bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
         # Checks and constructs the path for the exported file
         constructed_path = construct_path(self, context)
@@ -33,10 +36,8 @@ class BITCAKE_OT_send_to_engine(Operator):
         rename_with_prefix(objects_list)
 
         # Get current file path, append _bkp and save as new file
-        original_path = Path(bpy.data.filepath)
         filename = original_path.stem + '_bkp'
         new_path = original_path.with_stem(filename)
-
         bpy.ops.wm.save_mainfile(filepath=str(new_path))
 
         # Export file
@@ -52,6 +53,9 @@ class BITCAKE_OT_send_to_engine(Operator):
         # Save _bkp file and reopen original
         bpy.ops.wm.save_mainfile(filepath=str(new_path))
         bpy.ops.wm.open_mainfile(filepath=str(original_path))
+
+        # Re-hide all colliders for good measure
+        toggle_all_colliders_visibility(False)
 
         return {'FINISHED'}
 
@@ -80,7 +84,7 @@ class BITCAKE_OT_custom_butten(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        toggle_all_colliders_visibility()
+        make_objects_list(context)
 
         return {'FINISHED'}
 
@@ -224,12 +228,22 @@ def make_objects_list(context):
     panel_prefs = context.scene.menu_props
 
     if panel_prefs.export_selected:
+        selected_objects = bpy.context.selected_objects
+        for obj in selected_objects:
+            for child in obj.children:
+                if get_all_colliders().__contains__(child):
+                    # If object has collider, unhide it, select it, add it to list
+                    child.hide_set(False)
+                    child.hide_viewport = False
+                    child.select_set(True)
+                    selected_objects.append(child)
+        return selected_objects
 
-        return bpy.context.selected_objects
-    if panel_prefs.export_collection:
+    elif panel_prefs.export_collection:
         change_active_collection()
         collection_objects = bpy.context.active_object.users_collection[0].all_objects
         return [obj for obj in collection_objects]
+
     else:
         bpy.ops.object.select_all(action='DESELECT')
         bpy.ops.object.select_all()
@@ -292,12 +306,16 @@ def rename_with_prefix(objects_list):
 
     return
 
-def toggle_all_colliders_visibility():
+def toggle_all_colliders_visibility(force_on_off=None):
     all_colliders = get_all_colliders()
+
+    is_hidden = force_on_off
+
     for col in all_colliders:
-        is_hidden = col.hide_viewport
+        if force_on_off is None:
+            is_hidden = col.hide_viewport
         col.hide_set(not is_hidden)
-        col.hide_viewport = not col.hide_viewport
+        col.hide_viewport = not is_hidden
 
     return
 
