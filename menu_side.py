@@ -13,6 +13,7 @@ class PanelProperties(PropertyGroup):
     default_keymap: StringProperty(name="KeymapLabel", default="Default Keymap")
     export_selected: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
     export_collection: BoolProperty(name="Collection", description="Exports entire collection", default=False)
+    export_batch: BoolProperty(name="Batch Export", description="Exports objects in a separate file", default=False)
 
 class BITCAKE_PT_menu(Panel):
     bl_idname = "BITCAKE_PT_menu"
@@ -60,39 +61,49 @@ class BITCAKE_PT_send_to_engine(Panel):
         unreal_logo = pcoll["unreal"]
         cocos_logo = pcoll["cocos"]
 
-        for mod in addon_utils.modules():
-            if mod.bl_info['name'] == __package__:
-                addon_path = Path(mod.__file__)
-
-        projects_file_path = Path(addon_path.parent / 'registered_projects.json')
+        registered_projects_path = get_registered_projects_path()
 
         current_engine = None
-        if projects_file_path.is_file():
-            projects_json = json.load(projects_file_path.open())
+        if registered_projects_path.is_file():
+            projects_json = json.load(registered_projects_path.open())
             current_engine = projects_json[addonPrefs.registered_projects]['engine']
+
 
         layout = self.layout
         row = layout.row()
-        row.label(text="Send to Engine")
+        row.label(text="Send to Project")
         row = layout.row()
         row.prop(addonPrefs, 'registered_projects')
         row.operator('bitcake.register_project', icon='ADD', text='')
 
+        # If there's no Project Registered, don't draw the rest of the menu
         if not current_engine:
             return
 
+        row = layout.row()
+        row.prop(panel_prefs, 'export_batch', toggle=1, icon_value=1, icon='FILE_NEW')
+
+        # Rename button if in Batch Mode
+        send = ''
+        if panel_prefs.export_batch:
+            send = 'Batch '
+
         if current_engine == 'Unity':
             row = layout.row()
-            row.operator('bitcake.send_to_engine', text='Send to Unity', icon_value=unity_logo.icon_id)
+            row.operator('bitcake.send_to_engine', text=f'{send}Send to Unity', icon_value=unity_logo.icon_id)
         elif current_engine == 'Unreal':
             row = layout.row()
-            row.operator('bitcake.send_to_engine', text='Send to Unreal', icon_value=unreal_logo.icon_id)
+            row.operator('bitcake.send_to_engine', text=f'{send}Send to Unreal', icon_value=unreal_logo.icon_id)
         elif current_engine == 'Cocos':
             row = layout.row()
-            row.operator('bitcake.send_to_engine', text='Send to Cocos', icon_value=cocos_logo.icon_id)
+            row.operator('bitcake.send_to_engine', text=f'{send}Send to Cocos', icon_value=cocos_logo.icon_id)
+
         row = layout.row()
         row.prop(panel_prefs, 'export_selected')
         row.prop(panel_prefs, 'export_collection')
+        row = layout.row()
+        row = layout.row()
+        row.operator('bitcake.toggle_all_colliders_visibility', text='Toggle Colliders Visibility', icon='HIDE_OFF')
         row = layout.row()
         row.operator('bitcake.custom_butten', text='Custom Butten')
 
@@ -120,6 +131,16 @@ class BITCAKE_PT_animtools(Panel):
         row.operator('bitcake.breakdowner', text='50').breakdown_value=0.5
         row.operator('bitcake.breakdowner', text='75').breakdown_value=0.75
         row.operator('bitcake.breakdowner', text='100').breakdown_value=1.0
+
+
+def get_registered_projects_path():
+    for mod in addon_utils.modules():
+        if mod.bl_info['name'] == __package__:
+            addon_path = Path(mod.__file__)
+
+    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
+
+    return projects_file_path
 
 
 classes = (PanelProperties, BITCAKE_PT_menu, BITCAKE_PT_send_to_engine, BITCAKE_PT_animtools)

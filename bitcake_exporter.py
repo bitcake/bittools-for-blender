@@ -18,18 +18,28 @@ class BITCAKE_OT_send_to_engine(Operator):
     def execute(self, context):
         scene = context.scene
         panel_prefs = scene.menu_props
+        addonPrefs = context.preferences.addons[__package__].preferences
 
-        if panel_prefs.export_collection:
-            change_active_collection()
-
-        constructed_path = construct_path(context)
-        if constructed_path is None:
-            self.report({"ERROR"}, "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment")
-            return {'CANCELLED'}
+        # Checks and constructs the path for the exported file
+        constructed_path = construct_path(self, context)
 
         # If folder doesn't exist, create it
         constructed_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # Get List of objects according to export type (Selected, Collection, All)
+        objects_list = make_objects_list(context)
+
+        # Rename everything in the list
+        rename_with_prefix(objects_list)
+
+        # Get current file path, append _bkp and save as new file
+        original_path = Path(bpy.data.filepath)
+        filename = original_path.stem + '_bkp'
+        new_path = original_path.with_stem(filename)
+
+        bpy.ops.wm.save_mainfile(filepath=str(new_path))
+
+        # Export file
         bpy.ops.export_scene.fbx(
             filepath=str(constructed_path),
             bake_space_transform=True,
@@ -38,6 +48,25 @@ class BITCAKE_OT_send_to_engine(Operator):
             use_selection=panel_prefs.export_selected,
             use_active_collection=panel_prefs.export_collection,
             )
+
+        # Save _bkp file and reopen original
+        bpy.ops.wm.save_mainfile(filepath=str(new_path))
+        bpy.ops.wm.open_mainfile(filepath=str(original_path))
+
+        return {'FINISHED'}
+
+class BITCAKE_OT_toggle_all_colliders_visibility(Operator):
+    bl_idname = "bitcake.toggle_all_colliders_visibility"
+    bl_label = "Toggles Colliders Visibility"
+    bl_description = "Colliders must be prefixed by UBX_, UCX_, USP_, UCP_ or UMX_"
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT'
+
+    def execute(self, context):
+        toggle_all_colliders_visibility()
+
         return {'FINISHED'}
 
 
@@ -51,14 +80,15 @@ class BITCAKE_OT_custom_butten(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        construct_path(context)
+        toggle_all_colliders_visibility()
+
         return {'FINISHED'}
 
 
 class BITCAKE_OT_register_project(Operator, ImportHelper):
     bl_idname = "bitcake.register_project"
     bl_label = "Register Project"
-    bl_description = "Registers a new project within BitTools. It accepts any Unity, Unreal or Cocos Creator project."
+    bl_description = "Registers a new project within BitTools. Itá accepts any Unity, Unreal or Cocos Creator project."
 
     @classmethod
     def poll(cls, context):
@@ -66,6 +96,10 @@ class BITCAKE_OT_register_project(Operator, ImportHelper):
 
     def execute(self, context):
         path = Path(self.filepath)
+
+        if path.suffix != '':
+            path = path.parent
+
         cocos = path / 'project.json'
         unreal = path / 'Content'
         unity = path / 'Assets'
@@ -100,6 +134,7 @@ class BITCAKE_OT_unregister_project(Operator):
 
     def execute(self, context):
         self.report({"ERROR"}, "Button Not Implemented.")
+
         return {'FINISHED'}
 
 
@@ -110,9 +145,10 @@ def change_active_collection():
     for i in layer_collections:
         if i.name == active_collection:
             bpy.context.view_layer.active_layer_collection = i
+
     return
 
-def construct_path(context):
+def construct_path(self, context):
     blend_path = Path(bpy.path.abspath('//'))
     wip = False
     pathway = []
@@ -131,27 +167,14 @@ def construct_path(context):
 
     # If no WIP folder found then fail
     if wip is False:
-        print('Oops, wrong hierarchy')
-        return None
+        self.report({"ERROR"}, "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment")
+        return {'CANCELLED'}
 
     current_project_path = Path(get_current_project_assets_path(context))
     constructed_path = current_project_path.joinpath(*pathway)
     print(constructed_path)
 
     return constructed_path
-
-def get_current_project_path(context):
-    addonPrefs = context.preferences.addons[__package__].preferences
-    active_project = addonPrefs.registered_projects
-
-    for mod in addon_utils.modules():
-        if mod.bl_info['name'] == __package__:
-            addon_path = Path(mod.__file__)
-
-    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
-    projects_json = json.load(projects_file_path.open())
-
-    return projects_json[active_project]['path']
 
 def get_current_project_assets_path(context):
     addonPrefs = context.preferences.addons[__package__].preferences
@@ -166,11 +189,57 @@ def get_current_project_assets_path(context):
 
     return projects_json[active_project]['assets']
 
+def get_current_project_path(context):
+    addonPrefs = context.preferences.addons[__package__].preferences
+    active_project = addonPrefs.registered_projects
+
+    for mod in addon_utils.modules():
+        if mod.bl_info['name'] == __package__:
+            addon_path = Path(mod.__file__)
+
+    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
+    projects_json = json.load(projects_file_path.open())
+
+    return projects_json[active_project]['path']
+
+def get_all_colliders():
+    addonPrefs = bpy.context.preferences.addons[__package__].preferences
+    collider_prefixes = [addonPrefs.box_collider_prefix,
+                         addonPrefs.capsule_collider_prefix,
+                         addonPrefs.sphere_collider_prefix,
+                         addonPrefs.convex_collider_prefix,
+                         addonPrefs.mesh_collider_prefix]
+
+    all_objects = bpy.context.scene.objects
+
+    all_colliders_list = []
+    for obj in all_objects:
+        split = obj.name.split('_')
+        if collider_prefixes.__contains__(split[0]):
+            all_colliders_list.append(obj)
+
+    return all_colliders_list
+
+def make_objects_list(context):
+    panel_prefs = context.scene.menu_props
+
+    if panel_prefs.export_selected:
+
+        return bpy.context.selected_objects
+    if panel_prefs.export_collection:
+        change_active_collection()
+        collection_objects = bpy.context.active_object.users_collection[0].all_objects
+        return [obj for obj in collection_objects]
+    else:
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.ops.object.select_all()
+        return bpy.context.selected_objects
 
 def project_definitions(engine, path_string, assets_path):
     # print("THIS IS THE CURRENT ENGINE: {}".format(engine))
     project_name = path_string.split('\\')
     project = {project_name[-2]: {'engine': engine,'path': path_string, 'assets': assets_path,}}
+
     return project
 
 def register_project(project):
@@ -195,8 +264,49 @@ def register_project(project):
             json.dump(project, projects_file, indent=4)
     return
 
+def rename_with_prefix(objects_list):
+    addonPrefs = bpy.context.preferences.addons[__package__].preferences
+    # Get needed prefixes
+    sm_prefix = addonPrefs.static_mesh_prefix
+    sk_prefix = addonPrefs.skeletal_mesh_prefix
 
-classes = (BITCAKE_OT_send_to_engine, BITCAKE_OT_register_project, BITCAKE_OT_unregister_project, BITCAKE_OT_custom_butten)
+    separator = '_'
+
+    # Create list of Collider Prefixes so Collider's don't get renamed
+    collider_prefixes = [addonPrefs.box_collider_prefix,
+                         addonPrefs.capsule_collider_prefix,
+                         addonPrefs.sphere_collider_prefix,
+                         addonPrefs.convex_collider_prefix,
+                         addonPrefs.mesh_collider_prefix]
+    object_prefixes = [sm_prefix, sk_prefix]
+
+    for obj in objects_list:
+        split = obj.name.split(separator)
+
+        if collider_prefixes.__contains__(split[0]) or object_prefixes.__contains__(split[0]):
+            continue
+        if obj.find_armature():
+            obj.name = sk_prefix + separator + obj.name
+        else:
+            obj.name = sm_prefix + separator + obj.name
+
+    return
+
+def toggle_all_colliders_visibility():
+    all_colliders = get_all_colliders()
+    for col in all_colliders:
+        is_hidden = col.hide_viewport
+        col.hide_set(not is_hidden)
+        col.hide_viewport = not col.hide_viewport
+
+    return
+
+
+classes = (BITCAKE_OT_send_to_engine,
+           BITCAKE_OT_register_project,
+           BITCAKE_OT_unregister_project,
+           BITCAKE_OT_custom_butten,
+           BITCAKE_OT_toggle_all_colliders_visibility)
 
 def register():
     for cls in classes:

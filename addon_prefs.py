@@ -35,11 +35,18 @@ class BitCakeToolsPreferences(AddonPreferences):
     registered_projects: EnumProperty(items=update_registered_projects, name='', description='Register projects here before starting. Current Active project')
 
     # Prefixes Setup (user changeable)
-    static_mesh_prefix: StringProperty(name='Static Mesh Prefix', default='SM_')
-    skeletal_mesh_prefix: StringProperty(name='Skeletal Mesh Prefix', default='SK_')
-    animation_prefix: StringProperty(name='Animation Prefix', default='Anim_')
-    pose_prefix: StringProperty(name='Pose Prefix', default='Pose_')
-    camera_prefix: StringProperty(name='Camera Prefix', default='Cam_')
+    static_mesh_prefix: StringProperty(name='Static Mesh Prefix', default='SM')
+    skeletal_mesh_prefix: StringProperty(name='Skeletal Mesh Prefix', default='SK')
+    animation_prefix: StringProperty(name='Animation Prefix', default='Anim')
+    pose_prefix: StringProperty(name='Pose Prefix', default='Pose')
+    camera_prefix: StringProperty(name='Camera Prefix', default='Cam')
+
+    # Collider Prefixes Setup (user changeable)
+    box_collider_prefix: StringProperty(name='Box Collider Prefix', default='UBX')
+    capsule_collider_prefix: StringProperty(name='Capsule Collider Prefix', default='UCP')
+    sphere_collider_prefix: StringProperty(name='Sphere Collider Prefix', default='USP')
+    convex_collider_prefix: StringProperty(name='Convex Collider Prefix', default='UCX')
+    mesh_collider_prefix: StringProperty(name='Mesh Collider Prefix', default='UMX')
 
     # Folder Paths (not user changeable)
     static_mesh_path: StringProperty(name='Static Mesh Path', default='/Art/StaticMeshes/',)
