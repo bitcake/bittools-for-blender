@@ -83,20 +83,26 @@ class BITCAKE_PT_send_to_engine(Panel):
         row = layout.row()
         row.prop(panel_prefs, 'export_batch', toggle=1, icon_value=1, icon='FILE_NEW')
 
-        # Rename button if in Batch Mode
-        send = ''
-        if panel_prefs.export_batch:
-            send = 'Batch '
-
         if current_engine == 'Unity':
             row = layout.row()
-            row.operator('bitcake.send_to_engine', text=f'{send}Send to Unity', icon_value=unity_logo.icon_id)
+            if not panel_prefs.export_batch:
+                row.operator('bitcake.send_to_engine', text='Send to Unity', icon_value=unity_logo.icon_id)
+            else:
+                row.operator('bitcake.batch_send_to_engine', text='Batch Send to Unity', icon_value=unity_logo.icon_id)
+
         elif current_engine == 'Unreal':
             row = layout.row()
-            row.operator('bitcake.send_to_engine', text=f'{send}Send to Unreal', icon_value=unreal_logo.icon_id)
+            if not panel_prefs.export_batch:
+                row.operator('bitcake.send_to_engine', text='Send to Unreal', icon_value=unreal_logo.icon_id)
+            else:
+                row.operator('bitcake.batch_send_to_engine', text='Batch Send to Unreal', icon_value=unreal_logo.icon_id)
+
         elif current_engine == 'Cocos':
             row = layout.row()
-            row.operator('bitcake.send_to_engine', text=f'{send}Send to Cocos', icon_value=cocos_logo.icon_id)
+            if not panel_prefs.export_batch:
+                row.operator('bitcake.send_to_engine', text='Send to Cocos', icon_value=cocos_logo.icon_id)
+            else:
+                row.operator('bitcake.batch_send_to_engine', text='Batch Send to Cocos', icon_value=cocos_logo.icon_id)
 
         row = layout.row()
         row.prop(panel_prefs, 'export_selected')
