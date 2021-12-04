@@ -5,8 +5,11 @@ from pathlib   import Path
 from bpy.types import AddonPreferences
 from bpy.props import BoolProperty, StringProperty, EnumProperty
 
+
 def update_registered_projects(self, context):
     import json
+
+    addonPrefs = context.preferences.addons[__package__].preferences
     projects_list = []
 
     for mod in addon_utils.modules():
@@ -18,11 +21,13 @@ def update_registered_projects(self, context):
     if projects_file_path.is_file():
         with open('registered_projects.json', 'r') as projects:
             projects_json = json.load(projects)
+            first_key = next(iter(projects_json))
+            addonPrefs.first_project_registered = first_key
             for i, project in enumerate(projects_json):
                 projects_list.append((project, project, '', i))
 
-    return projects_list
 
+    return projects_list
 
 class BitCakeToolsPreferences(AddonPreferences):
     bl_idname = __package__
@@ -32,7 +37,11 @@ class BitCakeToolsPreferences(AddonPreferences):
         default=False,
     )
 
-    registered_projects: EnumProperty(items=update_registered_projects, name='', description='Register projects here before starting. Current Active project')
+    registered_projects: EnumProperty(items=update_registered_projects,
+                                      name='',
+                                      description='Register projects here before starting. Current Active project',
+                                      )
+    first_project_registered: StringProperty()
 
     # Prefixes Setup (user changeable)
     static_mesh_prefix: StringProperty(name='Static Mesh Prefix', default='SM')
@@ -74,8 +83,6 @@ class BitCakeToolsPreferences(AddonPreferences):
         column2.label(text='Paths')
         column2.prop(self, "static_mesh_path")
         column2.prop(self, "skeletal_mesh_path")
-
-
 
 
 classes = (BitCakeToolsPreferences,)

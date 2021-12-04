@@ -76,9 +76,11 @@ class BITCAKE_PT_send_to_engine(Panel):
         row.prop(addonPrefs, 'registered_projects')
         row.operator('bitcake.register_project', icon='ADD', text='')
 
-        # If there's no Project Registered, don't draw the rest of the menu
+        # If there's no Project Registered, don't draw the rest of the menu below
         if not current_engine:
             return
+
+        row.operator('bitcake.unregister_project', icon='REMOVE', text='')
 
         row = layout.row()
         row.prop(panel_prefs, 'export_batch', toggle=1, icon_value=1, icon='FILE_NEW')
@@ -111,7 +113,7 @@ class BITCAKE_PT_send_to_engine(Panel):
         row = layout.row()
         row.operator('bitcake.toggle_all_colliders_visibility', text='Toggle Colliders Visibility', icon='HIDE_OFF')
         row = layout.row()
-        row.operator('bitcake.custom_butten', text='Custom Butten')
+        row.operator('bitcake.custom_butten', text='Test Cusom Butten')
 
 class BITCAKE_PT_animtools(Panel):
     bl_idname = "BITCAKE_PT_animtools"

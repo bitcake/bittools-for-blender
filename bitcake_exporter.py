@@ -6,7 +6,6 @@ from bpy.types           import Operator, Scene
 from bpy_extras.io_utils import ImportHelper
 from pathlib             import Path
 
-
 class BITCAKE_OT_send_to_engine(Operator):
     bl_idname = "bitcake.send_to_engine"
     bl_label = "Send to Unity"
@@ -80,6 +79,7 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
 
         objects_list = make_objects_list(context)
 
+        # I just wanted to use generators to see how they worked. Please don't judge.
         for obj in range(len(objects_list)):
             try:
                 current_object = next(rename_with_prefix(objects_list, generator=True))
@@ -145,7 +145,9 @@ class BITCAKE_OT_custom_butten(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        construct_fbx_path(self, context, bpy.context.active_object)
+        addonPrefs = context.preferences.addons[__package__].preferences
+        current_project = addonPrefs.registered_projects
+        get_previous_project(current_project)
 
         return {'FINISHED'}
 
@@ -160,26 +162,24 @@ class BITCAKE_OT_register_project(Operator, ImportHelper):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        path = Path(self.filepath)
+        dir_path = Path(self.filepath)
+        if dir_path.is_file() or dir_path.suffix != '':
+            dir_path = dir_path.parent
 
-        if path.suffix != '':
-            path = path.parent
-
-        cocos = path / 'project.json'
-        unreal = path / 'Content'
-        unity = path / 'Assets'
-        # print("THIS IS THE CURRENT PATH: {}".format(path))
+        cocos = dir_path / 'project.json'
+        unreal = dir_path / 'Content'
+        unity = dir_path / 'Assets'
 
         if cocos.exists():
-            project_definition = project_definitions('Cocos', self.filepath, str(path / 'assets'))
+            project_definition = project_definitions('Cocos', dir_path, str(dir_path / 'assets'))
             register_project(project_definition)
 
         elif unreal.exists():
-            project_definition = project_definitions('Unreal', self.filepath, str(path / 'Content'))
+            project_definition = project_definitions('Unreal', dir_path, str(dir_path / 'Content'))
             register_project(project_definition)
 
         elif unity.exists():
-            project_definition = project_definitions('Unity', self.filepath, str(path / 'Assets'))
+            project_definition = project_definitions('Unity', dir_path, str(dir_path / 'Assets'))
             register_project(project_definition)
         else:
             self.report({"ERROR"}, "Folder is not a valid Game Project. Please point to a valid Cocos, Unity or Unreal project folder.")
@@ -190,18 +190,40 @@ class BITCAKE_OT_register_project(Operator, ImportHelper):
 
 class BITCAKE_OT_unregister_project(Operator):
     bl_idname = "bitcake.unregister_project"
-    bl_label = "Register Project"
-    bl_description = "Register a new project within blender to work with using BitCake Exporter"
+    bl_label = "Unregister Project"
+    bl_description = "Deletes current project from the Projects list"
 
     @classmethod
     def poll(cls, context):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        self.report({"ERROR"}, "Button Not Implemented.")
+        addonPrefs = context.preferences.addons[__package__].preferences
+        current_project = addonPrefs.registered_projects
+
+        previous_project = get_previous_project(current_project)
+        unregister_project(current_project)
+        addonPrefs.registered_projects = previous_project
 
         return {'FINISHED'}
 
+
+def get_previous_project(current_project):
+    registered_projects_file = get_registered_projects_file_path()
+    projects = json.load(registered_projects_file.open())
+    projects_list = []
+    for project in projects:
+        projects_list.append(project)
+
+    previous_project = ''
+    for i, project in enumerate(projects_list):
+        if project == current_project:
+            # Hack so that if current_project is the first index, give me the next instead of previous
+            if i == 0:
+                i = 2
+            previous_project = projects_list[i - 1]
+
+    return previous_project
 
 def change_active_collection():
     active_collection = bpy.context.active_object.users_collection[0].name
@@ -312,6 +334,16 @@ def find_parent_collection(collection):
 
     return collection[0]
 
+def get_all_registered_projects():
+    for mod in addon_utils.modules():
+        if mod.bl_info['name'] == __package__:
+            addon_path = Path(mod.__file__)
+
+    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
+    projects_json = json.load(projects_file_path.open())
+
+    return projects_json
+
 def get_current_project_assets_path(context):
     addonPrefs = context.preferences.addons[__package__].preferences
     active_project = addonPrefs.registered_projects
@@ -397,26 +429,19 @@ def get_all_child_of_child(obj):
         child = children.pop()
         all_children.append(child)
         children.extend(child.children)
-        print(children)
 
     return all_children
 
-def project_definitions(engine, path_string, assets_path):
-    # print("THIS IS THE CURRENT ENGINE: {}".format(engine))
-    project_name = path_string.split('\\')
-    project = {project_name[-2]: {'engine': engine,'path': path_string, 'assets': assets_path,}}
+def project_definitions(engine, dir_path, assets_path):
+    project_name = dir_path.stem
+    project = {project_name: {'engine': engine,'path': str(dir_path), 'assets': assets_path,}}
 
     return project
 
 def register_project(project):
     """Checks if file exist, if not create it and write details as json"""
 
-    # Gets Addon Path (__init__.py)
-    for mod in addon_utils.modules():
-        if mod.bl_info['name'] == __package__:
-            addon_path = Path(mod.__file__)
-
-    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
+    projects_file_path = get_registered_projects_file_path()
 
     if projects_file_path.is_file():
         projects_json = json.load(projects_file_path.open())
@@ -430,36 +455,79 @@ def register_project(project):
             json.dump(project, projects_file, indent=4)
     return
 
+def unregister_project(project):
+    """Pass a Project string in order to delete it from registered_projects.json"""
+
+    all_projects = get_all_registered_projects()
+    all_projects.pop(project)
+
+    file = get_registered_projects_file_path()
+
+    if not all_projects:
+        try:
+            file.unlink()
+            return
+        except FileNotFoundError:
+            print("registered_projects.json not found!")
+            return
+
+    with open(file, 'w') as projects_file:
+        json.dump(all_projects, projects_file, indent=4)
+
+def get_registered_projects_file_path():
+    # Gets Addon Path (__init__.py)
+    for mod in addon_utils.modules():
+        if mod.bl_info['name'] == __package__:
+            addon_path = Path(mod.__file__)
+
+    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
+
+    return projects_file_path
+
 def rename_with_prefix(objects_list, generator=False):
-    addonPrefs = bpy.context.preferences.addons[__package__].preferences
-    # Get needed prefixes
-    sm_prefix = addonPrefs.static_mesh_prefix
-    sk_prefix = addonPrefs.skeletal_mesh_prefix
-
-    separator = '_'
-
-    # Create list of Collider Prefixes so Collider's don't get renamed
-    collider_prefixes = [addonPrefs.box_collider_prefix,
-                         addonPrefs.capsule_collider_prefix,
-                         addonPrefs.sphere_collider_prefix,
-                         addonPrefs.convex_collider_prefix,
-                         addonPrefs.mesh_collider_prefix]
-    object_prefixes = [sm_prefix, sk_prefix]
+    """Renames current obj and all its children. If Generator is true it'll yield the current object being renamed."""
 
     for obj in objects_list:
-        split = obj.name.split(separator)
-
-        if collider_prefixes.__contains__(split[0]) or object_prefixes.__contains__(split[0]):
-            continue
-        if obj.find_armature():
-            obj.name = sk_prefix + separator + obj.name
-        else:
-            obj.name = sm_prefix + separator + obj.name
+        if obj.parent is None:
+            all_children = get_all_child_of_child(obj)
+            for child in all_children:
+                prefix = get_correct_prefix(child)
+                child.name = prefix + child.name
+        prefix = get_correct_prefix(obj)
+        obj.name = prefix + obj.name
 
         if generator:
             yield obj
 
     return
+
+def get_correct_prefix(obj):
+    # Create tuple of Collider Prefixes so Collider's don't get renamed
+    addonPrefs = bpy.context.preferences.addons[__package__].preferences
+    collider_prefixes = (addonPrefs.box_collider_prefix,
+                         addonPrefs.capsule_collider_prefix,
+                         addonPrefs.sphere_collider_prefix,
+                         addonPrefs.convex_collider_prefix,
+                         addonPrefs.mesh_collider_prefix)
+
+    # Get user-defined prefixes
+    sm_prefix = addonPrefs.static_mesh_prefix
+    sk_prefix = addonPrefs.skeletal_mesh_prefix
+    object_prefixes = (sm_prefix, sk_prefix)
+
+    separator = '_'
+
+    split_name = obj.name.split('_')
+
+    # If object is correctly named, ignore it
+    if collider_prefixes.__contains__(split_name[0]) or object_prefixes.__contains__(split_name[0]):
+        return
+
+    # Return correct prefix for each case
+    if obj.find_armature():
+        return sk_prefix + separator
+    else:
+        return sm_prefix + separator
 
 def toggle_all_colliders_visibility(force_on_off=None):
     all_colliders = get_all_colliders()
