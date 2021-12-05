@@ -3,7 +3,7 @@ import os
 import addon_utils
 import json
 import bpy.utils.previews
-from pathlib   import Path
+from pathlib import Path
 from bpy.types import Panel, PropertyGroup, Scene
 from bpy.props import StringProperty, BoolProperty
 
@@ -14,6 +14,7 @@ class PanelProperties(PropertyGroup):
     export_selected: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
     export_collection: BoolProperty(name="Collection", description="Exports entire collection", default=False)
     export_batch: BoolProperty(name="Batch Export", description="Exports objects in a separate file", default=False)
+
 
 class BITCAKE_PT_menu(Panel):
     bl_idname = "BITCAKE_PT_menu"
@@ -41,7 +42,8 @@ class BITCAKE_PT_menu(Panel):
         row = layout.row()
         row.label(text='Current Keymap: ' + current_label)
         row = layout.row()
-        row.operator('bitcake.hotkeychanger',text=button_label)
+        row.operator('bitcake.hotkeychanger', text=button_label)
+
 
 class BITCAKE_PT_send_to_engine(Panel):
     bl_idname = "BITCAKE_PT_send_to_engine"
@@ -54,7 +56,7 @@ class BITCAKE_PT_send_to_engine(Panel):
         scene = context.scene
         panel_prefs = scene.menu_props
 
-        addonPrefs = context.preferences.addons[__package__].preferences
+        addon_prefs = context.preferences.addons[__package__].preferences
 
         pcoll = preview_collections["main"]
         unity_logo = pcoll["unity"]
@@ -66,14 +68,13 @@ class BITCAKE_PT_send_to_engine(Panel):
         current_engine = None
         if registered_projects_path.is_file():
             projects_json = json.load(registered_projects_path.open())
-            current_engine = projects_json[addonPrefs.registered_projects]['engine']
-
+            current_engine = projects_json[addon_prefs.registered_projects]['engine']
 
         layout = self.layout
         row = layout.row()
         row.label(text="Send to Project")
         row = layout.row()
-        row.prop(addonPrefs, 'registered_projects')
+        row.prop(addon_prefs, 'registered_projects')
         row.operator('bitcake.register_project', icon='ADD', text='')
 
         # If there's no Project Registered, don't draw the rest of the menu below
@@ -97,7 +98,8 @@ class BITCAKE_PT_send_to_engine(Panel):
             if not panel_prefs.export_batch:
                 row.operator('bitcake.send_to_engine', text='Send to Unreal', icon_value=unreal_logo.icon_id)
             else:
-                row.operator('bitcake.batch_send_to_engine', text='Batch Send to Unreal', icon_value=unreal_logo.icon_id)
+                row.operator('bitcake.batch_send_to_engine', text='Batch Send to Unreal',
+                             icon_value=unreal_logo.icon_id)
 
         elif current_engine == 'Cocos':
             row = layout.row()
@@ -113,7 +115,8 @@ class BITCAKE_PT_send_to_engine(Panel):
         row = layout.row()
         row.operator('bitcake.toggle_all_colliders_visibility', text='Toggle Colliders Visibility', icon='HIDE_OFF')
         row = layout.row()
-        row.operator('bitcake.custom_butten', text='Test Cusom Butten')
+        row.operator('bitcake.custom_butten', text='Custom Butten')
+
 
 class BITCAKE_PT_animtools(Panel):
     bl_idname = "BITCAKE_PT_animtools"
@@ -134,14 +137,15 @@ class BITCAKE_PT_animtools(Panel):
         row = layout.row()
         row.prop(animtool_props, 'breakdowner', slider=True)
         row = layout.row()
-        row.operator('bitcake.breakdowner', text='0').breakdown_value=0.0
-        row.operator('bitcake.breakdowner', text='25').breakdown_value=0.25
-        row.operator('bitcake.breakdowner', text='50').breakdown_value=0.5
-        row.operator('bitcake.breakdowner', text='75').breakdown_value=0.75
-        row.operator('bitcake.breakdowner', text='100').breakdown_value=1.0
+        row.operator('bitcake.breakdowner', text='0').breakdown_value = 0.0
+        row.operator('bitcake.breakdowner', text='25').breakdown_value = 0.25
+        row.operator('bitcake.breakdowner', text='50').breakdown_value = 0.5
+        row.operator('bitcake.breakdowner', text='75').breakdown_value = 0.75
+        row.operator('bitcake.breakdowner', text='100').breakdown_value = 1.0
 
 
 def get_registered_projects_path():
+    addon_path = None
     for mod in addon_utils.modules():
         if mod.bl_info['name'] == __package__:
             addon_path = Path(mod.__file__)
@@ -154,10 +158,10 @@ def get_registered_projects_path():
 classes = (PanelProperties, BITCAKE_PT_menu, BITCAKE_PT_send_to_engine, BITCAKE_PT_animtools)
 preview_collections = {}
 
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-
 
     # Register Custom Icons
     pcoll = bpy.utils.previews.new()

@@ -21,8 +21,7 @@ def update_registered_projects(self, context):
     if projects_file_path.is_file():
         with open('registered_projects.json', 'r') as projects:
             projects_json = json.load(projects)
-            first_key = next(iter(projects_json))
-            addonPrefs.first_project_registered = first_key
+
             for i, project in enumerate(projects_json):
                 projects_list.append((project, project, '', i))
 
@@ -41,7 +40,6 @@ class BitCakeToolsPreferences(AddonPreferences):
                                       name='',
                                       description='Register projects here before starting. Current Active project',
                                       )
-    first_project_registered: StringProperty()
 
     # Prefixes Setup (user changeable)
     static_mesh_prefix: StringProperty(name='Static Mesh Prefix', default='SM')

@@ -1,10 +1,10 @@
-from typing import Collection
 import bpy
 import json
 import addon_utils
-from bpy.types           import Operator, Scene
+from bpy.types import Operator
 from bpy_extras.io_utils import ImportHelper
-from pathlib             import Path
+from pathlib import Path
+
 
 class BITCAKE_OT_send_to_engine(Operator):
     bl_idname = "bitcake.send_to_engine"
@@ -48,7 +48,7 @@ class BITCAKE_OT_send_to_engine(Operator):
             axis_up='Y',
             use_selection=panel_prefs.export_selected,
             use_active_collection=panel_prefs.export_collection,
-            )
+        )
 
         # Save _bkp file and reopen original
         bpy.ops.wm.save_mainfile(filepath=str(new_path))
@@ -107,7 +107,7 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
                     axis_forward='-Z',
                     axis_up='Y',
                     use_selection=True,
-                    )
+                )
 
             # Ver se isso vai dar problema no futuro (Algum arquivo não vai ser exportado, sei la...)
             except StopIteration:
@@ -119,6 +119,7 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
         toggle_all_colliders_visibility(False)
 
         return {'FINISHED'}
+
 
 class BITCAKE_OT_toggle_all_colliders_visibility(Operator):
     bl_idname = "bitcake.toggle_all_colliders_visibility"
@@ -182,7 +183,8 @@ class BITCAKE_OT_register_project(Operator, ImportHelper):
             project_definition = project_definitions('Unity', dir_path, str(dir_path / 'Assets'))
             register_project(project_definition)
         else:
-            self.report({"ERROR"}, "Folder is not a valid Game Project. Please point to a valid Cocos, Unity or Unreal project folder.")
+            self.report({"ERROR"},
+                        "Folder is not a valid Game Project. Please point to a valid Cocos, Unity or Unreal project folder.")
             return {'CANCELLED'}
 
         return {'FINISHED'}
@@ -198,12 +200,12 @@ class BITCAKE_OT_unregister_project(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        addonPrefs = context.preferences.addons[__package__].preferences
-        current_project = addonPrefs.registered_projects
+        addon_prefs = context.preferences.addons[__package__].preferences
+        current_project = addon_prefs.registered_projects
 
         previous_project = get_previous_project(current_project)
         unregister_project(current_project)
-        addonPrefs.registered_projects = previous_project
+        addon_prefs.registered_projects = previous_project
 
         return {'FINISHED'}
 
@@ -225,6 +227,7 @@ def get_previous_project(current_project):
 
     return previous_project
 
+
 def change_active_collection():
     active_collection = bpy.context.active_object.users_collection[0].name
     layer_collections = bpy.context.view_layer.layer_collection.children
@@ -234,6 +237,7 @@ def change_active_collection():
             bpy.context.view_layer.active_layer_collection = i
 
     return
+
 
 def construct_file_path(self, context):
     blend_path = Path(bpy.path.abspath('//'))
@@ -254,13 +258,15 @@ def construct_file_path(self, context):
 
     # If no WIP folder found then fail
     if wip is False:
-        self.report({"ERROR"}, "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment")
+        self.report({"ERROR"},
+                    "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment")
         return {'CANCELLED'}
 
     current_project_path = Path(get_current_project_assets_path(context))
     constructed_path = current_project_path.joinpath(*pathway)
 
     return constructed_path
+
 
 def construct_fbx_path(self, context, obj):
     blend_path = Path(bpy.path.abspath('//'))
@@ -284,7 +290,8 @@ def construct_fbx_path(self, context, obj):
 
     # If no WIP folder found then fail
     if wip is False:
-        self.report({"ERROR"}, "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment/YourFile.blend")
+        self.report({"ERROR"},
+                    "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment/YourFile.blend")
         return {'CANCELLED'}
 
     current_project_path = Path(get_current_project_assets_path(context))
@@ -292,11 +299,13 @@ def construct_fbx_path(self, context, obj):
 
     return constructed_path
 
+
 def get_active_object_collection_tree():
     C = bpy.context
     empty_list = []
     collection_tree = get_current_collection_hierarchy(C.collection, empty_list)
     return collection_tree
+
 
 def get_object_collection_tree(obj):
     # Check if object is in root collection
@@ -307,6 +316,7 @@ def get_object_collection_tree(obj):
     collection_tree = get_current_collection_hierarchy(obj.users_collection[0], empty_list)
 
     return collection_tree
+
 
 def get_current_collection_hierarchy(active_collection, collection_list=[]):
     C = bpy.context
@@ -319,6 +329,7 @@ def get_current_collection_hierarchy(active_collection, collection_list=[]):
     collection_list.append(active_collection)
 
     return collection_list
+
 
 def find_parent_collection(collection):
     D = bpy.data
@@ -334,6 +345,7 @@ def find_parent_collection(collection):
 
     return collection[0]
 
+
 def get_all_registered_projects():
     for mod in addon_utils.modules():
         if mod.bl_info['name'] == __package__:
@@ -343,6 +355,7 @@ def get_all_registered_projects():
     projects_json = json.load(projects_file_path.open())
 
     return projects_json
+
 
 def get_current_project_assets_path(context):
     addonPrefs = context.preferences.addons[__package__].preferences
@@ -357,6 +370,7 @@ def get_current_project_assets_path(context):
 
     return projects_json[active_project]['assets']
 
+
 def get_current_project_path(context):
     addonPrefs = context.preferences.addons[__package__].preferences
     active_project = addonPrefs.registered_projects
@@ -370,13 +384,14 @@ def get_current_project_path(context):
 
     return projects_json[active_project]['path']
 
+
 def get_all_colliders():
-    addonPrefs = bpy.context.preferences.addons[__package__].preferences
-    collider_prefixes = [addonPrefs.box_collider_prefix,
-                         addonPrefs.capsule_collider_prefix,
-                         addonPrefs.sphere_collider_prefix,
-                         addonPrefs.convex_collider_prefix,
-                         addonPrefs.mesh_collider_prefix]
+    addon_prefs = bpy.context.preferences.addons[__package__].preferences
+    collider_prefixes = [addon_prefs.box_collider_prefix,
+                         addon_prefs.capsule_collider_prefix,
+                         addon_prefs.sphere_collider_prefix,
+                         addon_prefs.convex_collider_prefix,
+                         addon_prefs.mesh_collider_prefix]
 
     all_objects = bpy.context.scene.objects
 
@@ -387,6 +402,7 @@ def get_all_colliders():
             all_colliders_list.append(obj)
 
     return all_colliders_list
+
 
 def make_objects_list(context):
     panel_prefs = context.scene.menu_props
@@ -408,6 +424,7 @@ def make_objects_list(context):
         bpy.ops.object.select_all()
         return bpy.context.selected_objects
 
+
 def append_child_colliders(obj_list):
     for obj in obj_list:
         children = get_all_child_of_child(obj)
@@ -421,6 +438,7 @@ def append_child_colliders(obj_list):
 
     return obj_list
 
+
 def get_all_child_of_child(obj):
     children = list(obj.children)
     all_children = []
@@ -432,11 +450,13 @@ def get_all_child_of_child(obj):
 
     return all_children
 
+
 def project_definitions(engine, dir_path, assets_path):
     project_name = dir_path.stem
-    project = {project_name: {'engine': engine,'path': str(dir_path), 'assets': assets_path,}}
+    project = {project_name: {'engine': engine, 'path': str(dir_path), 'assets': assets_path, }}
 
     return project
+
 
 def register_project(project):
     """Checks if file exist, if not create it and write details as json"""
@@ -454,6 +474,7 @@ def register_project(project):
         with open(projects_file_path, 'w') as projects_file:
             json.dump(project, projects_file, indent=4)
     return
+
 
 def unregister_project(project):
     """Pass a Project string in order to delete it from registered_projects.json"""
@@ -474,6 +495,7 @@ def unregister_project(project):
     with open(file, 'w') as projects_file:
         json.dump(all_projects, projects_file, indent=4)
 
+
 def get_registered_projects_file_path():
     # Gets Addon Path (__init__.py)
     for mod in addon_utils.modules():
@@ -483,6 +505,7 @@ def get_registered_projects_file_path():
     projects_file_path = Path(addon_path.parent / 'registered_projects.json')
 
     return projects_file_path
+
 
 def rename_with_prefix(objects_list, generator=False):
     """Renames current obj and all its children. If Generator is true it'll yield the current object being renamed."""
@@ -500,6 +523,7 @@ def rename_with_prefix(objects_list, generator=False):
             yield obj
 
     return
+
 
 def get_correct_prefix(obj):
     # Create tuple of Collider Prefixes so Collider's don't get renamed
@@ -529,6 +553,7 @@ def get_correct_prefix(obj):
     else:
         return sm_prefix + separator
 
+
 def toggle_all_colliders_visibility(force_on_off=None):
     all_colliders = get_all_colliders()
 
@@ -549,6 +574,7 @@ classes = (BITCAKE_OT_send_to_engine,
            BITCAKE_OT_unregister_project,
            BITCAKE_OT_custom_butten,
            BITCAKE_OT_toggle_all_colliders_visibility)
+
 
 def register():
     for cls in classes:
