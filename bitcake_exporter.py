@@ -205,7 +205,8 @@ class BITCAKE_OT_unregister_project(Operator):
 
         previous_project = get_previous_project(current_project)
         unregister_project(current_project)
-        addon_prefs.registered_projects = previous_project
+        if previous_project is not None:
+            addon_prefs.registered_projects = previous_project
 
         return {'FINISHED'}
 
@@ -223,7 +224,10 @@ def get_previous_project(current_project):
             # Hack so that if current_project is the first index, give me the next instead of previous
             if i == 0:
                 i = 2
-            previous_project = projects_list[i - 1]
+            try:
+                previous_project = projects_list[i - 1]
+            except IndexError:
+                return None
 
     return previous_project
 
