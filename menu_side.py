@@ -16,8 +16,8 @@ class PanelProperties(PropertyGroup):
     export_batch: BoolProperty(name="Batch Export", description="Exports objects in a separate file", default=False)
 
 
-class BITCAKE_PT_menu(Panel):
-    bl_idname = "BITCAKE_PT_menu"
+class BITCAKE_PT_hotkey_changer(Panel):
+    bl_idname = "BITCAKE_PT_hotkey_changer"
     bl_label = "Hotkey Changer"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -115,7 +115,25 @@ class BITCAKE_PT_send_to_engine(Panel):
         row = layout.row()
         row.operator('bitcake.toggle_all_colliders_visibility', text='Toggle Colliders Visibility', icon='HIDE_OFF')
         row = layout.row()
-        row.operator('bitcake.custom_butten', text='Custom Butten')
+        row.operator('bitcake.custom_butten', text='Test Butten')
+
+class BITCAKE_PT_collider_tools(Panel):
+    bl_idname = "BITCAKE_PT_collider_tools"
+    bl_label = "Collider Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "BitTools"
+
+    def draw(self, context):
+        properties = context.scene.menu_props
+        animtool_props = context.scene.animtool_props
+
+        addonPrefs = context.preferences.addons[__package__].preferences
+
+        layout = self.layout
+        layout.label(text='Add Collider')
+        row = layout.row()
+        row.operator('bitcake.add_box_collider', text='Add Box Collider (UBX)', icon='CUBE')
 
 
 class BITCAKE_PT_animtools(Panel):
@@ -155,7 +173,11 @@ def get_registered_projects_path():
     return projects_file_path
 
 
-classes = (PanelProperties, BITCAKE_PT_menu, BITCAKE_PT_send_to_engine, BITCAKE_PT_animtools)
+classes = (PanelProperties,
+           BITCAKE_PT_send_to_engine,
+           BITCAKE_PT_animtools,
+           BITCAKE_PT_collider_tools)
+
 preview_collections = {}
 
 
