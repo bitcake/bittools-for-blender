@@ -21,6 +21,9 @@ def create_box_mesh_from_bounding_box():
     selection = bpy.context.selected_objects
 
     for obj in selection:
+        if obj.type != 'MESH':
+            continue
+
         active_object = obj
         active_object_collection = obj.users_collection[0]
         cursor.location = active_object.location
