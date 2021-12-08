@@ -3,6 +3,7 @@ from bpy.types import Operator
 from mathutils import Vector
 
 
+
 class BITCAKE_OT_add_box_collider(Operator):
     bl_idname = "bitcake.add_box_collider"
     bl_label = "Add Box Collider"
@@ -10,13 +11,39 @@ class BITCAKE_OT_add_box_collider(Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        find_bounding_box_center()
-        create_box_mesh_from_bounding_box()
+        create_box_mesh_from_selected_vertices()
+
+        # create_box_mesh_from_bounding_box()
 
         return {'FINISHED'}
 
+def create_box_mesh_from_selected_vertices():
+    verts = get_vertices_from_selection()
+    bounds = get_bounds(verts)
+    bounding_box = define_bounding_box_from_bounds(bounds)
 
-def create_box_mesh_from_bounding_box():
+
+def get_vertices_from_selection():
+    bpy.ops.object.mode_set(mode='OBJECT')
+    verts = [vert for vert in bpy.context.object.data.vertices if vert.select]
+
+    return verts
+
+def get_bounds(vertex_list):
+    """Found this super fast and handy function in the web, thanks"""
+    points = [points.co for points in vertex_list]
+    x_co, y_co, z_co = zip(*points)
+
+    return [(min(x_co), min(y_co), min(z_co)), (max(x_co), max(y_co), max(z_co))]
+
+def define_bounding_box_from_bounds(bounds):
+    from itertools import permutations
+    min_bounds = bounds[0]
+    max_bounds = bounds[1]
+    permutations = permutations(min_bounds, 3)
+    print(*permutations)
+
+def create_bound_box_mesh_from_selected_objects():
     cursor = bpy.context.scene.cursor
     selection = bpy.context.selected_objects
 
@@ -34,11 +61,11 @@ def create_box_mesh_from_bounding_box():
         vertices = active_object.bound_box
         edges = []
         faces = [(0, 1, 2, 3),
-                (0, 4, 5, 1),
-                (4, 7, 6, 5),
-                (7, 3, 2, 6),
-                (1, 5, 6, 2),
-                (0, 3, 7, 4),]
+                 (0, 4, 5, 1),
+                 (4, 7, 6, 5),
+                 (7, 3, 2, 6),
+                 (1, 5, 6, 2),
+                 (0, 3, 7, 4),]
 
         prefix = get_collider_prefixes()['box']
         new_mesh = bpy.data.meshes.new(prefix + '_' + active_object.name)
