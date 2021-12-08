@@ -11,42 +11,44 @@ class BITCAKE_OT_add_box_collider(Operator):
 
     def execute(self, context):
         find_bounding_box_center()
-        get_box_vertices()
+        create_box_mesh_from_bounding_box()
 
         return {'FINISHED'}
 
 
-def get_box_vertices():
+def create_box_mesh_from_bounding_box():
     cursor = bpy.context.scene.cursor
-    active_object = bpy.context.active_object
-    active_object_collection = bpy.context.active_object.users_collection[0]
+    selection = bpy.context.selected_objects
 
-    cursor.location = active_object.location
-    bpy.ops.object.select_all(action='DESELECT')
+    for obj in selection:
+        active_object = obj
+        active_object_collection = obj.users_collection[0]
+        cursor.location = active_object.location
+        bpy.ops.object.select_all(action='DESELECT')
 
-    # I had to check each vertice by hand to figure out which one was which
-    # Then I build that faces array by drawing and plotting each loop
-    vertices = active_object.bound_box
-    edges = []
-    faces = [(0, 1, 2, 3),
-             (0, 4, 5, 1),
-             (4, 7, 6, 5),
-             (7, 3, 2, 6),
-             (1, 5, 6, 2),
-             (0, 3, 7, 4),]
+        # I had to check each vertice by hand to figure out which one was which
+        # Then I build that faces array by drawing and plotting each loop
+        vertices = active_object.bound_box
+        edges = []
+        faces = [(0, 1, 2, 3),
+                (0, 4, 5, 1),
+                (4, 7, 6, 5),
+                (7, 3, 2, 6),
+                (1, 5, 6, 2),
+                (0, 3, 7, 4),]
 
-    prefix = get_collider_prefixes()['box']
-    new_mesh = bpy.data.meshes.new(prefix + '_' + active_object.name)
-    new_mesh.from_pydata(vertices, edges, faces)
-    new_mesh.update()
+        prefix = get_collider_prefixes()['box']
+        new_mesh = bpy.data.meshes.new(prefix + '_' + active_object.name)
+        new_mesh.from_pydata(vertices, edges, faces)
+        new_mesh.update()
 
-    new_object = bpy.data.objects.new(prefix + '_' + active_object.name, new_mesh)
-    new_object.parent = active_object
+        new_object = bpy.data.objects.new(prefix + '_' + active_object.name, new_mesh)
+        new_object.parent = active_object
 
-    master_collection = active_object_collection
-    master_collection.objects.link(new_object)
-    new_object.select_set(True)
-    bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
+        master_collection = active_object_collection
+        master_collection.objects.link(new_object)
+        new_object.select_set(True)
+        bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
 
     return
 
