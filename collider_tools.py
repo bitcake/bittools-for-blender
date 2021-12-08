@@ -19,6 +19,7 @@ class BITCAKE_OT_add_box_collider(Operator):
 def get_box_vertices():
     cursor = bpy.context.scene.cursor
     active_object = bpy.context.active_object
+    active_object_collection = bpy.context.active_object.users_collection[0]
 
     cursor.location = active_object.location
     bpy.ops.object.select_all(action='DESELECT')
@@ -34,16 +35,34 @@ def get_box_vertices():
              (1, 5, 6, 2),
              (0, 3, 7, 4),]
 
-    new_mesh = bpy.data.meshes.new('new_mesh')
+    prefix = get_collider_prefixes()['box']
+    new_mesh = bpy.data.meshes.new(prefix + '_' + active_object.name)
     new_mesh.from_pydata(vertices, edges, faces)
     new_mesh.update()
-    new_object = bpy.data.objects.new('new_object', new_mesh)
 
-    master_collection = bpy.context.scene.collection
+    new_object = bpy.data.objects.new(prefix + '_' + active_object.name, new_mesh)
+    new_object.parent = active_object
+
+    master_collection = active_object_collection
     master_collection.objects.link(new_object)
     new_object.select_set(True)
     bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
 
+    return
+
+
+def get_collider_prefixes():
+    """Returns a dictionary containing all prefixes, access them with the strings:
+    'box', 'capsule', 'sphere', 'convex', 'mesh' WARNING: Does not contain separator"""
+
+    addon_prefs = bpy.context.preferences.addons[__package__].preferences
+    collider_prefixes = {'box': addon_prefs.box_collider_prefix,
+                         'capsule': addon_prefs.capsule_collider_prefix,
+                         'sphere': addon_prefs.sphere_collider_prefix,
+                         'convex': addon_prefs.convex_collider_prefix,
+                         'mesh': addon_prefs.mesh_collider_prefix}
+
+    return collider_prefixes
 
 
 def find_bounding_box_center():
