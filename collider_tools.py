@@ -10,17 +10,49 @@ class BITCAKE_OT_add_box_collider(Operator):
     bl_description = "Add a box collider to selected object and rename it according to naming convention"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context):
-        create_box_mesh_from_selected_vertices()
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT' or context.mode == 'EDIT_MESH'
 
-        # create_box_mesh_from_bounding_box()
+    def execute(self, context):
+        if len(context.selected_objects) > 1 and context.mode == 'EDIT_MESH':
+            self.report({"ERROR"}, "More than one object is selected, please only select one object at a time.")
+            return {'CANCELLED'}
+        elif context.active_object.type != 'MESH':
+            self.report({"ERROR"}, "The selected object is not a Mesh.")
+            return {'CANCELLED'}
+
+
+        if context.mode == 'EDIT_MESH':
+            bound_box = create_bound_box_from_selected_vertices()
+            if not bound_box:
+                self.report({"ERROR"}, "No vertices selected! Please select some vertices and try again.")
+                return {'CANCELLED'}
+        else:
+            create_bound_box_from_selected_objects()
 
         return {'FINISHED'}
 
-def create_box_mesh_from_selected_vertices():
+def create_bound_box_from_selected_vertices():
     verts = get_vertices_from_selection()
+    if not verts:
+        return
+
     bounds = get_bounds(verts)
     bounding_box = define_bounding_box_from_bounds(bounds)
+
+    active_object = bpy.context.active_object
+    prefix = get_collider_prefixes()['box']
+    name = prefix + '_' + active_object.name
+
+    bounding_box = create_mesh(name, (bounding_box[0], bounding_box[1], bounding_box[2]), active_object)
+
+    cursor = bpy.context.scene.cursor
+    cursor.location = active_object.location
+    bounding_box.select_set(True)
+    bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
+
+    return bounding_box
 
 
 def get_vertices_from_selection():
@@ -30,20 +62,36 @@ def get_vertices_from_selection():
     return verts
 
 def get_bounds(vertex_list):
-    """Found this super fast and handy function in the web, thanks"""
+    """Found this super fast and handy function in the web, thanks.\n
+    Returns a list of tuples containing the min and max values of each axis in the bounds of a vertex list."""
     points = [points.co for points in vertex_list]
     x_co, y_co, z_co = zip(*points)
 
     return [(min(x_co), min(y_co), min(z_co)), (max(x_co), max(y_co), max(z_co))]
 
 def define_bounding_box_from_bounds(bounds):
-    from itertools import permutations
     min_bounds = bounds[0]
     max_bounds = bounds[1]
-    permutations = permutations(min_bounds, 3)
-    print(*permutations)
+    vertices = [(min_bounds[0], min_bounds[1], min_bounds[2]),
+                (min_bounds[0], max_bounds[1], min_bounds[2]),
+                (max_bounds[0], max_bounds[1], min_bounds[2]),
+                (max_bounds[0], min_bounds[1], min_bounds[2]),
+                (min_bounds[0], min_bounds[1], max_bounds[2]),
+                (min_bounds[0], max_bounds[1], max_bounds[2]),
+                (max_bounds[0], max_bounds[1], max_bounds[2]),
+                (max_bounds[0], min_bounds[1], max_bounds[2]),]
 
-def create_bound_box_mesh_from_selected_objects():
+    edges = []
+    faces = [(0, 1, 2, 3),
+             (4, 5, 1, 0),
+             (5, 4, 7, 6),
+             (3, 2, 6, 7),
+             (0, 3, 7, 4),
+             (5, 6, 2, 1)]
+
+    return (vertices, edges, faces)
+
+def create_bound_box_from_selected_objects():
     cursor = bpy.context.scene.cursor
     selection = bpy.context.selected_objects
 
@@ -68,20 +116,32 @@ def create_bound_box_mesh_from_selected_objects():
                  (0, 3, 7, 4),]
 
         prefix = get_collider_prefixes()['box']
-        new_mesh = bpy.data.meshes.new(prefix + '_' + active_object.name)
-        new_mesh.from_pydata(vertices, edges, faces)
-        new_mesh.update()
+        name = prefix + '_' + active_object.name
 
-        new_object = bpy.data.objects.new(prefix + '_' + active_object.name, new_mesh)
-        new_object.parent = active_object
+        new_object = create_mesh(name, (vertices, edges, faces), active_object)
 
-        master_collection = active_object_collection
-        master_collection.objects.link(new_object)
         new_object.select_set(True)
         bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
 
     return
 
+def create_mesh(name, pydata, parent=None):
+    """Function takes in a name string, a tuple of (vertices, edges, faces) and optionally a Parent object."""
+    new_mesh = bpy.data.meshes.new(name)
+    new_mesh.from_pydata(pydata[0], pydata[1], pydata[2])
+    new_mesh.update()
+
+    new_object = bpy.data.objects.new(name, new_mesh)
+
+    collection = bpy.context.collection
+
+    if parent:
+        collection = parent.users_collection[0]
+        new_object.parent = parent
+
+    collection.objects.link(new_object)
+
+    return new_object
 
 def get_collider_prefixes():
     """Returns a dictionary containing all prefixes, access them with the strings:
