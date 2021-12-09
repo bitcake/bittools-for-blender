@@ -134,6 +134,8 @@ class BITCAKE_PT_collider_tools(Panel):
         layout.label(text='Add Collider')
         row = layout.row()
         row.operator('bitcake.add_box_collider', text='Add Box Collider (UBX)', icon='CUBE')
+        row = layout.row()
+        row.operator('bitcake.add_sphere_collider', text='Add Sphere Collider (USP)', icon='SPHERE')
 
 
 class BITCAKE_PT_animtools(Panel):

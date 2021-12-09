@@ -1,7 +1,7 @@
 import bpy
 from bpy.types import Operator
 from mathutils import Vector
-
+import mathutils
 
 
 class BITCAKE_OT_add_box_collider(Operator):
@@ -32,6 +32,35 @@ class BITCAKE_OT_add_box_collider(Operator):
             create_bound_box_from_selected_objects()
 
         return {'FINISHED'}
+
+
+class BITCAKE_OT_add_sphere_collider(Operator):
+    bl_idname = "bitcake.add_sphere_collider"
+    bl_label = "Add Sphere Collider"
+    bl_description = "Add a sphere collider to selected object and rename it according to naming convention"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT' or context.mode == 'EDIT_MESH'
+
+    def execute(self, context):
+        active_object = bpy.context.active_object
+        bounding_box = active_object.bound_box
+        bounding_box_center = find_bounding_box_center()
+
+        # Put the cursor in the middle just to check if its working
+        cursor = bpy.context.scene.cursor
+        cursor.location = bounding_box_center
+
+        bounds_limit = mathutils.Vector((bounding_box[0][0], bounding_box[0][1], bounding_box[0][2]))
+        radius = bounds_limit - bounding_box_center
+        print(radius.length)
+
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=32, radius=radius.length, enter_editmode=False, align='WORLD', location=bounding_box_center, scale=(1, 1, 1))
+
+        return {'FINISHED'}
+
 
 def create_bound_box_from_selected_vertices():
     verts = get_vertices_from_selection()
@@ -158,15 +187,15 @@ def get_collider_prefixes():
 
 
 def find_bounding_box_center():
-    o = bpy.context.object
+    o = bpy.context.active_object
     local_bbox_center = 0.125 * sum((Vector(b) for b in o.bound_box), Vector())
     global_bbox_center = o.matrix_world @ local_bbox_center
 
-    print(global_bbox_center)
     return global_bbox_center
 
 
-classes = (BITCAKE_OT_add_box_collider,)
+classes = (BITCAKE_OT_add_box_collider,
+           BITCAKE_OT_add_sphere_collider,)
 
 def register():
     for cls in classes:
