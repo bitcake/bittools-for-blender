@@ -1,3 +1,4 @@
+import logging
 import bpy
 from bpy.types import Operator
 from mathutils import Vector
@@ -22,7 +23,6 @@ class BITCAKE_OT_add_box_collider(Operator):
             self.report({"ERROR"}, "The selected object is not a Mesh.")
             return {'CANCELLED'}
 
-
         if context.mode == 'EDIT_MESH':
             bound_box = create_bound_box_from_selected_vertices()
             if not bound_box:
@@ -45,21 +45,162 @@ class BITCAKE_OT_add_sphere_collider(Operator):
         return context.mode == 'OBJECT' or context.mode == 'EDIT_MESH'
 
     def execute(self, context):
-        active_object = bpy.context.active_object
-        bounding_box = active_object.bound_box
-        bounding_box_center = find_bounding_box_center()
-
-        # Put the cursor in the middle just to check if its working
-        cursor = bpy.context.scene.cursor
-        cursor.location = bounding_box_center
-
-        bounds_limit = mathutils.Vector((bounding_box[0][0], bounding_box[0][1], bounding_box[0][2]))
-        radius = bounds_limit - bounding_box_center
-        print(radius.length)
-
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=32, radius=radius.length, enter_editmode=False, align='WORLD', location=bounding_box_center, scale=(1, 1, 1))
+        if len(context.selected_objects) > 1 and context.mode == 'EDIT_MESH':
+            self.report({"ERROR"}, "More than one object is selected, please only select one object at a time.")
+            return {'CANCELLED'}
+        for obj in context.selected_objects:
+            if obj.type != 'MESH':
+                self.report({"ERROR"}, "The selected object is not a Mesh.")
+                return {'CANCELLED'}
+            # Check if object is inside an Armature Hierachy, if so, cancel Operator.
+            elif obj.parent is not None:
+                has_armature = check_hierarchy_for_armature(self, context, obj)
+                if has_armature:
+                    self.report({"ERROR"},
+                                "The selected object is part of an Armature Hierarchy.\n Please remove it from the Armature and try again.")
+                    return {'CANCELLED'}
+        # Do the operation
+        if context.mode == 'EDIT_MESH':
+            sphere = create_sphere_from_selected_vertices()
+            if not sphere:
+                self.report({"ERROR"}, "No vertices selected! Please select some vertices and try again.")
+                return {'CANCELLED'}
+        else:
+            logging.info(context.mode)
+            create_sphere_from_selected_objects()
 
         return {'FINISHED'}
+
+
+def check_hierarchy_for_armature(self, context, obj):
+    """Checks parental hierarchy for an Armature, returns True if there's one."""
+
+    # Go up the hierarchy until parent because there could be an object inside an object
+    please = False
+    while please is False:
+        parent = obj.parent
+
+        # Unhide parent in case it's hidden
+        original_hide_status = parent.hide_get()
+        if parent.hide_get():
+            parent.hide_set(not parent.hide_get())
+            parent.hide_viewport = not parent.hide_get()
+
+        if obj.type == 'ARMATURE' or parent.type == 'ARMATURE':
+            # In case we unhid object, hide it again
+            if original_hide_status:
+                parent.hide_set(not parent.hide_get())
+                parent.hide_viewport = not parent.hide_get()
+            return True
+        else:
+            # In case we unhid object, hide it again
+            if original_hide_status:
+                parent.hide_set(not parent.hide_get())
+                parent.hide_viewport = not parent.hide_get()
+
+            obj = obj.parent
+            please = True
+
+    return False
+
+
+def create_sphere_from_selected_vertices():
+    active_object = bpy.context.active_object
+    collection = bpy.context.active_object.users_collection[0]
+
+    verts = get_vertices_from_selection()
+    if not verts:
+        return
+
+    bounds = get_bounds(verts)
+    bounding_box = define_bounding_box_from_bounds(bounds)
+    bounding_box_center = find_center_from_vertices(bounding_box[0], active_object)
+
+    bounds_limit = mathutils.Vector(bounding_box[0][0])
+    bounds_limit = (bounds_limit + active_object.location)
+    radius = bounds_limit - bounding_box_center
+
+    cursor = bpy.context.scene.cursor
+    cursor.location = bounding_box_center
+
+    # Create the sphere using the vector length so that it has measurements in meters.
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=32, radius=radius.length, enter_editmode=False,
+                                         align='WORLD', location=bounding_box_center, scale=(1, 1, 1))
+
+    # Organize everything, placing it under the correct collection and parent, then rename the sphere
+    sphere = bpy.context.active_object
+    master_collection = bpy.context.collection
+    master_collection.objects.unlink(sphere)
+    collection.objects.link(sphere)
+    sphere.parent = active_object
+    bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
+
+    prefix = get_collider_prefixes()['sphere']
+    sphere.name = prefix + '_' + active_object.name
+
+    return sphere
+
+
+def create_sphere_from_selected_objects():
+    master_collection = bpy.context.collection
+
+    sphere = None
+    for obj in bpy.context.selected_objects:
+        active_object = obj
+        bounding_box = active_object.bound_box
+        collection = obj.users_collection[0]
+        cursor = bpy.context.scene.cursor
+
+        # Applies transform so that we can properly do The Math®
+        apply_transform_reverse_hierarchy(obj)
+        bounding_box_center = find_bounding_box_center_from_obj(active_object)
+        cursor.location = bounding_box_center
+
+        # Get any point in th bounding box and find the radius using it
+        # (Radius = The distance between the center of the bbox and any bbox point)
+        bounds_limit = mathutils.Vector(bounding_box[0])
+        bounds_limit = (bounds_limit + active_object.location)
+        cursor.location = bounding_box_center
+        radius = bounds_limit - bounding_box_center
+
+        # Create the sphere using the vector length so that it has measurements in meters.
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=32, radius=radius.length, enter_editmode=False,
+                                             align='WORLD', location=bounding_box_center, scale=(1, 1, 1))
+
+        # Organize everything, placing it under the correct collection and parent, then rename the sphere
+        sphere = bpy.context.active_object
+
+        if sphere.users_collection[0] == master_collection:
+            master_collection.objects.unlink(sphere)
+
+        collection.objects.link(sphere)
+        sphere.parent = active_object
+        bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
+
+        prefix = get_collider_prefixes()['sphere']
+        sphere.name = prefix + '_' + active_object.name
+
+    return sphere
+
+
+def apply_transform_reverse_hierarchy(obj):
+    # Go up the hierarchy until parent because there could be an object inside an object
+    current_object = obj
+    please = False
+    while please is False:
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+        if current_object.parent is not None:
+            current_object.parent.select_set(True)
+            bpy.context.view_layer.objects.active = current_object.parent
+            current_object = current_object.parent
+            continue
+        else:
+            bpy.context.view_layer.objects.active = obj
+            please = True
+
+    # Restore Original Selection
+
+    return
 
 
 def create_bound_box_from_selected_vertices():
@@ -80,6 +221,7 @@ def create_bound_box_from_selected_vertices():
     cursor.location = active_object.location
     bounding_box.select_set(True)
     bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
+    bounding_box.select_set(False)
 
     return bounding_box
 
@@ -90,13 +232,15 @@ def get_vertices_from_selection():
 
     return verts
 
+
 def get_bounds(vertex_list):
-    """Found this super fast and handy function in the web, thanks.\n
+    """Found this super-fast and handy function in the web, thanks.\n
     Returns a list of tuples containing the min and max values of each axis in the bounds of a vertex list."""
     points = [points.co for points in vertex_list]
     x_co, y_co, z_co = zip(*points)
 
     return [(min(x_co), min(y_co), min(z_co)), (max(x_co), max(y_co), max(z_co))]
+
 
 def define_bounding_box_from_bounds(bounds):
     min_bounds = bounds[0]
@@ -108,7 +252,7 @@ def define_bounding_box_from_bounds(bounds):
                 (min_bounds[0], min_bounds[1], max_bounds[2]),
                 (min_bounds[0], max_bounds[1], max_bounds[2]),
                 (max_bounds[0], max_bounds[1], max_bounds[2]),
-                (max_bounds[0], min_bounds[1], max_bounds[2]),]
+                (max_bounds[0], min_bounds[1], max_bounds[2]), ]
 
     edges = []
     faces = [(0, 1, 2, 3),
@@ -119,6 +263,7 @@ def define_bounding_box_from_bounds(bounds):
              (5, 6, 2, 1)]
 
     return (vertices, edges, faces)
+
 
 def create_bound_box_from_selected_objects():
     cursor = bpy.context.scene.cursor
@@ -142,7 +287,7 @@ def create_bound_box_from_selected_objects():
                  (4, 7, 6, 5),
                  (7, 3, 2, 6),
                  (1, 5, 6, 2),
-                 (0, 3, 7, 4),]
+                 (0, 3, 7, 4), ]
 
         prefix = get_collider_prefixes()['box']
         name = prefix + '_' + active_object.name
@@ -153,6 +298,7 @@ def create_bound_box_from_selected_objects():
         bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
 
     return
+
 
 def create_mesh(name, pydata, parent=None):
     """Function takes in a name string, a tuple of (vertices, edges, faces) and optionally a Parent object."""
@@ -172,6 +318,7 @@ def create_mesh(name, pydata, parent=None):
 
     return new_object
 
+
 def get_collider_prefixes():
     """Returns a dictionary containing all prefixes, access them with the strings:
     'box', 'capsule', 'sphere', 'convex', 'mesh' WARNING: Does not contain separator"""
@@ -186,16 +333,23 @@ def get_collider_prefixes():
     return collider_prefixes
 
 
-def find_bounding_box_center():
-    o = bpy.context.active_object
-    local_bbox_center = 0.125 * sum((Vector(b) for b in o.bound_box), Vector())
-    global_bbox_center = o.matrix_world @ local_bbox_center
+def find_bounding_box_center_from_obj(obj):
+    local_bbox_center = 0.125 * sum((Vector(b) for b in obj.bound_box), Vector())
+    global_bbox_center = obj.matrix_world @ local_bbox_center
+
+    return global_bbox_center
+
+
+def find_center_from_vertices(vertices, obj):
+    local_bbox_center = sum((Vector(b) for b in vertices), Vector()) / len(vertices)
+    global_bbox_center = obj.matrix_world @ local_bbox_center
 
     return global_bbox_center
 
 
 classes = (BITCAKE_OT_add_box_collider,
            BITCAKE_OT_add_sphere_collider,)
+
 
 def register():
     for cls in classes:

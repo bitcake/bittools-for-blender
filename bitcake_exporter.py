@@ -1,3 +1,5 @@
+import logging
+
 import bpy
 import json
 import addon_utils
@@ -146,10 +148,10 @@ class BITCAKE_OT_custom_butten(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        addonPrefs = context.preferences.addons[__package__].preferences
-        current_project = addonPrefs.registered_projects
-        get_previous_project(current_project)
-
+        # addonPrefs = context.preferences.addons[__package__].preferences
+        # current_project = addonPrefs.registered_projects
+        # get_previous_project(current_project)
+        logging.info(bpy.context.region)
         return {'FINISHED'}
 
 
@@ -305,9 +307,9 @@ def construct_fbx_path(self, context, obj):
 
 
 def get_active_object_collection_tree():
-    C = bpy.context
+    context = bpy.context
     empty_list = []
-    collection_tree = get_current_collection_hierarchy(C.collection, empty_list)
+    collection_tree = get_current_collection_hierarchy(context.collection, empty_list)
     return collection_tree
 
 
@@ -323,9 +325,9 @@ def get_object_collection_tree(obj):
 
 
 def get_current_collection_hierarchy(active_collection, collection_list=[]):
-    C = bpy.context
+    context = bpy.context
 
-    if active_collection == C.scene.collection:
+    if active_collection == context.scene.collection:
         return
 
     parent = find_parent_collection(active_collection)
@@ -336,13 +338,13 @@ def get_current_collection_hierarchy(active_collection, collection_list=[]):
 
 
 def find_parent_collection(collection):
-    D = bpy.data
-    C = bpy.context
+    data = bpy.data
+    context = bpy.context
 
     # First get a list of ALL collections in the scene
-    collections = [c for c in D.collections if C.scene.user_of_id(c)]
+    collections = [c for c in data.collections if context.scene.user_of_id(c)]
     # Then append the master collection because we need to stop this at some point.
-    collections.append(C.scene.collection)
+    collections.append(context.scene.collection)
 
     coll = collection
     collection = [c for c in collections if c.user_of_id(coll)]
