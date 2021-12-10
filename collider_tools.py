@@ -16,11 +16,7 @@ class BITCAKE_OT_add_box_collider(Operator):
         return context.mode == 'OBJECT' or context.mode == 'EDIT_MESH'
 
     def execute(self, context):
-        if len(context.selected_objects) > 1 and context.mode == 'EDIT_MESH':
-            self.report({"ERROR"}, "More than one object is selected, please only select one object at a time.")
-            return {'CANCELLED'}
-        elif context.active_object.type != 'MESH':
-            self.report({"ERROR"}, "The selected object is not a Mesh.")
+        if found_issues_during_checking(self, context):
             return {'CANCELLED'}
 
         if context.mode == 'EDIT_MESH':
@@ -45,21 +41,9 @@ class BITCAKE_OT_add_sphere_collider(Operator):
         return context.mode == 'OBJECT' or context.mode == 'EDIT_MESH'
 
     def execute(self, context):
-        if len(context.selected_objects) > 1 and context.mode == 'EDIT_MESH':
-            self.report({"ERROR"}, "More than one object is selected, please only select one object at a time.")
+        if found_issues_during_checking(self, context):
             return {'CANCELLED'}
-        for obj in context.selected_objects:
-            if obj.type != 'MESH':
-                self.report({"ERROR"}, "The selected object is not a Mesh.")
-                return {'CANCELLED'}
-            # Check if object is inside an Armature Hierachy, if so, cancel Operator.
-            elif obj.parent is not None:
-                has_armature = check_hierarchy_for_armature(self, context, obj)
-                if has_armature:
-                    self.report({"ERROR"},
-                                "The selected object is part of an Armature Hierarchy.\n Please remove it from the Armature and try again.")
-                    return {'CANCELLED'}
-        # Do the operation
+
         if context.mode == 'EDIT_MESH':
             sphere = create_sphere_from_selected_vertices()
             if not sphere:
@@ -70,6 +54,28 @@ class BITCAKE_OT_add_sphere_collider(Operator):
             create_sphere_from_selected_objects()
 
         return {'FINISHED'}
+
+
+def found_issues_during_checking(self, context):
+    """Checks for issues before running any Collider operator."""
+
+    # User cannot operate in Edit Mode if he has more than 1 object selected
+    if len(context.selected_objects) > 1 and context.mode == 'EDIT_MESH':
+        self.report({"ERROR"}, "More than one object is selected, please only select one object at a time.")
+        return True
+
+    # Check the contents of all the user's selection
+    for obj in context.selected_objects:
+        if obj.type != 'MESH':
+            self.report({"ERROR"}, "The selected object is not a Mesh.")
+            return True
+        # Check if object is inside an Armature Hierachy, if so, cancel Operator.
+        elif obj.parent is not None:
+            has_armature = check_hierarchy_for_armature(self, context, obj)
+            if has_armature:
+                self.report({"ERROR"},
+                            "The selected object is part of an Armature Hierarchy.\n Please remove it from the Armature and try again.")
+                return True
 
 
 def check_hierarchy_for_armature(self, context, obj):
