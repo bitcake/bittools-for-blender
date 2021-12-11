@@ -1,6 +1,3 @@
-import logging
-import bpy
-import os
 import addon_utils
 from pathlib   import Path
 from bpy.types import AddonPreferences
@@ -17,14 +14,15 @@ def update_registered_projects(self, context):
         if mod.bl_info['name'] == __package__:
             addon_path = Path(mod.__file__)
 
-    print('*'*40)
-    print(addon_path.parent)
-    print(addon_path.parent)
-    print('*'*40)
     projects_file_path = Path(addon_path.parent / 'registered_projects.json')
+    print('*'*40)
+    print(addon_path.parent)
+    print('Is this a file that exists? {}'.format(projects_file_path.is_file()))
+    print('*'*40)
+
 
     if projects_file_path.is_file():
-        with open('registered_projects.json', 'r') as projects:
+        with open(str(projects_file_path), 'r') as projects:
             projects_json = json.load(projects)
 
             for i, project in enumerate(projects_json):
