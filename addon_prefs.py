@@ -1,3 +1,4 @@
+import logging
 import bpy
 import os
 import addon_utils
@@ -16,6 +17,10 @@ def update_registered_projects(self, context):
         if mod.bl_info['name'] == __package__:
             addon_path = Path(mod.__file__)
 
+    print('*'*40)
+    print(addon_path.parent)
+    print(addon_path.parent)
+    print('*'*40)
     projects_file_path = Path(addon_path.parent / 'registered_projects.json')
 
     if projects_file_path.is_file():

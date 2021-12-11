@@ -4,3 +4,4 @@ Keymaps/__pycache__
 /.idea
 /BlenderTestFiles
 registered_projects.json
+*.log
