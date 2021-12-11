@@ -15,11 +15,6 @@ def update_registered_projects(self, context):
             addon_path = Path(mod.__file__)
 
     projects_file_path = Path(addon_path.parent / 'registered_projects.json')
-    print('*'*40)
-    print(addon_path.parent)
-    print('Is this a file that exists? {}'.format(projects_file_path.is_file()))
-    print('*'*40)
-
 
     if projects_file_path.is_file():
         with open(str(projects_file_path), 'r') as projects:
