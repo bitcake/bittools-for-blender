@@ -1,0 +1,17 @@
+{
+    "Unreal": {
+        "name": "Unreal",
+        "forward_axis": "X",
+        "up_axis": "Z"
+    },
+    "Unity": {
+        "name": "Unity",
+        "forward_axis": "-Z",
+        "up_axis": "Y"
+    },
+    "Cocos": {
+        "name": "Cocos",
+        "forward_axis": "-Z",
+        "up_axis": "Y"
+    }
+}

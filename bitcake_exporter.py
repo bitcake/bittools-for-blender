@@ -74,12 +74,14 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
     def execute(self, context):
         scene = context.scene
         panel_prefs = scene.menu_props
+        configs = get_engine_settings()
 
         # Save current file
         original_path = Path(bpy.data.filepath)
         bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
         objects_list = make_objects_list(context)
+        print(f'CURRENT OBJECTS LIST IS: {objects_list}')
 
         # I just wanted to use generators to see how they worked. Please don't judge.
         for obj in range(len(objects_list)):
@@ -88,6 +90,7 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
                 if current_object.parent != None:
                     continue
 
+                print(f'THIS IS THE CURRENT OBJECT BEING EXPORTED {current_object}')
                 # If object is root object, construct its file path
                 path = construct_fbx_path(self, context, current_object)
 
@@ -103,11 +106,18 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
                 for child in children:
                     child.select_set(True)
 
+                if panel_prefs.origin_transform:
+                    bpy.context.object.location = 0, 0, 0
+
+                if panel_prefs.apply_transform:
+                    print("AE DOIDERA, APLIQUEI OS TRANSFORM TUDO")
+                    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
                 bpy.ops.export_scene.fbx(
                     filepath=str(path),
                     bake_space_transform=True,
-                    axis_forward='-Z',
-                    axis_up='Y',
+                    axis_forward=configs['forward_axis'],
+                    axis_up=configs['up_axis'],
                     use_selection=True,
                 )
 
@@ -142,16 +152,15 @@ class BITCAKE_OT_custom_butten(Operator):
     bl_idname = "bitcake.custom_butten"
     bl_label = "Do test stuff"
     bl_description = "Just test stuff"
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        # addonPrefs = context.preferences.addons[__package__].preferences
-        # current_project = addonPrefs.registered_projects
-        # get_previous_project(current_project)
-        logging.info(bpy.context.region)
+        get_engine_settings()
+
         return {'FINISHED'}
 
 
@@ -234,6 +243,19 @@ def get_previous_project(current_project):
     return previous_project
 
 
+def get_engine_settings():
+    registered_projects_file = get_registered_projects_file_path()
+    projects = json.load(registered_projects_file.open())
+    engine_configs_file = get_engine_configs_file_path()
+    configs = json.load(engine_configs_file.open())
+
+    addon_prefs = bpy.context.preferences.addons[__package__].preferences
+    current_project = projects[addon_prefs.registered_projects]
+    current_config = configs[current_project['engine']]
+
+    return current_config
+
+
 def change_active_collection():
     active_collection = bpy.context.active_object.users_collection[0].name
     layer_collections = bpy.context.view_layer.layer_collection.children
@@ -289,10 +311,11 @@ def construct_fbx_path(self, context, obj):
 
     collection_tree = get_object_collection_tree(obj)
     for col in collection_tree:
-        pathway.append(col.name)
+        nospc = col.name.replace(" ", "")
+        pathway.append(nospc)
 
-    # Add parent object as final name
-    pathway.append(obj.name + '.fbx')
+    # Add parent object as final name, remove whitespaces for good measure
+    pathway.append(obj.name.replace(" ", "") + '.fbx')
 
     # If no WIP folder found then fail
     if wip is False:
@@ -513,10 +536,24 @@ def get_registered_projects_file_path():
     return projects_file_path
 
 
+def get_engine_configs_file_path():
+    # Gets Addon Path (__init__.py)
+    for mod in addon_utils.modules():
+        if mod.bl_info['name'] == __package__:
+            addon_path = Path(mod.__file__)
+
+    engine_configs_path = Path(addon_path.parent / 'engine_configs.json')
+
+    return engine_configs_path
+
+
 def rename_with_prefix(objects_list, generator=False):
     """Renames current obj and all its children. If Generator is true it'll yield the current object being renamed."""
 
     for obj in objects_list:
+        print(f'THIS IS THE CURRENT LIST OF OBJECTS TO RENAME {objects_list}')
+        print(f'THIS IS THE CURRENT OBJECT BEING RENAMED {obj}')
+
         if obj.parent is None:
             all_children = get_all_child_of_child(obj)
             for child in all_children:
@@ -526,6 +563,7 @@ def rename_with_prefix(objects_list, generator=False):
         if prefix:
             obj.name = prefix + obj.name
 
+        print(f'THIS IS THE NEW OBJECT NAME {obj.name}')
         if generator:
             yield obj
 
@@ -573,6 +611,11 @@ def toggle_all_colliders_visibility(force_on_off=None):
         col.hide_viewport = not is_hidden
 
     return
+
+
+def zero_transforms(obj_list):
+    for obj in obj_list:
+        bpy.context.object.location = 0, 0 ,0
 
 
 classes = (BITCAKE_OT_send_to_engine,

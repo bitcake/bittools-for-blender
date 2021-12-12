@@ -13,7 +13,9 @@ class PanelProperties(PropertyGroup):
     default_keymap: StringProperty(name="KeymapLabel", default="Default Keymap")
     export_selected: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
     export_collection: BoolProperty(name="Collection", description="Exports entire collection", default=False)
-    export_batch: BoolProperty(name="Batch Export", description="Exports objects in a separate file", default=False)
+    export_batch: BoolProperty(name="Batch", description="Exports objects in a separate file", default=False)
+    origin_transform: BoolProperty(name="Origin", description="Place objects in origin before exporting", default=False)
+    apply_transform: BoolProperty(name="Apply", description="Apply transforms before exporting", default=False)
 
 
 class BITCAKE_PT_hotkey_changer(Panel):
@@ -78,7 +80,9 @@ class BITCAKE_PT_send_to_engine(Panel):
 
         row.operator('bitcake.unregister_project', icon='REMOVE', text='')
 
-        row = layout.row()
+        row = layout.row(align=True)
+        row.prop(panel_prefs, 'origin_transform', toggle=1, icon_value=1, icon='OBJECT_ORIGIN')
+        row.prop(panel_prefs, 'apply_transform', toggle=1, icon_value=1, icon='CHECKMARK')
         row.prop(panel_prefs, 'export_batch', toggle=1, icon_value=1, icon='FILE_NEW')
 
         if current_engine == 'Unity':
