@@ -37,6 +37,14 @@ class BITCAKE_OT_send_to_engine(Operator):
         # Rename everything in the list
         rename_with_prefix(objects_list)
 
+        if panel_prefs.origin_transform:
+            for obj in objects_list:
+                obj.location = 0, 0, 0
+
+        if panel_prefs.apply_transform:
+            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+
+
         # Get current file path, append _bkp and save as new file
         filename = original_path.stem + '_bkp'
         new_path = original_path.with_stem(filename)
@@ -84,47 +92,40 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
         print(f'CURRENT OBJECTS LIST IS: {objects_list}')
 
         # I just wanted to use generators to see how they worked. Please don't judge.
-        for obj in range(len(objects_list)):
-            try:
-                current_object = next(rename_with_prefix(objects_list, generator=True))
-                if current_object.parent != None:
-                    continue
+        for obj in rename_with_prefix(objects_list, generator=True):
+            if obj.parent != None:
+                continue
 
-                print(f'THIS IS THE CURRENT OBJECT BEING EXPORTED {current_object}')
-                # If object is root object, construct its file path
-                path = construct_fbx_path(self, context, current_object)
+            print(f'THIS IS THE CURRENT OBJECT BEING EXPORTED {obj}')
+            # If object is root object, construct its file path
+            path = construct_fbx_path(self, context, obj)
 
-                # If folder doesn't exist, create it
-                path.parent.mkdir(parents=True, exist_ok=True)
+            # If folder doesn't exist, create it
+            path.parent.mkdir(parents=True, exist_ok=True)
 
-                # Get all children objects and select ONLY them and the parent, also making it the active obj
-                children = get_all_child_of_child(current_object)
-                bpy.ops.object.select_all(action='DESELECT')
-                bpy.context.view_layer.objects.active = current_object
-                current_object.select_set(True)
+            # Get all children objects and select ONLY them and the parent, also making it the active obj
+            children = get_all_child_of_child(obj)
+            bpy.ops.object.select_all(action='DESELECT')
+            bpy.context.view_layer.objects.active = obj
+            obj.select_set(True)
 
-                for child in children:
-                    child.select_set(True)
+            for child in children:
+                child.select_set(True)
 
-                if panel_prefs.origin_transform:
-                    bpy.context.object.location = 0, 0, 0
+            if panel_prefs.origin_transform:
+                obj.location = 0, 0, 0
 
-                if panel_prefs.apply_transform:
-                    print("AE DOIDERA, APLIQUEI OS TRANSFORM TUDO")
-                    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+            if panel_prefs.apply_transform:
+                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
-                bpy.ops.export_scene.fbx(
-                    filepath=str(path),
-                    bake_space_transform=True,
-                    axis_forward=configs['forward_axis'],
-                    axis_up=configs['up_axis'],
-                    use_selection=True,
-                )
+            bpy.ops.export_scene.fbx(
+                filepath=str(path),
+                bake_space_transform=True,
+                axis_forward=configs['forward_axis'],
+                axis_up=configs['up_axis'],
+                use_selection=True,
+            )
 
-            # Ver se isso vai dar problema no futuro (Algum arquivo não vai ser exportado, sei la...)
-            except StopIteration:
-                print("Generator Iteration Stopped")
-                break
 
         bpy.ops.wm.open_mainfile(filepath=str(original_path))
         bpy.ops.object.select_all(action='DESELECT')
@@ -551,9 +552,6 @@ def rename_with_prefix(objects_list, generator=False):
     """Renames current obj and all its children. If Generator is true it'll yield the current object being renamed."""
 
     for obj in objects_list:
-        print(f'THIS IS THE CURRENT LIST OF OBJECTS TO RENAME {objects_list}')
-        print(f'THIS IS THE CURRENT OBJECT BEING RENAMED {obj}')
-
         if obj.parent is None:
             all_children = get_all_child_of_child(obj)
             for child in all_children:
@@ -563,7 +561,6 @@ def rename_with_prefix(objects_list, generator=False):
         if prefix:
             obj.name = prefix + obj.name
 
-        print(f'THIS IS THE NEW OBJECT NAME {obj.name}')
         if generator:
             yield obj
 
