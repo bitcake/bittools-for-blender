@@ -51,7 +51,7 @@ class BitCakeToolsPreferences(AddonPreferences):
     capsule_collider_prefix: StringProperty(name='Capsule Collider Prefix', default='UCP')
     sphere_collider_prefix: StringProperty(name='Sphere Collider Prefix', default='USP')
     convex_collider_prefix: StringProperty(name='Convex Collider Prefix', default='UCX')
-    mesh_collider_prefix: StringProperty(name='Mesh Collider Prefix', default='UMX')
+    mesh_collider_prefix: StringProperty(name='Mesh Collider Prefix', default='UME')
 
     # Folder Paths (not user changeable)
     static_mesh_path: StringProperty(name='Static Mesh Path', default='/Art/StaticMeshes/',)

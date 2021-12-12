@@ -63,12 +63,7 @@ class BITCAKE_PT_send_to_engine(Panel):
         unreal_logo = pcoll["unreal"]
         cocos_logo = pcoll["cocos"]
 
-        registered_projects_path = get_registered_projects_path()
-
-        current_engine = None
-        if registered_projects_path.is_file():
-            projects_json = json.load(registered_projects_path.open())
-            current_engine = projects_json[addon_prefs.registered_projects]['engine']
+        current_engine = get_current_engine(context)
 
         layout = self.layout
         row = layout.row()
@@ -128,16 +123,27 @@ class BITCAKE_PT_collider_tools(Panel):
         properties = context.scene.menu_props
         animtool_props = context.scene.animtool_props
 
-        addonPrefs = context.preferences.addons[__package__].preferences
+        addon_prefs = context.preferences.addons[__package__].preferences
+        pcol = [addon_prefs.box_collider_prefix,
+                addon_prefs.capsule_collider_prefix,
+                addon_prefs.sphere_collider_prefix,
+                addon_prefs.convex_collider_prefix,
+                addon_prefs.mesh_collider_prefix]
+
+        current_engine = get_current_engine(context)
 
         layout = self.layout
         layout.label(text='Add Collider')
         row = layout.row()
-        row.operator('bitcake.add_box_collider', text='Add Box Collider (UBX)', icon='CUBE')
+        row.operator('bitcake.add_box_collider', text=f'Add Box Collider ({pcol[0]})', icon='CUBE')
         row = layout.row()
-        row.operator('bitcake.add_sphere_collider', text='Add Sphere Collider (USP)', icon='SPHERE')
+        row.operator('bitcake.add_sphere_collider', text=f'Add Sphere Collider ({pcol[2]})', icon='SPHERE')
         row = layout.row()
-        row.operator('bitcake.add_convex_collider', text='Add Convex Collider (UCX)', icon='MESH_ICOSPHERE')
+        row.operator('bitcake.add_convex_collider', text=f'Add Convex Collider ({pcol[3]})', icon='MESH_ICOSPHERE')
+
+        if current_engine == 'Unity':
+            row = layout.row()
+            row.operator('bitcake.add_mesh_collider', text=f'Add Mesh Collider ({pcol[4]})', icon='MESH_MONKEY')
 
 class BITCAKE_PT_animtools(Panel):
     bl_idname = "BITCAKE_PT_animtools"
@@ -163,6 +169,18 @@ class BITCAKE_PT_animtools(Panel):
         row.operator('bitcake.breakdowner', text='50').breakdown_value = 0.5
         row.operator('bitcake.breakdowner', text='75').breakdown_value = 0.75
         row.operator('bitcake.breakdowner', text='100').breakdown_value = 1.0
+
+
+def get_current_engine(context):
+    registered_projects_path = get_registered_projects_path()
+    addon_prefs = context.preferences.addons[__package__].preferences
+
+    current_engine = None
+    if registered_projects_path.is_file():
+        projects_json = json.load(registered_projects_path.open())
+        current_engine = projects_json[addon_prefs.registered_projects]['engine']
+
+    return current_engine
 
 
 def get_registered_projects_path():

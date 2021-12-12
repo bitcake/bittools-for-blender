@@ -81,6 +81,31 @@ class BITCAKE_OT_add_convex_collider(Operator):
         return {'FINISHED'}
 
 
+class BITCAKE_OT_add_mesh_collider(Operator):
+    bl_idname = "bitcake.add_mesh_collider"
+    bl_label = "Add Mesh Collider"
+    bl_description = "Add a mesh collider to selected object based on the Object's shape and rename it according to naming convention"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT' or context.mode == 'EDIT_MESH'
+
+    def execute(self, context):
+        if found_issues_during_checking(self, context):
+            return {'CANCELLED'}
+
+        if context.mode == 'EDIT_MESH':
+            mesh = create_mesh_collider_from_selected_vertices(self, context)
+            if not mesh:
+                self.report({"ERROR"}, "No vertices selected! Please select some vertices and try again.")
+                return {'CANCELLED'}
+        else:
+            create_mesh_collider_from_selected_objects(self, context)
+
+        return {'FINISHED'}
+
+
 def found_issues_during_checking(self, context):
     """Checks for issues before running any Collider operator."""
 
@@ -192,6 +217,63 @@ def create_convex_hull_from_selected_objects(self, context):
         bpy.ops.object.select_all(action='DESELECT')
 
     return
+
+
+def create_mesh_collider_from_selected_objects(self, context):
+    selected_objects = context.selected_objects
+    bpy.ops.object.select_all(action='DESELECT')
+
+    colliders = []
+    for obj in selected_objects:
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+        bpy.ops.object.duplicate()
+        current_obj = bpy.context.object
+
+        prefix = get_collider_prefixes()['mesh']
+        current_obj.name = prefix + '_' + obj.name
+        current_obj.parent = obj
+        current_obj.matrix_parent_inverse = obj.matrix_world.inverted()
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.select_all(action='DESELECT')
+        colliders.append(current_obj)
+
+    for col in colliders:
+        col.select_set(True)
+
+    return
+
+
+def create_mesh_collider_from_selected_vertices(self, context):
+    verts = get_vertices_from_selection()
+    print(verts)
+    if not verts:
+        return
+
+    obj = context.object
+
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.duplicate()
+    bpy.ops.mesh.separate(type='SELECTED')
+    bpy.context.view_layer.objects.active = bpy.context.selected_objects[1]
+    data = bpy.context.active_object.data
+
+    for v in data.vertices:
+        v.select = True
+
+    bpy.ops.object.mode_set(mode='EDIT')
+
+    current_obj = bpy.context.active_object
+    prefix = get_collider_prefixes()['mesh']
+    current_obj.name = prefix + '_' + obj.name
+    current_obj.parent = obj
+    current_obj.matrix_parent_inverse = obj.matrix_world.inverted()
+    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.select_all(action='DESELECT')
+    current_obj.select_set(True)
+
+    return current_obj
 
 
 def create_sphere_from_selected_vertices():
@@ -439,7 +521,8 @@ def find_center_from_vertices(vertices, obj):
 
 classes = (BITCAKE_OT_add_box_collider,
            BITCAKE_OT_add_sphere_collider,
-           BITCAKE_OT_add_convex_collider)
+           BITCAKE_OT_add_convex_collider,
+           BITCAKE_OT_add_mesh_collider)
 
 
 def register():

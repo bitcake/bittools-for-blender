@@ -523,7 +523,8 @@ def rename_with_prefix(objects_list, generator=False):
                 prefix = get_correct_prefix(child)
                 child.name = prefix + child.name
         prefix = get_correct_prefix(obj)
-        obj.name = prefix + obj.name
+        if prefix:
+            obj.name = prefix + obj.name
 
         if generator:
             yield obj
