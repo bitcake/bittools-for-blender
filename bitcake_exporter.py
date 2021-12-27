@@ -35,7 +35,9 @@ class BITCAKE_OT_send_to_engine(Operator):
         objects_list = make_objects_list(context)
 
         # Rename everything in the list
-        rename_with_prefix(objects_list)
+        # This is a Generator because I use it on the batch exporter to properly export things.
+        for obj in rename_with_prefix(objects_list):
+            continue
 
         if panel_prefs.origin_transform:
             for obj in objects_list:
@@ -44,21 +46,33 @@ class BITCAKE_OT_send_to_engine(Operator):
         if panel_prefs.apply_transform:
             bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
-
         # Get current file path, append _bkp and save as new file
         filename = original_path.stem + '_bkp'
         new_path = original_path.with_stem(filename)
         bpy.ops.wm.save_mainfile(filepath=str(new_path))
 
-        # Export file
-        bpy.ops.export_scene.fbx(
-            filepath=str(constructed_path),
-            bake_space_transform=True,
-            axis_forward='-Z',
-            axis_up='Y',
-            use_selection=panel_prefs.export_selected,
-            use_active_collection=panel_prefs.export_collection,
-        )
+        # Builds the parameters and exports scene
+        exporter(constructed_path, panel_prefs)
+
+        # configs = get_engine_configs()
+
+        # # Export file
+        # bpy.ops.export_scene.fbx(
+        #     filepath=str(constructed_path),
+        #     apply_scale_options=configs['apply_scale'],
+        #     use_space_transform=configs['space_transform'],
+        #     bake_space_transform=False,
+        #     use_custom_props=True,
+        #     add_leaf_bones=configs['add_leaf_bones'],
+        #     primary_bone_axis=configs['primary_bone'],
+        #     secondary_bone_axis=configs['secondary_bone'],
+        #     bake_anim_step=configs['anim_sampling'],
+        #     bake_anim_simplify_factor=configs['anim_simplify'],
+        #     use_selection=panel_prefs.export_selected,
+        #     use_active_collection=panel_prefs.export_collection,
+        #     axis_forward=configs['forward_axis'],
+        #     axis_up=configs['up_axis'],
+        # )
 
         # Save _bkp file and reopen original
         bpy.ops.wm.save_mainfile(filepath=str(new_path))
@@ -82,7 +96,7 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
     def execute(self, context):
         scene = context.scene
         panel_prefs = scene.menu_props
-        configs = get_engine_settings()
+        configs = get_engine_configs()
 
         # Save current file
         original_path = Path(bpy.data.filepath)
@@ -92,7 +106,7 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
         print(f'CURRENT OBJECTS LIST IS: {objects_list}')
 
         # I just wanted to use generators to see how they worked. Please don't judge.
-        for obj in rename_with_prefix(objects_list, generator=True):
+        for obj in rename_with_prefix(objects_list):
             if obj.parent != None:
                 continue
 
@@ -118,8 +132,11 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
             if panel_prefs.apply_transform:
                 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
+            configs = get_engine_configs()
+
             bpy.ops.export_scene.fbx(
                 filepath=str(path),
+                apply_scale_options=configs['apply_scale'],
                 bake_space_transform=True,
                 axis_forward=configs['forward_axis'],
                 axis_up=configs['up_axis'],
@@ -160,7 +177,7 @@ class BITCAKE_OT_custom_butten(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        get_engine_settings()
+        unity_animation_setup(context, bpy.context.selected_objects)
 
         return {'FINISHED'}
 
@@ -223,6 +240,58 @@ class BITCAKE_OT_unregister_project(Operator):
         return {'FINISHED'}
 
 
+# Sad reminder to do research properly before jumping into the first solution
+# Blender 2.92 had introduced a better way to export to Unity, this is the OLD way of doing things
+def unity_animation_setup(context, obj_list):
+    c = context.copy()
+
+    for obj in obj_list:
+        if obj.type == 'ARMATURE':
+            # Context Override so the methods below only works on select objects
+            c['selected_objects'] = [obj]
+            c['selected_editable_objects'] = [obj]
+            bpy.ops.transform.rotate(c, value=-1.5708, orient_axis='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False, proportional_edit_falloff='SPHERE', proportional_size=0.13513, use_proportional_connected=False, use_proportional_projected=False, release_confirm=True)
+            bpy.ops.object.transform_apply(c, location=False, rotation=True, scale=False)
+            bpy.ops.transform.rotate(c, value=1.5708, orient_axis='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', constraint_axis=(True, False, False), mirror=True, use_proportional_edit=False, proportional_edit_falloff='SPHERE', proportional_size=0.13513, use_proportional_connected=False, use_proportional_projected=False, release_confirm=True)
+
+            for child in obj.children:
+                if child.type == 'MESH':
+                    c['selected_editable_objects'] = [child]
+                    bpy.ops.object.transform_apply(c, location=False, rotation=True, scale=False)
+
+    return
+
+
+def exporter(path, panel_preferences, batch=False):
+    configs = get_engine_configs()
+
+    use_selection = panel_preferences.export_selected
+    use_collection = panel_preferences.export_collection
+
+    if batch:
+        use_selection = True
+        use_collection = False
+
+    # Export file
+    bpy.ops.export_scene.fbx(
+        filepath=str(path),
+        apply_scale_options=configs['apply_scale'],
+        use_space_transform=configs['space_transform'],
+        bake_space_transform=False,
+        use_armature_deform_only=True,
+        use_custom_props=True,
+        add_leaf_bones=configs['add_leaf_bones'],
+        primary_bone_axis=configs['primary_bone'],
+        secondary_bone_axis=configs['secondary_bone'],
+        bake_anim_step=configs['anim_sampling'],
+        bake_anim_simplify_factor=configs['anim_simplify'],
+        use_selection=use_selection,
+        use_active_collection=use_collection,
+        axis_forward=configs['forward_axis'],
+        axis_up=configs['up_axis'],
+    )
+
+
 def get_previous_project(current_project):
     registered_projects_file = get_registered_projects_file_path()
     projects = json.load(registered_projects_file.open())
@@ -244,7 +313,7 @@ def get_previous_project(current_project):
     return previous_project
 
 
-def get_engine_settings():
+def get_engine_configs():
     registered_projects_file = get_registered_projects_file_path()
     projects = json.load(registered_projects_file.open())
     engine_configs_file = get_engine_configs_file_path()
@@ -276,7 +345,7 @@ def construct_file_path(self, context):
     for part in blend_path.parts:
         if wip is True:
             split_part = part.split('_')
-            pathway.append(split_part[1])
+            pathway.append(split_part[-1])
         if part.__contains__('_WIP'):
             pathway.append('Art')
             wip = True
@@ -548,23 +617,23 @@ def get_engine_configs_file_path():
     return engine_configs_path
 
 
-def rename_with_prefix(objects_list, generator=False):
+def rename_with_prefix(obj_list):
     """Renames current obj and all its children. If Generator is true it'll yield the current object being renamed."""
 
-    for obj in objects_list:
+    for obj in obj_list:
+        print(obj)
         if obj.parent is None:
             all_children = get_all_child_of_child(obj)
             for child in all_children:
+                print(child)
                 prefix = get_correct_prefix(child)
-                child.name = prefix + child.name
+                if prefix:
+                    child.name = prefix + child.name
         prefix = get_correct_prefix(obj)
         if prefix:
             obj.name = prefix + obj.name
 
-        if generator:
-            yield obj
-
-    return
+    yield obj
 
 
 def get_correct_prefix(obj):
@@ -585,12 +654,12 @@ def get_correct_prefix(obj):
 
     split_name = obj.name.split('_')
 
-    # If object is correctly named, ignore it
+    # If object is correctly named, ignore it and return its prefix
     if collider_prefixes.__contains__(split_name[0]) or object_prefixes.__contains__(split_name[0]):
         return
 
     # Return correct prefix for each case
-    if obj.find_armature():
+    if obj.type == 'ARMATURE':
         return sk_prefix + separator
     else:
         return sm_prefix + separator

@@ -10,6 +10,8 @@ bpy.context.view_layer.objects.active = ob
 bpy.data.objects['Sphere.017']
 ### Map a bounding box float array to vectors
 list(map(Vector, C.active_object.bound_box))
+### Deselect Everything
+bpy.ops.object.select_all(action='DESELECT')
 
 -----------
 
