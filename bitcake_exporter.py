@@ -1,5 +1,3 @@
-import logging
-
 import bpy
 import json
 import addon_utils
@@ -54,26 +52,6 @@ class BITCAKE_OT_send_to_engine(Operator):
         # Builds the parameters and exports scene
         exporter(constructed_path, panel_prefs)
 
-        # configs = get_engine_configs()
-
-        # # Export file
-        # bpy.ops.export_scene.fbx(
-        #     filepath=str(constructed_path),
-        #     apply_scale_options=configs['apply_scale'],
-        #     use_space_transform=configs['space_transform'],
-        #     bake_space_transform=False,
-        #     use_custom_props=True,
-        #     add_leaf_bones=configs['add_leaf_bones'],
-        #     primary_bone_axis=configs['primary_bone'],
-        #     secondary_bone_axis=configs['secondary_bone'],
-        #     bake_anim_step=configs['anim_sampling'],
-        #     bake_anim_simplify_factor=configs['anim_simplify'],
-        #     use_selection=panel_prefs.export_selected,
-        #     use_active_collection=panel_prefs.export_collection,
-        #     axis_forward=configs['forward_axis'],
-        #     axis_up=configs['up_axis'],
-        # )
-
         # Save _bkp file and reopen original
         bpy.ops.wm.save_mainfile(filepath=str(new_path))
         bpy.ops.wm.open_mainfile(filepath=str(original_path))
@@ -103,7 +81,6 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
         bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
         objects_list = make_objects_list(context)
-        print(f'CURRENT OBJECTS LIST IS: {objects_list}')
 
         # I just wanted to use generators to see how they worked. Please don't judge.
         for obj in rename_with_prefix(objects_list):
@@ -132,17 +109,8 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
             if panel_prefs.apply_transform:
                 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
-            configs = get_engine_configs()
-
-            bpy.ops.export_scene.fbx(
-                filepath=str(path),
-                apply_scale_options=configs['apply_scale'],
-                bake_space_transform=True,
-                axis_forward=configs['forward_axis'],
-                axis_up=configs['up_axis'],
-                use_selection=True,
-            )
-
+            # Builds the parameters and exports scene
+            exporter(path, panel_prefs, batch=True)
 
         bpy.ops.wm.open_mainfile(filepath=str(original_path))
         bpy.ops.object.select_all(action='DESELECT')
@@ -374,7 +342,7 @@ def construct_fbx_path(self, context, obj):
     for part in blend_path.parts:
         if wip is True:
             split_part = part.split('_')
-            pathway.append(split_part[1])
+            pathway.append(split_part[-1])
         if part.__contains__('_WIP'):
             pathway.append('Art')
             wip = True
@@ -621,7 +589,6 @@ def rename_with_prefix(obj_list):
     """Renames current obj and all its children. If Generator is true it'll yield the current object being renamed."""
 
     for obj in obj_list:
-        print(obj)
         if obj.parent is None:
             all_children = get_all_child_of_child(obj)
             for child in all_children:
@@ -633,7 +600,7 @@ def rename_with_prefix(obj_list):
         if prefix:
             obj.name = prefix + obj.name
 
-    yield obj
+        yield obj
 
 
 def get_correct_prefix(obj):
