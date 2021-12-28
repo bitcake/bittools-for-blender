@@ -35,6 +35,7 @@ class BITCAKE_OT_send_to_engine(Operator):
         # Rename everything in the list
         # This is a Generator because I use it on the batch exporter to properly export things.
         for obj in rename_with_prefix(objects_list):
+            construct_animation_events_json(self, constructed_path, obj)
             continue
 
         if panel_prefs.origin_transform:
@@ -94,6 +95,9 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
             # If folder doesn't exist, create it
             path.parent.mkdir(parents=True, exist_ok=True)
 
+            # Create .json file with all animation events
+            construct_animation_events_json(self, path, obj)
+
             # Get all children objects and select ONLY them and the parent, also making it the active obj
             children = get_all_child_of_child(obj)
             bpy.ops.object.select_all(action='DESELECT')
@@ -145,7 +149,42 @@ class BITCAKE_OT_custom_butten(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        unity_animation_setup(context, bpy.context.selected_objects)
+        obj = context.object
+
+        if obj.type != 'ARMATURE':
+            self.report({"ERROR"}, "Not an armature")
+            return {'CANCELLED'}
+
+        # If object is root object, construct its file path
+        path = construct_fbx_path(self, context, obj)
+
+        # If folder doesn't exist, create it
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        markers_json = Path(get_markers_configs_file_path())
+        markers_json = json.load(markers_json.open())
+
+        fps = bpy.context.scene.render.fps
+        markers_json['Scene']['FPS'] = fps
+        if fps % 30 != 0:
+            self.report({"ERROR"}, "Scene is not currently at 30 or 60FPS! Please FIX!")
+
+        markers_json['Scene']['Character'] = obj.name
+
+        for mrks in bpy.context.scene.timeline_markers:
+            markers_json['Scene']['TimelineMarkers'][mrks.name] = mrks.frame
+
+        for action in bpy.data.actions:
+            markers_json['Scene']['ActionsMarkers'][action.name] = {}
+            for marker in action.pose_markers:
+                markers_json['Scene']['ActionsMarkers'][action.name][marker.name] = marker.frame
+
+        path = path.with_stem(path.stem + '_events')
+        path = path.with_suffix('.json')
+        print(path)
+
+        with open(path, 'w') as jfile:
+            json.dump(markers_json, jfile, indent=4)
 
         return {'FINISHED'}
 
@@ -259,6 +298,39 @@ def exporter(path, panel_preferences, batch=False):
         axis_up=configs['up_axis'],
     )
 
+def construct_animation_events_json(self, path, obj):
+        if obj.type != 'ARMATURE':
+            return
+
+        # If object is root object, construct its file path
+        # path = construct_fbx_path(self, context, obj)
+
+        markers_json = Path(get_markers_configs_file_path())
+        markers_json = json.load(markers_json.open())
+
+        fps = bpy.context.scene.render.fps
+        markers_json['Scene']['FPS'] = fps
+        if fps % 30 != 0:
+            self.report({"ERROR"}, "Scene is not currently at 30 or 60FPS! Please FIX!")
+
+        markers_json['Scene']['Character'] = obj.name
+
+        for mrks in bpy.context.scene.timeline_markers:
+            markers_json['Scene']['TimelineMarkers'][mrks.name] = mrks.frame
+
+        for action in bpy.data.actions:
+            markers_json['Scene']['ActionsMarkers'][action.name] = {}
+            for marker in action.pose_markers:
+                markers_json['Scene']['ActionsMarkers'][action.name][marker.name] = marker.frame
+
+        path = path.with_stem(path.stem + '_events')
+        path = path.with_suffix('.json')
+        print(path)
+
+        with open(path, 'w') as jfile:
+            json.dump(markers_json, jfile, indent=4)
+
+        return
 
 def get_previous_project(current_project):
     registered_projects_file = get_registered_projects_file_path()
@@ -581,6 +653,17 @@ def get_engine_configs_file_path():
             addon_path = Path(mod.__file__)
 
     engine_configs_path = Path(addon_path.parent / 'engine_configs.json')
+
+    return engine_configs_path
+
+
+def get_markers_configs_file_path():
+    # Gets Addon Path (__init__.py)
+    for mod in addon_utils.modules():
+        if mod.bl_info['name'] == __package__:
+            addon_path = Path(mod.__file__)
+
+    engine_configs_path = Path(addon_path.parent / 'anim_events.json')
 
     return engine_configs_path
 

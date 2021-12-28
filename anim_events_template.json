@@ -1,0 +1,22 @@
+{
+    "Scene":{
+        "FPS": 30,
+        "Character": "Joaozinhodafebem",
+        "TimelineMarkers":{
+            "TimeLineMarker": 5,
+            "TimeLineMarker_02": 23
+        },
+        "ActionsMarkers":{
+            "Idle":{
+                "ParticleSpawn": 23,
+                "ParticleDie": 30,
+                "MakeSadFace": 145
+            },
+            "Jump":{
+                "MakeHappyFace": 3,
+                "DieAlone": 10,
+                "BeHappyForeverAfter": 345
+            }
+        }
+    }
+}
