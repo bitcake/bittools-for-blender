@@ -302,8 +302,17 @@ def construct_animation_events_json(self, path, obj):
         if obj.type != 'ARMATURE':
             return
 
-        # If object is root object, construct its file path
-        # path = construct_fbx_path(self, context, obj)
+        # Verify if file has markers, if not, don't build .json
+        has_markers = False
+        for action in bpy.data.actions:
+            for marker in action.pose_markers:
+                has_markers = True
+
+        for mrks in bpy.context.scene.timeline_markers:
+            has_markers = True
+
+        if not has_markers:
+            return
 
         markers_json = Path(get_markers_configs_file_path())
         markers_json = json.load(markers_json.open())
@@ -328,11 +337,8 @@ def construct_animation_events_json(self, path, obj):
                 action_marker['Markers'].append(marker_dict)
             markers_json['ActionsMarkers'].append(action_marker)
 
-        print(json.dumps(markers_json, indent=4))
-
         path = path.with_stem(path.stem + '_events')
         path = path.with_suffix('.json')
-        print(path)
 
         with open(path, 'w') as jfile:
             json.dump(markers_json, jfile, indent=4)

@@ -1,21 +1,20 @@
 {
-    "Scene":{
-        "FPS": 30,
-        "Character": "Joaozinhodafebem",
-        "TimelineMarkers":[
-            {"Name": "ParticleSpawn", "Frame": 23},
-            {"Name": "MakeSadFace", "Frame": 23},
-            {"Name": "ParticleDie", "Frame": 23}
-        ],
-        "ActionsMarkers":[
-            {
-                "Name": "Idle",
-                "Markers": [
-                    {"Name": "ParticleSpawn", "Frame": 23},
-                    {"Name": "MakeSadFace", "Frame": 23},
-                    {"Name": "ParticleDie", "Frame": 23}
-                ]
-            }
+    "FPS": 30,
+    "Character": "Joaozinhodafebem",
+    "TimelineMarkers":[
+        {"Name": "ParticleSpawn", "Frame": 23},
+        {"Name": "MakeSadFace", "Frame": 23},
+        {"Name": "ParticleDie", "Frame": 23}
+    ],
+    "ActionsMarkers":[
+        {
+            "Name": "Idle",
+            "Markers": [
+                {"Name": "ParticleSpawn", "Frame": 23},
+                {"Name": "MakeSadFace", "Frame": 23},
+                {"Name": "ParticleDie", "Frame": 23}
         ]
-    }
+        }
+    ]
+
 }
