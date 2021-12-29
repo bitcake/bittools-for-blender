@@ -165,19 +165,19 @@ class BITCAKE_OT_custom_butten(Operator):
         markers_json = json.load(markers_json.open())
 
         fps = bpy.context.scene.render.fps
-        markers_json['Scene']['FPS'] = fps
+        markers_json['FPS'] = fps
         if fps % 30 != 0:
             self.report({"ERROR"}, "Scene is not currently at 30 or 60FPS! Please FIX!")
 
-        markers_json['Scene']['Character'] = obj.name
+        markers_json['Character'] = obj.name
 
         for mrks in bpy.context.scene.timeline_markers:
-            markers_json['Scene']['TimelineMarkers'][mrks.name] = mrks.frame
+            markers_json['TimelineMarkers'][mrks.name] = mrks.frame
 
         for action in bpy.data.actions:
-            markers_json['Scene']['ActionsMarkers'][action.name] = {}
+            markers_json['ActionsMarkers'][action.name] = {}
             for marker in action.pose_markers:
-                markers_json['Scene']['ActionsMarkers'][action.name][marker.name] = marker.frame
+                markers_json['ActionsMarkers'][action.name][marker.name] = marker.frame
 
         path = path.with_stem(path.stem + '_events')
         path = path.with_suffix('.json')
@@ -309,19 +309,26 @@ def construct_animation_events_json(self, path, obj):
         markers_json = json.load(markers_json.open())
 
         fps = bpy.context.scene.render.fps
-        markers_json['Scene']['FPS'] = fps
+        markers_json['FPS'] = fps
         if fps % 30 != 0:
             self.report({"ERROR"}, "Scene is not currently at 30 or 60FPS! Please FIX!")
 
-        markers_json['Scene']['Character'] = obj.name
+        markers_json['Character'] = obj.name
 
+        markers_json['TimelineMarkers'] = []
         for mrks in bpy.context.scene.timeline_markers:
-            markers_json['Scene']['TimelineMarkers'][mrks.name] = mrks.frame
+            dictionary = {"Name": mrks.name, "Frame": mrks.frame}
+            markers_json['TimelineMarkers'].append(dictionary)
 
+        markers_json['ActionsMarkers'] = []
         for action in bpy.data.actions:
-            markers_json['Scene']['ActionsMarkers'][action.name] = {}
+            action_marker = {"Name": action.name, "Markers": []}
             for marker in action.pose_markers:
-                markers_json['Scene']['ActionsMarkers'][action.name][marker.name] = marker.frame
+                marker_dict = {"Name": marker.name, "Frame": marker.frame}
+                action_marker['Markers'].append(marker_dict)
+            markers_json['ActionsMarkers'].append(action_marker)
+
+        print(json.dumps(markers_json, indent=4))
 
         path = path.with_stem(path.stem + '_events')
         path = path.with_suffix('.json')

@@ -1,9 +1,6 @@
 {
-    "Scene":
-    {
-        "FPS": 30,
-        "Character": "Joaozinhodafebem",
-        "TimelineMarkers":{},
-        "ActionsMarkers":{}
-    }
+    "FPS": 30,
+    "Character": "Joaozinhodafebem",
+    "TimelineMarkers":[],
+    "ActionsMarkers":[{"Name": "Test", "Markers":[]}]
 }
