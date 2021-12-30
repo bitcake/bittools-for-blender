@@ -16,7 +16,7 @@ from . import hotkey_manager
 from . import anim_tools
 from . import bitcake_exporter
 from . import collider_tools
-
+from . import scene_setup
 
 def register():
     addon_prefs.register()
@@ -25,6 +25,7 @@ def register():
     anim_tools.register()
     bitcake_exporter.register()
     collider_tools.register()
+    scene_setup.register()
 
 def unregister():
     addon_prefs.unregister()
@@ -33,6 +34,7 @@ def unregister():
     anim_tools.unregister()
     bitcake_exporter.unregister()
     collider_tools.unregister()
+    scene_setup.unregister()
 
 
 # bpy.ops.bitcake.addon_prefs_setup('EXEC_DEFAULT')

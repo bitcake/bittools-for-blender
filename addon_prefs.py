@@ -1,7 +1,9 @@
 import addon_utils
 from pathlib   import Path
 from bpy.types import AddonPreferences
-from bpy.props import BoolProperty, StringProperty, EnumProperty
+from bpy.props import BoolProperty, IntProperty, StringProperty, EnumProperty
+
+from . import scene_setup
 
 
 def update_registered_projects(self, context):
@@ -60,6 +62,9 @@ class BitCakeToolsPreferences(AddonPreferences):
     pose_path: StringProperty(name='Pose Path', default='/Art/Poses/')
     camera_path: StringProperty(name='Camera Path', default='/Art/Camera/')
 
+    #Scene Setup
+    fps: IntProperty(name='Scene FPS', default=30, min=24, max=120, update=scene_setup.update_scene_fps)
+
     def draw(self, context):
         layout = self.layout
         layout.label(text="HotkeyChanger")
@@ -76,9 +81,8 @@ class BitCakeToolsPreferences(AddonPreferences):
         column.prop(self, "pose_prefix")
         column.prop(self, "camera_prefix")
 
-        column2.label(text='Paths')
-        column2.prop(self, "static_mesh_path")
-        column2.prop(self, "skeletal_mesh_path")
+        column2.label(text='Scene Configs')
+        column2.prop(self, "fps")
 
 
 classes = (BitCakeToolsPreferences,)
