@@ -1,4 +1,7 @@
+from os import terminal_size
 import bpy
+from bpy import context
+from bpy.types import Menu
 from bpy.app.handlers import persistent
 
 @persistent
@@ -19,6 +22,6 @@ def register():
     bpy.app.handlers.load_pre.append(scene_setup)
     bpy.app.handlers.load_factory_startup_post.append(scene_setup)
 
+
 def unregister():
-    bpy.app.handlers.load_pre.remove(scene_setup)
     bpy.app.handlers.load_factory_startup_post.remove(scene_setup)

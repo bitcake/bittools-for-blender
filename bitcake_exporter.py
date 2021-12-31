@@ -247,6 +247,36 @@ class BITCAKE_OT_unregister_project(Operator):
         return {'FINISHED'}
 
 
+class BITCAKE_OT_ignore_on_export(bpy.types.Operator):
+    """Right click entry test"""
+    bl_idname = "bitcake.ignore_on_export"
+    bl_label = "Ignore on Export"
+
+    def execute(self, context):
+        collection = context.collection
+
+        if not collection.get('Ignore'):
+            collection['Ignore'] = True
+        elif collection['Ignore']:
+            collection['Ignore'] = not collection['Ignore']
+
+        if collection['Ignore']:
+            collection.name = collection.name + '_[IGNORED]'
+            bpy.ops.outliner.collection_color_tag_set(color='COLOR_01')
+        else:
+            collection.name = collection.name.replace('_[IGNORED]', '')
+            bpy.ops.outliner.collection_color_tag_set(color='NONE')
+
+        return {'FINISHED'}
+
+
+def collection_outliner_context_draw(self, context):
+    layout = self.layout
+    layout.separator()
+    layout.label(text='BitCake Tools')
+    layout.operator("bitcake.ignore_on_export", text="Ignore on Export")
+
+
 # Sad reminder to do research properly before jumping into the first solution
 # Blender 2.92 had introduced a better way to export to Unity, this is the OLD way of doing things
 def unity_animation_setup(context, obj_list):
@@ -559,22 +589,25 @@ def get_all_colliders():
 def make_objects_list(context):
     panel_prefs = context.scene.menu_props
 
+    objects_list = []
     if panel_prefs.export_selected:
         selected_objects = bpy.context.selected_objects
         selected_objects = append_child_colliders(selected_objects)
-        return selected_objects
+        objects_list = selected_objects
 
     elif panel_prefs.export_collection:
         change_active_collection()
         collection_objects = bpy.context.active_object.users_collection[0].all_objects
         collection_objects = append_child_colliders([obj for obj in collection_objects])
-        return collection_objects
+        objects_list = collection_objects
 
     else:
         bpy.ops.object.select_all(action='DESELECT')
         toggle_all_colliders_visibility(True)
         bpy.ops.object.select_all()
-        return bpy.context.selected_objects
+        objects_list = bpy.context.selected_objects
+
+    return filter_object_list(objects_list)
 
 
 def append_child_colliders(obj_list):
@@ -590,6 +623,17 @@ def append_child_colliders(obj_list):
 
     return obj_list
 
+
+def filter_object_list(object_list):
+    '''Removes all objects that are inside an Ignored Collection or are Linked inside one'''
+
+    for obj in object_list:
+        for col in obj.users_collection:
+            if col.get('Ignore'):
+                print(obj.name + " TA IGNORADO dentro da " + col.name)
+                object_list.remove(obj)
+
+    return object_list
 
 def get_all_child_of_child(obj):
     children = list(obj.children)
@@ -752,14 +796,17 @@ classes = (BITCAKE_OT_send_to_engine,
            BITCAKE_OT_register_project,
            BITCAKE_OT_unregister_project,
            BITCAKE_OT_custom_butten,
-           BITCAKE_OT_toggle_all_colliders_visibility)
+           BITCAKE_OT_toggle_all_colliders_visibility,
+           BITCAKE_OT_ignore_on_export)
 
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.types.OUTLINER_MT_collection.append(collection_outliner_context_draw)
 
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+    bpy.types.OUTLINER_MT_collection.remove(collection_outliner_context_draw)
