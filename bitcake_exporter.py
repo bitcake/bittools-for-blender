@@ -19,6 +19,13 @@ class BITCAKE_OT_send_to_engine(Operator):
         scene = context.scene
         panel_prefs = scene.menu_props
 
+        # Get List of objects to export according to export type (Selected, Collection, All)
+        objects_list = make_objects_list(context)
+
+        if len(objects_list) == 0:
+            self.report({'ERROR'}, 'No objects to export. Check if Active Object is part of an Ignored Collection')
+            return {'CANCELLED'}
+
         # Save current file
         original_path = Path(bpy.data.filepath)
         bpy.ops.wm.save_mainfile(filepath=str(original_path))
@@ -29,8 +36,6 @@ class BITCAKE_OT_send_to_engine(Operator):
         # If folder doesn't exist, create it
         constructed_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Get List of objects according to export type (Selected, Collection, All)
-        objects_list = make_objects_list(context)
 
         # Rename everything in the list
         # This is a Generator because I use it on the batch exporter to properly export things.
@@ -49,6 +54,9 @@ class BITCAKE_OT_send_to_engine(Operator):
         filename = original_path.stem + '_bkp'
         new_path = original_path.with_stem(filename)
         bpy.ops.wm.save_mainfile(filepath=str(new_path))
+
+        # Only Select objects inside the list before exporting
+        select_objects_in_list(objects_list)
 
         # Builds the parameters and exports scene
         exporter(constructed_path, panel_prefs)
@@ -77,11 +85,17 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
         panel_prefs = scene.menu_props
         configs = get_engine_configs()
 
+        # Get List of objects to export according to export type (Selected, Collection, All)
+        objects_list = make_objects_list(context)
+
+        if len(objects_list) == 0:
+            self.report({'ERROR'}, 'No objects to export. Check if Active Object is part of an Ignored Collection')
+            return {'CANCELLED'}
+
         # Save current file
         original_path = Path(bpy.data.filepath)
         bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
-        objects_list = make_objects_list(context)
 
         # I just wanted to use generators to see how they worked. Please don't judge.
         for obj in rename_with_prefix(objects_list):
@@ -302,11 +316,9 @@ def unity_animation_setup(context, obj_list):
 def exporter(path, panel_preferences, batch=False):
     configs = get_engine_configs()
 
-    use_selection = panel_preferences.export_selected
     use_collection = panel_preferences.export_collection
 
     if batch:
-        use_selection = True
         use_collection = False
 
     # Export file
@@ -322,7 +334,7 @@ def exporter(path, panel_preferences, batch=False):
         secondary_bone_axis=configs['secondary_bone'],
         bake_anim_step=configs['anim_sampling'],
         bake_anim_simplify_factor=configs['anim_simplify'],
-        use_selection=use_selection,
+        use_selection=True,
         use_active_collection=use_collection,
         axis_forward=configs['forward_axis'],
         axis_up=configs['up_axis'],
@@ -599,6 +611,7 @@ def make_objects_list(context):
         change_active_collection()
         collection_objects = bpy.context.active_object.users_collection[0].all_objects
         collection_objects = append_child_colliders([obj for obj in collection_objects])
+        print(f"Aqui estão os Collection Objects: {collection_objects}")
         objects_list = collection_objects
 
     else:
@@ -608,6 +621,15 @@ def make_objects_list(context):
         objects_list = bpy.context.selected_objects
 
     return filter_object_list(objects_list)
+
+
+def select_objects_in_list(objects_list):
+    toggle_all_colliders_visibility(True)
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.context.view_layer.objects.active = None
+
+    for obj in objects_list:
+        obj.select_set(True)
 
 
 def append_child_colliders(obj_list):
@@ -627,12 +649,21 @@ def append_child_colliders(obj_list):
 def filter_object_list(object_list):
     '''Removes all objects that are inside an Ignored Collection or are Linked inside one'''
 
-    for obj in object_list:
+    print("*" * 40)
+    print(object_list)
+    print(len(object_list))
+    list_copy = object_list.copy()
+
+    for obj in list_copy:
+        print(f"Trabalhando no Object: {obj}")
         for col in obj.users_collection:
             if col.get('Ignore'):
                 print(obj.name + " TA IGNORADO dentro da " + col.name)
                 object_list.remove(obj)
 
+    print(object_list)
+    print(len(object_list))
+    print("*" * 40)
     return object_list
 
 def get_all_child_of_child(obj):
