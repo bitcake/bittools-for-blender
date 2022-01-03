@@ -16,6 +16,7 @@ class PanelProperties(PropertyGroup):
     export_batch: BoolProperty(name="Batch", description="Exports objects in a separate file", default=False)
     origin_transform: BoolProperty(name="Origin", description="Place objects in origin before exporting", default=False)
     apply_transform: BoolProperty(name="Apply", description="Apply transforms before exporting", default=False)
+    export_nla_strips: BoolProperty(name="Export NLA Strips", description="Separate NLA Strips into their own animations when exporting.\nYou'll usually want this turned OFF for Game Engine", default=False)
 
 
 class BITCAKE_PT_hotkey_changer(Panel):
@@ -60,11 +61,6 @@ class BITCAKE_PT_send_to_engine(Panel):
 
         addon_prefs = context.preferences.addons[__package__].preferences
 
-        pcoll = preview_collections["main"]
-        unity_logo = pcoll["unity"]
-        unreal_logo = pcoll["unreal"]
-        cocos_logo = pcoll["cocos"]
-
         current_engine = get_current_engine(context)
 
         layout = self.layout
@@ -85,36 +81,59 @@ class BITCAKE_PT_send_to_engine(Panel):
         row.prop(panel_prefs, 'apply_transform', toggle=1, icon_value=1, icon='CHECKMARK')
         row.prop(panel_prefs, 'export_batch', toggle=1, icon_value=1, icon='FILE_NEW')
 
-        if current_engine == 'Unity':
-            row = layout.row()
-            if not panel_prefs.export_batch:
-                row.operator('bitcake.send_to_engine', text='Send to Unity', icon_value=unity_logo.icon_id)
-            else:
-                row.operator('bitcake.batch_send_to_engine', text='Batch Send to Unity', icon_value=unity_logo.icon_id)
+        row = layout.row(align=True)
+        row.prop(panel_prefs, 'export_nla_strips', toggle=1, icon_value=1, icon='NLA')
 
-        elif current_engine == 'Unreal':
-            row = layout.row()
-            if not panel_prefs.export_batch:
-                row.operator('bitcake.send_to_engine', text='Send to Unreal', icon_value=unreal_logo.icon_id)
-            else:
-                row.operator('bitcake.batch_send_to_engine', text='Batch Send to Unreal',
-                             icon_value=unreal_logo.icon_id)
-
-        elif current_engine == 'Cocos':
-            row = layout.row()
-            if not panel_prefs.export_batch:
-                row.operator('bitcake.send_to_engine', text='Send to Cocos', icon_value=cocos_logo.icon_id)
-            else:
-                row.operator('bitcake.batch_send_to_engine', text='Batch Send to Cocos', icon_value=cocos_logo.icon_id)
-
-        row = layout.row()
-        row.prop(panel_prefs, 'export_selected')
-        row.prop(panel_prefs, 'export_collection')
-        row = layout.row()
+        row = layout.row(align=True)
+        row.prop(panel_prefs, 'export_selected', toggle=1, icon='RESTRICT_SELECT_OFF')
+        row.prop(panel_prefs, 'export_collection', toggle=1, icon='OUTLINER_COLLECTION')
         row = layout.row()
         row.operator('bitcake.toggle_all_colliders_visibility', text='Toggle Colliders Visibility', icon='HIDE_OFF')
+
+        layout.separator()
+        layout.label(text='Export')
+        send_to_engine_button(self, context)
+
+        layout.separator()
+        layout.separator()
+        layout.label(text='Test Stuff')
         row = layout.row()
         row.operator('bitcake.custom_butten', text='Test Butten')
+
+
+def send_to_engine_button(self, context):
+    panel_prefs = context.scene.menu_props
+    layout = self.layout
+
+    pcoll = preview_collections["main"]
+    unity_logo = pcoll["unity"]
+    unreal_logo = pcoll["unreal"]
+    cocos_logo = pcoll["cocos"]
+
+    current_engine = get_current_engine(context)
+
+    if current_engine == 'Unity':
+        row = layout.row()
+        if not panel_prefs.export_batch:
+            row.operator('bitcake.send_to_engine', text='Send to Unity', icon_value=unity_logo.icon_id)
+        else:
+            row.operator('bitcake.batch_send_to_engine', text='Batch Send to Unity', icon_value=unity_logo.icon_id)
+
+    elif current_engine == 'Unreal':
+        row = layout.row()
+        if not panel_prefs.export_batch:
+            row.operator('bitcake.send_to_engine', text='Send to Unreal', icon_value=unreal_logo.icon_id)
+        else:
+            row.operator('bitcake.batch_send_to_engine', text='Batch Send to Unreal',
+                            icon_value=unreal_logo.icon_id)
+
+    elif current_engine == 'Cocos':
+        row = layout.row()
+        if not panel_prefs.export_batch:
+            row.operator('bitcake.send_to_engine', text='Send to Cocos', icon_value=cocos_logo.icon_id)
+        else:
+            row.operator('bitcake.batch_send_to_engine', text='Batch Send to Cocos', icon_value=cocos_logo.icon_id)
+
 
 class BITCAKE_PT_collider_tools(Panel):
     bl_idname = "BITCAKE_PT_collider_tools"
@@ -137,7 +156,6 @@ class BITCAKE_PT_collider_tools(Panel):
         current_engine = get_current_engine(context)
 
         layout = self.layout
-        layout.label(text='Add Collider')
         row = layout.row()
         row.operator('bitcake.add_box_collider', text=f'Add Box Collider ({pcol[0]})', icon='CUBE')
         row = layout.row()
@@ -148,6 +166,22 @@ class BITCAKE_PT_collider_tools(Panel):
         if current_engine == 'Unity':
             row = layout.row()
             row.operator('bitcake.add_mesh_collider', text=f'Add Mesh Collider ({pcol[4]})', icon='MESH_MONKEY')
+
+
+class BITCAKE_PT_rigging_tools(Panel):
+    bl_idname = "BITCAKE_PT_rigging_tools"
+    bl_label = "Rigging Tools"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "BitTools"
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.operator('bitcake.set_deform_bones', text='Set Deform Bones', icon='BONE_DATA')
+        row = layout.row()
+        row.operator('bitcake.shape_keys_to_custom_props', text='Shape Keys to Props', icon='CON_ACTION')
+
 
 class BITCAKE_PT_animtools(Panel):
     bl_idname = "BITCAKE_PT_animtools"
@@ -201,7 +235,8 @@ def get_registered_projects_path():
 classes = (PanelProperties,
            BITCAKE_PT_send_to_engine,
            BITCAKE_PT_animtools,
-           BITCAKE_PT_collider_tools)
+           BITCAKE_PT_collider_tools,
+           BITCAKE_PT_rigging_tools)
 
 preview_collections = {}
 

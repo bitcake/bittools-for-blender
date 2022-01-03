@@ -21,8 +21,8 @@ class BITCAKE_OT_hotkeychanger(Operator):
     default_keymap_path = "scripts/presets/keyconfig/Blender.py"
     default_keymap_path = str(pathlib.PurePath(pure, default_keymap_path))
 
-    addonDir = bpy.utils.user_resource('SCRIPTS', "addons")
-    custom_keymap_dir = addonDir + "\\BitCakeTools\\custom_keymap.py"
+    addonDir = bpy.utils.user_resource('SCRIPTS')
+    custom_keymap_dir = addonDir + "\\addons\\BitCakeTools\\custom_keymap.py"
 
     def toggledefaulthotkey(self, context):
         addonPrefs = context.preferences.addons[__package__].preferences

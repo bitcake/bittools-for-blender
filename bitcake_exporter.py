@@ -27,6 +27,10 @@ class BITCAKE_OT_send_to_engine(Operator):
             return {'CANCELLED'}
 
         # Save current file
+        if bpy.data.filepath == '':
+            self.report({'ERROR'}, 'Please Save the file before running the export.')
+            return {'CANCELLED'}
+
         original_path = Path(bpy.data.filepath)
         bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
@@ -36,6 +40,8 @@ class BITCAKE_OT_send_to_engine(Operator):
         # If folder doesn't exist, create it
         constructed_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # Perform Animation Cleanup
+        actions_cleanup(context)
 
         # Rename everything in the list
         # This is a Generator because I use it on the batch exporter to properly export things.
@@ -65,6 +71,9 @@ class BITCAKE_OT_send_to_engine(Operator):
         bpy.ops.wm.save_mainfile(filepath=str(new_path))
         bpy.ops.wm.open_mainfile(filepath=str(original_path))
 
+        # Deselect everything because Blender 3.0 now saves selection
+        bpy.ops.object.select_all(action='DESELECT')
+
         # Re-hide all colliders for good measure
         toggle_all_colliders_visibility(False)
 
@@ -93,16 +102,21 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
             return {'CANCELLED'}
 
         # Save current file
+        if bpy.data.filepath == '':
+            self.report({'ERROR'}, 'Please Save the file before running the export.')
+            return {'CANCELLED'}
+
         original_path = Path(bpy.data.filepath)
         bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
+        # Perform Animation Cleanup
+        actions_cleanup(context)
 
         # I just wanted to use generators to see how they worked. Please don't judge.
         for obj in rename_with_prefix(objects_list):
             if obj.parent != None:
                 continue
 
-            print(f'THIS IS THE CURRENT OBJECT BEING EXPORTED {obj}')
             # If object is root object, construct its file path
             path = construct_fbx_path(self, context, obj)
 
@@ -131,7 +145,11 @@ class BITCAKE_OT_batch_send_to_engine(Operator):
             exporter(path, panel_prefs, batch=True)
 
         bpy.ops.wm.open_mainfile(filepath=str(original_path))
+
+        # Deselect everything because Blender 3.0 now saves selection
         bpy.ops.object.select_all(action='DESELECT')
+
+        # Re-hide all colliders for good measure
         toggle_all_colliders_visibility(False)
 
         return {'FINISHED'}
@@ -163,42 +181,24 @@ class BITCAKE_OT_custom_butten(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        obj = context.object
+        objects_list = context.selected_objects
 
-        if obj.type != 'ARMATURE':
-            self.report({"ERROR"}, "Not an armature")
-            return {'CANCELLED'}
+        actions = context.blend_data.actions
+        for action in actions:
+            # If Action doesn't contain any keyframes, delete it
+            if action.fcurves.items() == []:
+                bpy.data.actions.remove(bpy.data.actions[action.name])
+            # Make sure all actions with keyframes Use Fake User so they don't get deleted on export
+            elif not action.use_fake_user:
+                action.use_fake_user = True
 
-        # If object is root object, construct its file path
-        path = construct_fbx_path(self, context, obj)
+        for obj in objects_list:
+            nla_tracks = obj.animation_data.nla_tracks
+            if nla_tracks == []:
+                continue
 
-        # If folder doesn't exist, create it
-        path.parent.mkdir(parents=True, exist_ok=True)
-
-        markers_json = Path(get_markers_configs_file_path())
-        markers_json = json.load(markers_json.open())
-
-        fps = bpy.context.scene.render.fps
-        markers_json['FPS'] = fps
-        if fps % 30 != 0:
-            self.report({"ERROR"}, "Scene is not currently at 30 or 60FPS! Please FIX!")
-
-        markers_json['Character'] = obj.name
-
-        for mrks in bpy.context.scene.timeline_markers:
-            markers_json['TimelineMarkers'][mrks.name] = mrks.frame
-
-        for action in bpy.data.actions:
-            markers_json['ActionsMarkers'][action.name] = {}
-            for marker in action.pose_markers:
-                markers_json['ActionsMarkers'][action.name][marker.name] = marker.frame
-
-        path = path.with_stem(path.stem + '_events')
-        path = path.with_suffix('.json')
-        print(path)
-
-        with open(path, 'w') as jfile:
-            json.dump(markers_json, jfile, indent=4)
+            for track in nla_tracks:
+                nla_tracks.remove(track)
 
         return {'FINISHED'}
 
@@ -313,10 +313,22 @@ def unity_animation_setup(context, obj_list):
     return
 
 
+def actions_cleanup(context):
+    actions = context.blend_data.actions
+    for action in actions:
+        # If Action doesn't contain any keyframes, delete it
+        if action.fcurves.items() == []:
+            bpy.data.actions.remove(bpy.data.actions[action.name])
+        # Make sure all actions with keyframes Use Fake User so they don't get deleted on export
+        elif not action.use_fake_user:
+            action.use_fake_user = True
+
+
 def exporter(path, panel_preferences, batch=False):
     configs = get_engine_configs()
 
     use_collection = panel_preferences.export_collection
+    export_nla = panel_preferences.export_nla_strips
 
     if batch:
         use_collection = False
@@ -332,6 +344,7 @@ def exporter(path, panel_preferences, batch=False):
         add_leaf_bones=configs['add_leaf_bones'],
         primary_bone_axis=configs['primary_bone'],
         secondary_bone_axis=configs['secondary_bone'],
+        bake_anim_use_nla_strips=export_nla,
         bake_anim_step=configs['anim_sampling'],
         bake_anim_simplify_factor=configs['anim_simplify'],
         use_selection=True,
@@ -611,7 +624,6 @@ def make_objects_list(context):
         change_active_collection()
         collection_objects = bpy.context.active_object.users_collection[0].all_objects
         collection_objects = append_child_colliders([obj for obj in collection_objects])
-        print(f"Aqui estão os Collection Objects: {collection_objects}")
         objects_list = collection_objects
 
     else:
@@ -649,21 +661,13 @@ def append_child_colliders(obj_list):
 def filter_object_list(object_list):
     '''Removes all objects that are inside an Ignored Collection or are Linked inside one'''
 
-    print("*" * 40)
-    print(object_list)
-    print(len(object_list))
     list_copy = object_list.copy()
 
     for obj in list_copy:
-        print(f"Trabalhando no Object: {obj}")
         for col in obj.users_collection:
             if col.get('Ignore'):
-                print(obj.name + " TA IGNORADO dentro da " + col.name)
                 object_list.remove(obj)
 
-    print(object_list)
-    print(len(object_list))
-    print("*" * 40)
     return object_list
 
 def get_all_child_of_child(obj):
@@ -763,7 +767,6 @@ def rename_with_prefix(obj_list):
         if obj.parent is None:
             all_children = get_all_child_of_child(obj)
             for child in all_children:
-                print(child)
                 prefix = get_correct_prefix(child)
                 if prefix:
                     child.name = prefix + child.name
