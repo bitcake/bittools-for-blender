@@ -183,32 +183,6 @@ class BITCAKE_PT_rigging_tools(Panel):
         row.operator('bitcake.shape_keys_to_custom_props', text='Shape Keys to Props', icon='CON_ACTION')
 
 
-class BITCAKE_PT_animtools(Panel):
-    bl_idname = "BITCAKE_PT_animtools"
-    bl_label = "Anim Tools"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_context = "posemode"
-    bl_category = "Item"
-
-    def draw(self, context):
-        properties = context.scene.menu_props
-        animtool_props = context.scene.animtool_props
-
-        addonPrefs = context.preferences.addons[__package__].preferences
-
-        layout = self.layout
-        layout.label(text='Breakdowner')
-        row = layout.row()
-        row.prop(animtool_props, 'breakdowner', slider=True)
-        row = layout.row()
-        row.operator('bitcake.breakdowner', text='0').breakdown_value = 0.0
-        row.operator('bitcake.breakdowner', text='25').breakdown_value = 0.25
-        row.operator('bitcake.breakdowner', text='50').breakdown_value = 0.5
-        row.operator('bitcake.breakdowner', text='75').breakdown_value = 0.75
-        row.operator('bitcake.breakdowner', text='100').breakdown_value = 1.0
-
-
 def get_current_engine(context):
     registered_projects_path = get_registered_projects_path()
     addon_prefs = context.preferences.addons[__package__].preferences
@@ -234,7 +208,6 @@ def get_registered_projects_path():
 
 classes = (PanelProperties,
            BITCAKE_PT_send_to_engine,
-           BITCAKE_PT_animtools,
            BITCAKE_PT_collider_tools,
            BITCAKE_PT_rigging_tools)
 

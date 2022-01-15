@@ -122,9 +122,25 @@ class BITCAKE_OT_breakdowner(Operator):
 #     for keyframe in fcu.keyframe_points:
 #         print(keyframe.co) #coordinates x,y
 
+def draw_panel(self, context):
+    layout = self.layout
+    animtool_props = context.scene.animtool_props
+
+    layout.label(text='Breakdowner')
+    row = layout.row()
+    row.prop(animtool_props, 'breakdowner', slider=True)
+    row = layout.row()
+    row.operator('bitcake.breakdowner', text='0').breakdown_value = 0.0
+    row.operator('bitcake.breakdowner', text='25').breakdown_value = 0.25
+    row.operator('bitcake.breakdowner', text='50').breakdown_value = 0.5
+    row.operator('bitcake.breakdowner', text='75').breakdown_value = 0.75
+    row.operator('bitcake.breakdowner', text='100').breakdown_value = 1.0
 
 
-classes = (BITCAKE_OT_breakdowner, AnimToolProperties)
+classes = (
+    BITCAKE_OT_breakdowner,
+    AnimToolProperties,
+    )
 
 def register():
     for cls in classes:

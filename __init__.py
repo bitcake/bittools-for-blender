@@ -10,30 +10,54 @@ bl_info = {
     "category": "Animation",
 }
 
+import importlib
+import sys
+
+def import_or_reload_modules(module_names, package_name):
+    ensure_starts_with = lambda s, prefix: s if s.startswith(prefix) else prefix + s
+    module_names = [ensure_starts_with(name, f'{package_name}.') for name in module_names]
+    modules = []
+    for module_name in module_names:
+        module = sys.modules.get(module_name)
+        if module:
+            module = importlib.reload(module)
+        else:
+            module = globals()[module_name] = importlib.import_module(module_name)
+        modules.append(module)
+    return modules
+
+
 from . import addon_prefs
 from . import menu_side
 from . import hotkey_manager
-from . import anim_tools
 from . import bitcake_exporter
 from . import collider_tools
 from . import scene_setup
 from . import rigging_tools
 
+module_names = [
+    'animation',
+]
+
+modules = import_or_reload_modules(module_names, __name__)
+
 def register():
     addon_prefs.register()
     menu_side.register()
     hotkey_manager.register()
-    anim_tools.register()
     bitcake_exporter.register()
     collider_tools.register()
     scene_setup.register()
     rigging_tools.register()
 
+    for module in modules:
+        if hasattr(module, 'register'):
+            module.register()
+
 def unregister():
     addon_prefs.unregister()
     menu_side.unregister()
     hotkey_manager.unregister()
-    anim_tools.unregister()
     bitcake_exporter.unregister()
     collider_tools.unregister()
     scene_setup.unregister()
