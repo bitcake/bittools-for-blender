@@ -22,19 +22,40 @@ class BITCAKE_PT_animtools(Panel):
         for draw_func in __class__.draw_funcs:
             draw_func(self, context)
 
+
+class BITCAKE_PT_keyframetools(Panel):
+    bl_idname = "BITCAKE_PT_keyframetools"
+    bl_label = "Keyframe Tools"
+    bl_space_type = "GRAPH_EDITOR"
+    bl_region_type = "WINDOW"
+
+    draw_funcs = []
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text='TO DESENHANDO AQUI CARALHO DA PORRA')
+
+classes = (BITCAKE_PT_animtools,
+           BITCAKE_PT_keyframetools,
+           )
+
 def register():
     for module in modules:
         if hasattr(module, 'register'):
             module.register()
         if hasattr(module, 'draw_panel'):
             BITCAKE_PT_animtools.draw_funcs.append(module.draw_panel)
+            BITCAKE_PT_keyframetools.draw_funcs.append(module.draw_panel)
 
-    bpy.utils.register_class(BITCAKE_PT_animtools)
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
 def unregister():
-    bpy.utils.unregister_class(BITCAKE_PT_animtools)
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
 
     BITCAKE_PT_animtools.draw_funcs.clear()
+    BITCAKE_PT_keyframetools.draw_funcs.clear()
 
     for module in modules:
         if hasattr(module, 'unregister'):

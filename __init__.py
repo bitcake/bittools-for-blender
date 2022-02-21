@@ -63,5 +63,8 @@ def unregister():
     scene_setup.unregister()
     rigging_tools.unregister()
 
+    for module in modules:
+        if hasattr(module, 'unregister'):
+            module.unregister()
 
 # bpy.ops.bitcake.addon_prefs_setup('EXEC_DEFAULT')
