@@ -2,18 +2,29 @@ import bpy
 import json
 import addon_utils
 from bpy.types import Operator
+from bpy.props import BoolProperty, StringProperty
 from bpy_extras.io_utils import ImportHelper
 from pathlib import Path
 
 
 class BITCAKE_OT_send_to_engine(Operator):
     bl_idname = "bitcake.send_to_engine"
-    bl_label = "Send to Unity"
+    bl_label = "Send to Engine"
     bl_description = "Quick Export directly to the correct engine folder."
+
+    sending_to_engine: BoolProperty(name='Send to Engine', default=True)
+    directory: StringProperty(subtype='DIR_PATH')
 
     @classmethod
     def poll(cls, context):
         return context.mode == 'OBJECT'
+
+    def invoke(self, context, event):
+        if not self.sending_to_engine:
+            context.window_manager.fileselect_add(self)
+            return {'RUNNING_MODAL'}
+
+        return {'FINISHED'}
 
     def execute(self, context):
         scene = context.scene
@@ -35,7 +46,11 @@ class BITCAKE_OT_send_to_engine(Operator):
         bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
         # Checks and constructs the path for the exported file
-        constructed_path = construct_file_path(self, context)
+        if self.sending_to_engine:
+            constructed_path = construct_file_path(self, context)
+        else:
+            filename = Path(bpy.data.filepath).stem + '.fbx'
+            constructed_path = Path(self.directory + filename)
 
         # If folder doesn't exist, create it
         constructed_path.parent.mkdir(parents=True, exist_ok=True)
@@ -458,7 +473,7 @@ def construct_file_path(self, context):
             pathway.append('Art')
             wip = True
 
-    # Add .blend filename and correct extension to the pathway list
+    # Add .blend filename and correct extension to the pathway list (if filename is dani.blend then export will be dani.fbx)
     filename = Path(bpy.data.filepath).stem
     pathway.append(filename + '.fbx')
 

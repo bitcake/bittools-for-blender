@@ -93,6 +93,7 @@ class BITCAKE_PT_send_to_engine(Panel):
         layout.separator()
         layout.label(text='Export')
         send_to_engine_button(self, context)
+        send_to_custom(self, context)
 
         layout.separator()
         layout.separator()
@@ -115,14 +116,14 @@ def send_to_engine_button(self, context):
     if current_engine == 'Unity':
         row = layout.row()
         if not panel_prefs.export_batch:
-            row.operator('bitcake.send_to_engine', text='Send to Unity', icon_value=unity_logo.icon_id)
+            row.operator('bitcake.send_to_engine', text='Send to Unity Project', icon_value=unity_logo.icon_id)
         else:
             row.operator('bitcake.batch_send_to_engine', text='Batch Send to Unity', icon_value=unity_logo.icon_id)
 
     elif current_engine == 'Unreal':
         row = layout.row()
         if not panel_prefs.export_batch:
-            row.operator('bitcake.send_to_engine', text='Send to Unreal', icon_value=unreal_logo.icon_id)
+            row.operator('bitcake.send_to_engine', text='Send to Unreal Project', icon_value=unreal_logo.icon_id)
         else:
             row.operator('bitcake.batch_send_to_engine', text='Batch Send to Unreal',
                             icon_value=unreal_logo.icon_id)
@@ -130,10 +131,21 @@ def send_to_engine_button(self, context):
     elif current_engine == 'Cocos':
         row = layout.row()
         if not panel_prefs.export_batch:
-            row.operator('bitcake.send_to_engine', text='Send to Cocos', icon_value=cocos_logo.icon_id)
+            row.operator('bitcake.send_to_engine', text='Send to Cocos Project', icon_value=cocos_logo.icon_id)
         else:
             row.operator('bitcake.batch_send_to_engine', text='Batch Send to Cocos', icon_value=cocos_logo.icon_id)
 
+
+def send_to_custom(self, context):
+    panel_prefs = context.scene.menu_props
+    layout = self.layout
+
+    row = layout.row()
+    if not panel_prefs.export_batch:
+        op = row.operator('bitcake.send_to_engine', text='Send to Custom Folder', icon='EXPORT')
+        op.sending_to_engine = False
+    else:
+        row.operator('bitcake.batch_send_to_engine', text='Batch Send to Custom Folder', icon='EXPORT')
 
 class BITCAKE_PT_collider_tools(Panel):
     bl_idname = "BITCAKE_PT_collider_tools"
