@@ -24,7 +24,7 @@ class BITCAKE_OT_send_to_engine(Operator):
             context.window_manager.fileselect_add(self)
             return {'RUNNING_MODAL'}
 
-        return {'FINISHED'}
+        return self.execute(context)
 
     def execute(self, context):
         scene = context.scene
