@@ -1,3 +1,7 @@
+import addon_utils
+import json
+import bpy
+from pathlib import Path
 from mathutils import Vector, Quaternion, Euler
 
 # Some of those helpers are from the GRET Plugin, check it out.
@@ -66,4 +70,32 @@ def clear_pose(obj, clear_armature_properties=True, clear_bone_properties=True):
         pose_bone.rotation_axis_angle = [0.0, 0.0, 1.0, 0.0]
         pose_bone.scale = Vector((1.0, 1.0, 1.0))
 
+def get_current_engine(context):
+    registered_projects_path = get_registered_projects_path()
+    addon_prefs = context.preferences.addons[__package__].preferences
 
+    current_engine = None
+    if registered_projects_path.is_file():
+        projects_json = json.load(registered_projects_path.open())
+        current_engine = projects_json[addon_prefs.registered_projects]['engine']
+
+    return current_engine
+
+
+def get_registered_projects_path():
+    addon_path = None
+    for mod in addon_utils.modules():
+        if mod.bl_info['name'] == __package__:
+            addon_path = Path(mod.__file__)
+
+    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
+
+    return projects_file_path
+
+def select_and_make_active(obj, context):
+    # Deselects everything then selects obj and make it active
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.data.objects[obj].select = True
+    context.view_layer.objects.active = obj
+
+    return

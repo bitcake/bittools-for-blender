@@ -41,6 +41,8 @@ class BitCakeToolsPreferences(AddonPreferences):
                                       description='Register projects here before starting. Current Active project',
                                       )
 
+    separator: StringProperty(name='Characater that separates naming', default='_')
+
     # Prefixes Setup (user changeable)
     static_mesh_prefix: StringProperty(name='Static Mesh Prefix', default='SM')
     skeletal_mesh_prefix: StringProperty(name='Skeletal Mesh Prefix', default='SK')
