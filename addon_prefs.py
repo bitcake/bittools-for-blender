@@ -68,8 +68,6 @@ class BitCakeToolsPreferences(AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="HotkeyChanger")
-        layout.prop(self, "isDefaultKeymaps")
 
         box = layout.box().column_flow(columns=2)
         column = box.column()

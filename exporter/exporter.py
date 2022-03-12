@@ -1,7 +1,6 @@
 import bpy
 import os
 import json
-import addon_utils
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
@@ -103,9 +102,9 @@ class BITCAKE_OT_universal_exporter(Operator):
         else:
             pass
 
-        if panel_prefs.origin_transform:
+        # Return objects to their original position
+        if panel_prefs.origin_transform and not panel_prefs.apply_transform:
             for obj in obj_location_dict:
-                print(f'AQUI É {obj} CUJO VETOR DE LOCATION É {obj_location_dict[obj]}')
                 obj.location = obj_location_dict[obj]
 
 
