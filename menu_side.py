@@ -3,47 +3,16 @@ import os
 import bpy.utils.previews
 from bpy.types import Panel, PropertyGroup, Scene
 from bpy.props import StringProperty, BoolProperty
-from .helpers import get_addon_prefs, get_current_engine, get_registered_projects_path
+from .helpers import get_addon_prefs, get_current_engine
 
 
 class PanelProperties(PropertyGroup):
-    custom_keymap: StringProperty(name="CurrentKeymapLabel", default="Custom Keymap")
-    default_keymap: StringProperty(name="KeymapLabel", default="Default Keymap")
     export_selected: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
     export_collection: BoolProperty(name="Collection", description="Exports entire collection", default=False)
     export_batch: BoolProperty(name="Batch", description="Exports objects in a separate file", default=False)
     origin_transform: BoolProperty(name="Origin", description="Place objects in origin before exporting", default=False)
     apply_transform: BoolProperty(name="Apply", description="Apply transforms before exporting", default=False)
     export_nla_strips: BoolProperty(name="Export NLA Strips", description="Separate NLA Strips into their own animations when exporting.\nYou'll usually want this turned OFF for Game Engine", default=False)
-
-
-class BITCAKE_PT_hotkey_changer(Panel):
-    bl_idname = "BITCAKE_PT_hotkey_changer"
-    bl_label = "Hotkey Changer"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "BitTools"
-
-    def draw(self, context):
-        scene = context.scene
-        panel_prefs = scene.menu_props
-
-        addon_prefs = get_addon_prefs()
-
-        if not addon_prefs.isDefaultKeymaps:
-            button_label = panel_prefs.default_keymap
-            current_label = panel_prefs.custom_keymap
-        else:
-            button_label = panel_prefs.custom_keymap
-            current_label = panel_prefs.default_keymap
-
-        layout = self.layout
-        row = layout.row()
-        row.label(text="Hotkey Changer")
-        row = layout.row()
-        row.label(text='Current Keymap: ' + current_label)
-        row = layout.row()
-        row.operator('bitcake.hotkeychanger', text=button_label)
 
 
 class BITCAKE_PT_send_to_engine(Panel):
@@ -59,7 +28,7 @@ class BITCAKE_PT_send_to_engine(Panel):
 
         addon_prefs = get_addon_prefs()
 
-        current_engine = get_current_engine(context)
+        current_engine = get_current_engine()
 
         layout = self.layout
         row = layout.row()
@@ -109,7 +78,7 @@ def send_to_engine_button(self, context):
     unreal_logo = pcoll["unreal"]
     cocos_logo = pcoll["cocos"]
 
-    current_engine = get_current_engine(context)
+    current_engine = get_current_engine()
 
     if current_engine == 'Unity':
         row = layout.row()
@@ -163,7 +132,7 @@ class BITCAKE_PT_collider_tools(Panel):
                 addon_prefs.convex_collider_prefix,
                 addon_prefs.mesh_collider_prefix]
 
-        current_engine = get_current_engine(context)
+        current_engine = get_current_engine()
 
         layout = self.layout
         row = layout.row()

@@ -5,6 +5,7 @@ from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from bpy_extras.io_utils import ImportHelper
 from pathlib import Path
+from .helpers import get_current_project_assets_path, get_registered_projects_path
 
 
 class BITCAKE_OT_send_to_engine(Operator):
@@ -416,7 +417,7 @@ def construct_animation_events_json(self, path, obj):
         return
 
 def get_previous_project(current_project):
-    registered_projects_file = get_registered_projects_file_path()
+    registered_projects_file = get_registered_projects_path()
     projects = json.load(registered_projects_file.open())
     projects_list = []
     for project in projects:
@@ -437,7 +438,7 @@ def get_previous_project(current_project):
 
 
 def get_engine_configs():
-    registered_projects_file = get_registered_projects_file_path()
+    registered_projects_file = get_registered_projects_path()
     projects = json.load(registered_projects_file.open())
     engine_configs_file = get_engine_configs_file_path()
     configs = json.load(engine_configs_file.open())
@@ -483,7 +484,7 @@ def construct_file_path(self, context):
                     "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment")
         return {'CANCELLED'}
 
-    current_project_path = Path(get_current_project_assets_path(context))
+    current_project_path = Path(get_current_project_assets_path())
     constructed_path = current_project_path.joinpath(*pathway)
 
     return constructed_path
@@ -516,7 +517,7 @@ def construct_fbx_path(self, context, obj):
                     "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment/YourFile.blend")
         return {'CANCELLED'}
 
-    current_project_path = Path(get_current_project_assets_path(context))
+    current_project_path = Path(get_current_project_assets_path())
     constructed_path = current_project_path.joinpath(*pathway)
 
     return constructed_path
@@ -567,30 +568,6 @@ def find_parent_collection(collection):
 
     return collection[0]
 
-
-def get_all_registered_projects():
-    for mod in addon_utils.modules():
-        if mod.bl_info['name'] == __package__:
-            addon_path = Path(mod.__file__)
-
-    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
-    projects_json = json.load(projects_file_path.open())
-
-    return projects_json
-
-
-def get_current_project_assets_path(context):
-    addonPrefs = context.preferences.addons[__package__].preferences
-    active_project = addonPrefs.registered_projects
-
-    for mod in addon_utils.modules():
-        if mod.bl_info['name'] == __package__:
-            addon_path = Path(mod.__file__)
-
-    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
-    projects_json = json.load(projects_file_path.open())
-
-    return projects_json[active_project]['assets']
 
 
 def get_current_project_path(context):
@@ -707,7 +684,7 @@ def project_definitions(engine, dir_path, assets_path):
 def register_project(project):
     """Checks if file exist, if not create it and write details as json"""
 
-    projects_file_path = get_registered_projects_file_path()
+    projects_file_path = get_registered_projects_path()()
 
     if projects_file_path.is_file():
         projects_json = json.load(projects_file_path.open())
@@ -725,10 +702,10 @@ def register_project(project):
 def unregister_project(project):
     """Pass a Project string in order to delete it from registered_projects.json"""
 
-    all_projects = get_all_registered_projects()
+    all_projects = json.load(get_registered_projects_path())
     all_projects.pop(project)
 
-    file = get_registered_projects_file_path()
+    file = get_registered_projects_path()
 
     if not all_projects:
         try:
@@ -741,16 +718,7 @@ def unregister_project(project):
     with open(file, 'w') as projects_file:
         json.dump(all_projects, projects_file, indent=4)
 
-
-def get_registered_projects_file_path():
-    # Gets Addon Path (__init__.py)
-    for mod in addon_utils.modules():
-        if mod.bl_info['name'] == __package__:
-            addon_path = Path(mod.__file__)
-
-    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
-
-    return projects_file_path
+    return
 
 
 def get_engine_configs_file_path():
@@ -842,8 +810,8 @@ def zero_transforms(obj_list):
 
 classes = (BITCAKE_OT_send_to_engine,
            BITCAKE_OT_batch_send_to_engine,
-           BITCAKE_OT_register_project,
-           BITCAKE_OT_unregister_project,
+        #    BITCAKE_OT_register_project,
+        #    BITCAKE_OT_unregister_project,
            BITCAKE_OT_custom_butten,
            BITCAKE_OT_toggle_all_colliders_visibility,
            BITCAKE_OT_ignore_on_export)

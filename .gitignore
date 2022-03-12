@@ -6,3 +6,4 @@ Keymaps/__pycache__
 registered_projects.json
 *.log
 animation/__pycache__
+*.pyc

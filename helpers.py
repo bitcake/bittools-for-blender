@@ -70,9 +70,9 @@ def clear_pose(obj, clear_armature_properties=True, clear_bone_properties=True):
         pose_bone.rotation_axis_angle = [0.0, 0.0, 1.0, 0.0]
         pose_bone.scale = Vector((1.0, 1.0, 1.0))
 
-def get_current_engine(context):
+def get_current_engine():
     registered_projects_path = get_registered_projects_path()
-    addon_prefs = context.preferences.addons[__package__].preferences
+    addon_prefs = get_addon_prefs()
 
     current_engine = None
     if registered_projects_path.is_file():
@@ -81,6 +81,18 @@ def get_current_engine(context):
 
     return current_engine
 
+def get_current_project_assets_path():
+    addon_prefs = get_addon_prefs()
+    active_project = addon_prefs.registered_projects
+
+    for mod in addon_utils.modules():
+        if mod.bl_info['name'] == __package__:
+            addon_path = Path(mod.__file__)
+
+    projects_file_path = Path(addon_path.parent / 'configs' / 'registered_projects.json')
+    projects_json = json.load(projects_file_path.open())
+
+    return projects_json[active_project]['assets']
 
 def get_registered_projects_path():
     addon_path = None

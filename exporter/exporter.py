@@ -4,7 +4,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_current_engine, select_and_make_active, get_registered_projects_path, get_engine_configs_path, get_markers_configs_file_path, get_addon_prefs
+from ..helpers import get_current_engine, select_and_make_active, get_registered_projects_path, get_engine_configs_path, get_markers_configs_file_path, get_addon_prefs, get_current_project_assets_path
 
 class BITCAKE_OT_universal_exporter(Operator):
     bl_idname = "bitcake.universal_exporter"
@@ -28,8 +28,7 @@ class BITCAKE_OT_universal_exporter(Operator):
         return self.execute(context)
 
     def execute(self, context):
-        scene = context.scene
-        panel_prefs = scene.menu_props
+        panel_prefs = context.scene.exporter_configs
 
         # Get List of objects to export according to export type (Selected, Collection, All)
         objects_list = make_objects_list(context, panel_prefs)
@@ -51,7 +50,6 @@ class BITCAKE_OT_universal_exporter(Operator):
         new_path = original_path.with_stem(backup_filename)
         # Create a backup and then Save file before messing around!
         bpy.ops.wm.save_mainfile(filepath=str(new_path))
-        bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
         # Perform Animation Cleanup
         actions_cleanup(context)
@@ -78,59 +76,45 @@ class BITCAKE_OT_universal_exporter(Operator):
         # Only Select objects inside the list before exporting
         toggle_all_colliders_visibility(True)
 
+        # Setup Export Directory
+        if self.use_custom_dir:
+            export_directory = Path(self.directory)
+        else:
+            export_directory = construct_export_directory(self)
+
+        # Process all types of paths then export accordingly
         if self.use_custom_dir and not self.is_batch:
-            select_objects_in_list(objects_list)
-            filename = Path(bpy.data.filepath).stem + '.fbx'
-            constructed_path = Path(self.directory + filename)
-            # If folder doesn't exist, create it
-            constructed_path.parent.mkdir(parents=True, exist_ok=True)
-            create_animation_markers_json_file(constructed_path, markers_json)
-            exporter(constructed_path, panel_prefs)
+            process_objs_paths_and_export(objects_list, export_directory, markers_json, panel_prefs)
 
         elif self.use_custom_dir and self.is_batch:
-            for obj in objects_list:
-                select_and_make_active(context, obj)
-                collection_hierarchy = get_collection_hierarchy_list_as_path(context, obj)
-                constructed_path = Path(self.directory).joinpath(*collection_hierarchy)
-                # If folder doesn't exist, create it
-                constructed_path.parent.mkdir(parents=True, exist_ok=True)
-                create_animation_markers_json_file(constructed_path, markers_json)
-                exporter(constructed_path, panel_prefs)
+            batch_process_objs_paths_and_export(context, objects_list, export_directory, markers_json, panel_prefs)
 
-        elif self.is_batch:
-            pass
+        elif not self.use_custom_dir and self.is_batch:
+            batch_process_objs_paths_and_export(context, objects_list, export_directory, markers_json, panel_prefs)
         else:
-            pass
+            process_objs_paths_and_export(objects_list, export_directory, markers_json, panel_prefs)
 
-        # Return objects to their original position
-        if panel_prefs.origin_transform and not panel_prefs.apply_transform:
+        # If only apply transform was selected, end Operation
+        if panel_prefs.apply_transform and not panel_prefs.origin_transform:
+            # Re-hide all colliders for good measure
+            toggle_all_colliders_visibility(False)
+            # Save! :D
+            bpy.ops.wm.save_mainfile(filepath=str(original_path))
+
+            return {'FINISHED'}
+
+        # If origin transform was selected, return to original position
+        elif panel_prefs.origin_transform and panel_prefs.apply_transform:
             for obj in obj_location_dict:
                 obj.location = obj_location_dict[obj]
-
 
         # Re-hide all colliders for good measure
         toggle_all_colliders_visibility(False)
 
+        # Save! :D
+        bpy.ops.wm.save_mainfile(filepath=str(original_path))
+
         return {'FINISHED'}
-        # # Checks and constructs the path for the exported file
-        # if self.use_custom_dir:
-        # else:
-        #     constructed_path = construct_export_directory(self, context)
-
-
-
-
-        # # Builds the parameters and exports scene
-        # exporter(constructed_path, panel_prefs)
-
-        # # Save _bkp file and reopen original
-        # bpy.ops.wm.save_mainfile(filepath=str(new_path))
-        # bpy.ops.wm.open_mainfile(filepath=str(original_path))
-
-        # # Deselect everything because Blender 3.0 now saves selection
-        # bpy.ops.object.select_all(action='DESELECT')
-
-
 
 
 def make_objects_list(context, panel_prefs):
@@ -239,8 +223,7 @@ def get_all_colliders():
     return all_colliders_list
 
 
-# TODO: CHANGE THIS ACCORDING TO TALK WITH DANI
-def construct_export_directory(self, context, custom_directory, using_custom=False, ):
+def construct_export_directory(self):
     blend_path = Path(bpy.path.abspath('//'))
     wip = False
     pathway = []
@@ -253,15 +236,16 @@ def construct_export_directory(self, context, custom_directory, using_custom=Fal
             pathway.append('Art')
             wip = True
 
-    # Add .blend filename and correct extension to the pathway list (if filename is dani.blend then export will be dani.fbx)
-    filename = Path(bpy.data.filepath).stem
-    pathway.append(filename + '.fbx')
-
     # If no WIP folder found then fail
     if wip is False:
         self.report({"ERROR"},
                     "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment")
         return {'CANCELLED'}
+
+    current_project_path = Path(get_current_project_assets_path())
+    constructed_directory = current_project_path.joinpath(*pathway)
+
+    return constructed_directory
 
 def rename_with_prefix(obj):
     """Renames current obj and all its children."""
@@ -365,6 +349,9 @@ def construct_animation_events_json(self, context, obj):
         return markers_json
 
 def create_animation_markers_json_file(path, markers_json):
+    if markers_json is None:
+        return
+
     path = path.with_stem(path.stem + '_events')
     path = path.with_suffix('.json')
 
@@ -444,6 +431,39 @@ def exporter(path, panel_preferences):
 
     return
 
+
+def process_objs_paths_and_export(objects_list, export_directory, markers_json, panel_prefs):
+    select_objects_in_list(objects_list)
+    # Create the filename based on this .blend name
+    filename = Path(bpy.data.filepath).stem + '.fbx'
+    # Constructs final path
+    constructed_path = Path(export_directory + filename)
+    # If folder doesn't exist, create it
+    constructed_path.parent.mkdir(parents=True, exist_ok=True)
+    # Pass the Json Dict and dump it to create the actual file in the directory
+    create_animation_markers_json_file(constructed_path, markers_json)
+    # Finally, export the file
+    exporter(constructed_path, panel_prefs)
+
+def batch_process_objs_paths_and_export(context, objects_list, export_directory, markers_json, panel_prefs):
+    """Process each object in the list, constructs each path, creates Animation Markers Json and Exports Files"""
+
+    for obj in objects_list:
+        select_and_make_active(context, obj)
+        # Gets object Collection Hierarchy as a path in string list format
+        collection_hierarchy = get_collection_hierarchy_list_as_path(context, obj)
+        # Constructs the export Path with filename as objname.fbx
+        constructed_path = export_directory.joinpath(*collection_hierarchy)
+        # If folder doesn't exist, create it
+        constructed_path.parent.mkdir(parents=True, exist_ok=True)
+        # Pass the Json Dict and dump it to create the actual file in the directory
+        create_animation_markers_json_file(constructed_path, markers_json)
+        # Finally, export the file
+        exporter(constructed_path, panel_prefs)
+
+    return
+
+
 def get_engine_configs():
     registered_projects_file = get_registered_projects_path()
     projects = json.load(registered_projects_file.open())
@@ -458,16 +478,30 @@ def get_engine_configs():
 
 
 def draw_panel(self, context):
+    configs = context.scene.exporter_configs
     pcoll = preview_collections["main"]
-    current_engine = get_current_engine(context)
+
+    batch = ""
+    if configs.export_batch:
+        batch = "Batch "
+
+    current_engine = get_current_engine()
+    if current_engine is None:
+        return
+
     engine_logo = pcoll[current_engine]
 
-
     layout = self.layout
+    layout.separator()
+    layout.label(text='Export')
     row = layout.row()
-    op = row.operator('bitcake.universal_exporter', text=f'Send to {current_engine} Project', icon_value=engine_logo.icon_id)
+    op = row.operator('bitcake.universal_exporter', text=f'{batch}Send to {current_engine} Project', icon_value=engine_logo.icon_id)
+    op.is_batch = configs.export_batch
+
+    row = layout.row()
+    op = row.operator('bitcake.universal_exporter', text=f'{batch}Send to Custom Directory', icon='EXPORT')
     op.use_custom_dir = True
-    op.is_batch = True
+    op.is_batch = configs.export_batch
 
 classes = (BITCAKE_OT_universal_exporter,)
 
