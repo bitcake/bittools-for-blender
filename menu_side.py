@@ -1,11 +1,9 @@
 import bpy
 import os
-import addon_utils
-import json
 import bpy.utils.previews
-from pathlib import Path
 from bpy.types import Panel, PropertyGroup, Scene
 from bpy.props import StringProperty, BoolProperty
+from .helpers import get_addon_prefs, get_current_engine, get_registered_projects_path
 
 
 class PanelProperties(PropertyGroup):
@@ -30,9 +28,9 @@ class BITCAKE_PT_hotkey_changer(Panel):
         scene = context.scene
         panel_prefs = scene.menu_props
 
-        addonPrefs = context.preferences.addons[__package__].preferences
+        addon_prefs = get_addon_prefs()
 
-        if not addonPrefs.isDefaultKeymaps:
+        if not addon_prefs.isDefaultKeymaps:
             button_label = panel_prefs.default_keymap
             current_label = panel_prefs.custom_keymap
         else:
@@ -59,7 +57,7 @@ class BITCAKE_PT_send_to_engine(Panel):
         scene = context.scene
         panel_prefs = scene.menu_props
 
-        addon_prefs = context.preferences.addons[__package__].preferences
+        addon_prefs = get_addon_prefs()
 
         current_engine = get_current_engine(context)
 
@@ -158,7 +156,7 @@ class BITCAKE_PT_collider_tools(Panel):
         properties = context.scene.menu_props
         animtool_props = context.scene.animtool_props
 
-        addon_prefs = context.preferences.addons[__package__].preferences
+        addon_prefs = get_addon_prefs()
         pcol = [addon_prefs.box_collider_prefix,
                 addon_prefs.capsule_collider_prefix,
                 addon_prefs.sphere_collider_prefix,
@@ -193,29 +191,6 @@ class BITCAKE_PT_rigging_tools(Panel):
         row.operator('bitcake.set_deform_bones', text='Set Deform Bones', icon='BONE_DATA')
         row = layout.row()
         row.operator('bitcake.shape_keys_to_custom_props', text='Shape Keys to Props', icon='CON_ACTION')
-
-
-def get_current_engine(context):
-    registered_projects_path = get_registered_projects_path()
-    addon_prefs = context.preferences.addons[__package__].preferences
-
-    current_engine = None
-    if registered_projects_path.is_file():
-        projects_json = json.load(registered_projects_path.open())
-        current_engine = projects_json[addon_prefs.registered_projects]['engine']
-
-    return current_engine
-
-
-def get_registered_projects_path():
-    addon_path = None
-    for mod in addon_utils.modules():
-        if mod.bl_info['name'] == __package__:
-            addon_path = Path(mod.__file__)
-
-    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
-
-    return projects_file_path
 
 
 classes = (PanelProperties,

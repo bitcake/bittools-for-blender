@@ -1,22 +1,21 @@
+import json
 import addon_utils
 from pathlib   import Path
 from bpy.types import AddonPreferences
 from bpy.props import BoolProperty, IntProperty, StringProperty, EnumProperty
+from .helpers import get_registered_projects_path
 
 from . import scene_setup
 
 
 def update_registered_projects(self, context):
-    import json
-
-    addonPrefs = context.preferences.addons[__package__].preferences
     projects_list = []
 
     for mod in addon_utils.modules():
         if mod.bl_info['name'] == __package__:
             addon_path = Path(mod.__file__)
 
-    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
+    projects_file_path = get_registered_projects_path()
 
     if projects_file_path.is_file():
         with open(str(projects_file_path), 'r') as projects:
@@ -25,8 +24,8 @@ def update_registered_projects(self, context):
             for i, project in enumerate(projects_json):
                 projects_list.append((project, project, '', i))
 
-
     return projects_list
+
 
 class BitCakeToolsPreferences(AddonPreferences):
     bl_idname = __package__

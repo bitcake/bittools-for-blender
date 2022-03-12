@@ -88,14 +88,40 @@ def get_registered_projects_path():
         if mod.bl_info['name'] == __package__:
             addon_path = Path(mod.__file__)
 
-    projects_file_path = Path(addon_path.parent / 'registered_projects.json')
+    projects_file_path = Path(addon_path.parent / 'configs' / 'registered_projects.json')
 
     return projects_file_path
 
-def select_and_make_active(obj, context):
+def get_engine_configs_path():
+    # Gets Addon Path (__init__.py)
+    for mod in addon_utils.modules():
+        if mod.bl_info['name'] == __package__:
+            addon_path = Path(mod.__file__)
+
+    engine_configs_path = Path(addon_path.parent / 'configs' / 'engine_configs.json')
+
+    return engine_configs_path
+
+def get_markers_configs_file_path():
+    # Gets Addon Path (__init__.py)
+    for mod in addon_utils.modules():
+        if mod.bl_info['name'] == __package__:
+            addon_path = Path(mod.__file__)
+
+    engine_configs_path = Path(addon_path.parent / 'configs' / 'anim_events.json')
+
+    return engine_configs_path
+
+
+def select_and_make_active(context, obj):
     # Deselects everything then selects obj and make it active
     bpy.ops.object.select_all(action='DESELECT')
-    bpy.data.objects[obj].select = True
+    bpy.data.objects[obj.name].select = True
     context.view_layer.objects.active = obj
 
     return
+
+
+def get_addon_prefs():
+    # Prefs for the BitTools addon instead of the BitTools.exporter module
+    return bpy.context.preferences.addons[__package__.split('.')[0]].preferences

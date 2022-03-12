@@ -30,7 +30,7 @@ def import_or_reload_modules(module_names, package_name):
 from . import addon_prefs
 from . import menu_side
 from . import hotkey_manager
-# from . import bitcake_exporter
+from . import bitcake_exporter
 from . import collider_tools
 from . import scene_setup
 from . import rigging_tools
@@ -46,7 +46,7 @@ def register():
     addon_prefs.register()
     menu_side.register()
     hotkey_manager.register()
-    # bitcake_exporter.register()
+    bitcake_exporter.register()
     collider_tools.register()
     scene_setup.register()
     rigging_tools.register()
@@ -59,7 +59,7 @@ def unregister():
     addon_prefs.unregister()
     menu_side.unregister()
     hotkey_manager.unregister()
-    # bitcake_exporter.unregister()
+    bitcake_exporter.unregister()
     collider_tools.unregister()
     scene_setup.unregister()
     rigging_tools.unregister()

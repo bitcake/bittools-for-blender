@@ -5,7 +5,7 @@ import addon_utils
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_current_engine, select_and_make_active
+from ..helpers import get_current_engine, select_and_make_active, get_registered_projects_path, get_engine_configs_path, get_markers_configs_file_path, get_addon_prefs
 
 class BITCAKE_OT_universal_exporter(Operator):
     bl_idname = "bitcake.universal_exporter"
@@ -13,6 +13,7 @@ class BITCAKE_OT_universal_exporter(Operator):
     bl_description = "Quick Export directly to the correct engine folder."
     bl_options = {'INTERNAL', 'UNDO'}
 
+    is_batch: BoolProperty(name='Batch Export', default=False)
     use_custom_dir: BoolProperty(name='Send to Engine', default=False)
     directory: StringProperty(subtype='DIR_PATH')
 
@@ -44,21 +45,22 @@ class BITCAKE_OT_universal_exporter(Operator):
             self.report({'ERROR'}, 'Please Save the file once before running the export.')
             return {'CANCELLED'}
 
-        # Save file before messing around!
-        original_path = Path(bpy.data.filepath)
-        bpy.ops.wm.save_mainfile(filepath=str(original_path))
-        # Get current filename, append _bkp and save as new file
-        filename = original_path.stem + '_backup'
-        new_path = original_path.with_stem(filename)
-        bpy.ops.wm.save_mainfile(filepath=str(new_path))
 
+        original_path = Path(bpy.data.filepath)
+        # Get current filename, append _backup and save as new file
+        backup_filename = original_path.stem + '_backup'
+        new_path = original_path.with_stem(backup_filename)
+        # Create a backup and then Save file before messing around!
+        bpy.ops.wm.save_mainfile(filepath=str(new_path))
+        bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
         # Perform Animation Cleanup
         actions_cleanup(context)
 
-
+        # Init empty dict in case we'll need to revert Origin Transforms
+        obj_location_dict = {}
         for obj in objects_list:
-            select_and_make_active(obj, context)
+            select_and_make_active(context, obj)
 
             # Rename current object according to rules
             rename_with_prefix(obj)
@@ -67,27 +69,57 @@ class BITCAKE_OT_universal_exporter(Operator):
             markers_json = construct_animation_events_json(self, context, obj)
 
             if panel_prefs.origin_transform:
+                obj_location_dict[obj] = obj.location.copy()
                 obj.location = 0, 0, 0
+
 
             if panel_prefs.apply_transform:
                 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 
+        # Only Select objects inside the list before exporting
+        toggle_all_colliders_visibility(True)
+
+        if self.use_custom_dir and not self.is_batch:
+            select_objects_in_list(objects_list)
+            filename = Path(bpy.data.filepath).stem + '.fbx'
+            constructed_path = Path(self.directory + filename)
+            # If folder doesn't exist, create it
+            constructed_path.parent.mkdir(parents=True, exist_ok=True)
+            create_animation_markers_json_file(constructed_path, markers_json)
+            exporter(constructed_path, panel_prefs)
+
+        elif self.use_custom_dir and self.is_batch:
+            for obj in objects_list:
+                select_and_make_active(context, obj)
+                collection_hierarchy = get_collection_hierarchy_list_as_path(context, obj)
+                constructed_path = Path(self.directory).joinpath(*collection_hierarchy)
+                # If folder doesn't exist, create it
+                constructed_path.parent.mkdir(parents=True, exist_ok=True)
+                create_animation_markers_json_file(constructed_path, markers_json)
+                exporter(constructed_path, panel_prefs)
+
+        elif self.is_batch:
+            pass
+        else:
+            pass
+
+        if panel_prefs.origin_transform:
+            for obj in obj_location_dict:
+                print(f'AQUI É {obj} CUJO VETOR DE LOCATION É {obj_location_dict[obj]}')
+                obj.location = obj_location_dict[obj]
+
+
+        # Re-hide all colliders for good measure
+        toggle_all_colliders_visibility(False)
 
         return {'FINISHED'}
-
         # # Checks and constructs the path for the exported file
         # if self.use_custom_dir:
-        #     filename = Path(bpy.data.filepath).stem + '.fbx'
-        #     constructed_path = Path(self.directory + filename)
         # else:
-        #     constructed_path = construct_file_path(self, context)
-
-        # # If folder doesn't exist, create it
-        # constructed_path.parent.mkdir(parents=True, exist_ok=True)
+        #     constructed_path = construct_export_directory(self, context)
 
 
-        # # Only Select objects inside the list before exporting
-        # select_objects_in_list(objects_list)
+
 
         # # Builds the parameters and exports scene
         # exporter(constructed_path, panel_prefs)
@@ -99,10 +131,7 @@ class BITCAKE_OT_universal_exporter(Operator):
         # # Deselect everything because Blender 3.0 now saves selection
         # bpy.ops.object.select_all(action='DESELECT')
 
-        # # Re-hide all colliders for good measure
-        # toggle_all_colliders_visibility(False)
 
-        # return {'FINISHED'}
 
 
 def make_objects_list(context, panel_prefs):
@@ -196,9 +225,6 @@ def get_collider_prefixes():
 
     return collider_prefixes
 
-def get_addon_prefs():
-    # Prefs for the BitTools addon instead of the BitTools.exporter module
-    return bpy.context.preferences.addons[__package__.split('.')[0]].preferences
 
 def get_all_colliders():
     collider_prefixes = get_collider_prefixes()
@@ -215,7 +241,7 @@ def get_all_colliders():
 
 
 # TODO: CHANGE THIS ACCORDING TO TALK WITH DANI
-def construct_file_path(self, context):
+def construct_export_directory(self, context, custom_directory, using_custom=False, ):
     blend_path = Path(bpy.path.abspath('//'))
     wip = False
     pathway = []
@@ -339,15 +365,98 @@ def construct_animation_events_json(self, context, obj):
 
         return markers_json
 
-def get_markers_configs_file_path():
-    # Gets Addon Path (__init__.py)
-    for mod in addon_utils.modules():
-        if mod.bl_info['name'] == __package__:
-            addon_path = Path(mod.__file__)
+def create_animation_markers_json_file(path, markers_json):
+    path = path.with_stem(path.stem + '_events')
+    path = path.with_suffix('.json')
 
-    engine_configs_path = Path(addon_path.parent / 'anim_events.json')
+    with open(path, 'w') as json_file:
+        json.dump(markers_json, json_file, indent=4)
 
-    return engine_configs_path
+    return
+
+def select_objects_in_list(objects_list):
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.context.view_layer.objects.active = None
+
+    for obj in objects_list:
+        obj.select_set(True)
+
+    return
+
+def get_object_collection_hierarchy(context, parent_collection, collection_list=[]):
+
+    if parent_collection == context.scene.collection:
+        return None
+
+    parent = find_parent_collection(context, parent_collection)
+    get_object_collection_hierarchy(context, parent, collection_list)
+    collection_list.append(parent_collection)
+
+    return collection_list
+
+
+def find_parent_collection(context, collection):
+    data = bpy.data
+
+    # First get a list of ALL collections in the scene
+    collections = [c for c in data.collections if context.scene.user_of_id(c)]
+    # Then append the master collection because we need to stop this at some point.
+    collections.append(context.scene.collection)
+
+    coll = collection
+    collection = [c for c in collections if c.user_of_id(coll)]
+
+    return collection[0]
+
+def get_collection_hierarchy_list_as_path(context, obj):
+    parent_collection = obj.users_collection[0]
+    # Initializing an empty list otherwise it wouldn't reset properly
+    collection_hierarchy = []
+    collection_hierarchy = get_object_collection_hierarchy(context, parent_collection, collection_hierarchy)
+    collection_hierarchy = [c.name for c in collection_hierarchy]
+    collection_hierarchy.append(obj.name + '.fbx')
+
+    return collection_hierarchy
+
+def exporter(path, panel_preferences):
+    configs = get_engine_configs()
+
+    export_nla = panel_preferences.export_nla_strips
+
+    # Export file
+    bpy.ops.export_scene.fbx(
+        filepath=str(path),
+        apply_scale_options=configs['apply_scale'],
+        use_space_transform=configs['space_transform'],
+        bake_space_transform=False,
+        use_armature_deform_only=True,
+        use_custom_props=True,
+        add_leaf_bones=configs['add_leaf_bones'],
+        primary_bone_axis=configs['primary_bone'],
+        secondary_bone_axis=configs['secondary_bone'],
+        bake_anim_use_nla_strips=export_nla,
+        bake_anim_step=configs['anim_sampling'],
+        bake_anim_simplify_factor=configs['anim_simplify'],
+        use_selection=True,
+        use_active_collection=False,
+        axis_forward=configs['forward_axis'],
+        axis_up=configs['up_axis'],
+    )
+
+    return
+
+def get_engine_configs():
+    registered_projects_file = get_registered_projects_path()
+    projects = json.load(registered_projects_file.open())
+    engine_configs_file = get_engine_configs_path()
+    configs = json.load(engine_configs_file.open())
+
+    addon_prefs = get_addon_prefs()
+    current_project = projects[addon_prefs.registered_projects]
+    current_config = configs[current_project['engine']]
+
+    return current_config
+
 
 def draw_panel(self, context):
     pcoll = preview_collections["main"]
@@ -357,8 +466,9 @@ def draw_panel(self, context):
 
     layout = self.layout
     row = layout.row()
-    row.operator('bitcake.universal_exporter', text=f'Send to {current_engine} Project', icon_value=engine_logo.icon_id)
-
+    op = row.operator('bitcake.universal_exporter', text=f'Send to {current_engine} Project', icon_value=engine_logo.icon_id)
+    op.use_custom_dir = True
+    op.is_batch = True
 
 classes = (BITCAKE_OT_universal_exporter,)
 
