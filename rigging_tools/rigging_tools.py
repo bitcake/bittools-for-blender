@@ -9,6 +9,8 @@ class BITCAKE_OT_shape_keys_to_custom_props(Operator):
 
     @classmethod
     def poll(cls, context):
+        if context.object is None:
+            return False
         return context.mode == 'OBJECT' and context.object.type == 'MESH' and context.object.data.shape_keys is not None
 
     def execute(self, context):

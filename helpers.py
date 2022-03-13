@@ -141,6 +141,37 @@ def select_and_make_active(context, obj):
 
     return
 
+def get_collider_prefixes():
+    addon_prefs = get_addon_prefs()
+    collider_prefixes = [addon_prefs.box_collider_prefix,
+                         addon_prefs.capsule_collider_prefix,
+                         addon_prefs.sphere_collider_prefix,
+                         addon_prefs.convex_collider_prefix,
+                         addon_prefs.mesh_collider_prefix]
+
+    return collider_prefixes
+
+def get_all_child_of_child(obj):
+    children = list(obj.children)
+    all_children = []
+
+    while len(children):
+        child = children.pop()
+        all_children.append(child)
+        children.extend(child.children)
+
+    return all_children
+
+def select_object_hierarchy(obj):
+    children = get_all_child_of_child(obj)
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+
+    for child in children:
+        child.select_set(True)
+
+    return
 
 def get_addon_prefs():
     # Prefs for the BitTools addon instead of the BitTools.exporter module

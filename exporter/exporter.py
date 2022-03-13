@@ -4,7 +4,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_current_engine, select_and_make_active, get_registered_projects_path, get_engine_configs_path, get_markers_configs_file_path, get_addon_prefs, get_current_project_assets_path, get_current_project_structure_json
+from ..helpers import get_current_engine, select_and_make_active, get_registered_projects_path, get_engine_configs_path, get_markers_configs_file_path, get_addon_prefs, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 class BITCAKE_OT_universal_exporter(Operator):
@@ -44,13 +44,21 @@ class BITCAKE_OT_universal_exporter(Operator):
             self.report({'ERROR'}, 'Please Save the file once before running the export.')
             return {'CANCELLED'}
 
+        # Setup Export Directory, if any error occur during path setup, stop!
+        if self.use_custom_dir:
+            export_directory = Path(self.directory)
+        else:
+            export_directory = construct_export_directory(self)
+            if export_directory == {'CANCELLED'}:
+                return export_directory
 
         original_path = Path(bpy.data.filepath)
         # Get current filename, append _backup and save as new file
         backup_filename = original_path.stem + '_backup'
-        new_path = original_path.with_stem(backup_filename)
+        backup_path = original_path.with_stem(backup_filename)
         # Create a backup and then Save file before messing around!
-        bpy.ops.wm.save_mainfile(filepath=str(new_path))
+        bpy.ops.wm.save_mainfile(filepath=str(backup_path))
+        bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
         # Perform Animation Cleanup
         actions_cleanup(context)
@@ -76,12 +84,6 @@ class BITCAKE_OT_universal_exporter(Operator):
 
         # Only Select objects inside the list before exporting
         toggle_all_colliders_visibility(True)
-
-        # Setup Export Directory
-        if self.use_custom_dir:
-            export_directory = Path(self.directory)
-        else:
-            export_directory = construct_export_directory(self)
 
         # Process all types of paths then export accordingly
         if self.use_custom_dir and not self.is_batch:
@@ -176,26 +178,7 @@ def filter_object_list(object_list):
 
     return object_list
 
-def get_all_child_of_child(obj):
-    children = list(obj.children)
-    all_children = []
 
-    while len(children):
-        child = children.pop()
-        all_children.append(child)
-        children.extend(child.children)
-
-    return all_children
-
-def get_collider_prefixes():
-    addon_prefs = get_addon_prefs()
-    collider_prefixes = [addon_prefs.box_collider_prefix,
-                         addon_prefs.capsule_collider_prefix,
-                         addon_prefs.sphere_collider_prefix,
-                         addon_prefs.convex_collider_prefix,
-                         addon_prefs.mesh_collider_prefix]
-
-    return collider_prefixes
 
 def construct_export_directory(self):
     blend_path = Path(bpy.path.abspath('//'))
@@ -434,9 +417,13 @@ def process_objs_paths_and_export(objects_list, export_directory, markers_json, 
 
 def batch_process_objs_paths_and_export(context, objects_list, export_directory, markers_json, panel_prefs):
     """Process each object in the list, constructs each path, creates Animation Markers Json and Exports Files"""
-
+    print(f'ESSA É A LISTA DE OBJETOS A EXPORTAR: {objects_list}')
     for obj in objects_list:
-        select_and_make_active(context, obj)
+        if obj.parent is not None:
+            continue
+
+        # Selects the object and all its hierachy
+        select_object_hierarchy(obj)
         # Gets object Collection Hierarchy as a path in string list format
         collection_hierarchy = get_collection_hierarchy_list_as_path(context, obj)
         # Constructs the export Path with filename as objname.fbx
