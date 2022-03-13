@@ -417,7 +417,6 @@ def process_objs_paths_and_export(objects_list, export_directory, markers_json, 
 
 def batch_process_objs_paths_and_export(context, objects_list, export_directory, markers_json, panel_prefs):
     """Process each object in the list, constructs each path, creates Animation Markers Json and Exports Files"""
-    print(f'ESSA É A LISTA DE OBJETOS A EXPORTAR: {objects_list}')
     for obj in objects_list:
         if obj.parent is not None:
             continue
