@@ -135,14 +135,15 @@ def toggle_all_colliders_visibility(force_on_off=None):
 
 
 def get_all_colliders():
-    collider_prefixes = get_collider_prefixes()
-
+    collider_prefixes = get_collider_prefixes().values()
     all_objects = bpy.context.scene.objects
 
     all_colliders_list = []
     for obj in all_objects:
         split = obj.name.split('_')
-        if collider_prefixes.__contains__(split[0]):
+
+        # Checks if Prefix exists in Collider Prefixes, if so add object to collider list
+        if split[0] in collider_prefixes:
             all_colliders_list.append(obj)
 
     return all_colliders_list
@@ -537,7 +538,7 @@ def get_collider_prefixes():
     """Returns a dictionary containing all prefixes, access them with the strings:
     'box', 'capsule', 'sphere', 'convex', 'mesh' WARNING: Does not contain separator"""
 
-    addon_prefs = bpy.context.preferences.addons[__package__].preferences
+    addon_prefs = get_addon_prefs()
     collider_prefixes = {'box': addon_prefs.box_collider_prefix,
                          'capsule': addon_prefs.capsule_collider_prefix,
                          'sphere': addon_prefs.sphere_collider_prefix,

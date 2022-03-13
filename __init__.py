@@ -35,6 +35,7 @@ module_names = [
     'exporter',
     'collider_tools',
     'rigging_tools',
+    'dev_tools',
 ]
 
 modules = import_or_reload_modules(module_names, __name__)

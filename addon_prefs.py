@@ -33,6 +33,11 @@ class BitCakeToolsPreferences(AddonPreferences):
         default=True,
     )
 
+    toggle_dev_tools: BoolProperty(
+        name="Development Tools",
+        default=True,
+    )
+
     registered_projects: EnumProperty(items=update_registered_projects,
                                       name='',
                                       description='Register projects here before starting. Current Active project',
@@ -72,6 +77,7 @@ class BitCakeToolsPreferences(AddonPreferences):
         column.label(text="Menu Configs")
         column.prop(self, "toggle_collider_tools")
         column.prop(self, "toggle_rigging_tools")
+        column.prop(self, "toggle_dev_tools")
 
 
         box = layout.box().column_flow(columns=2)

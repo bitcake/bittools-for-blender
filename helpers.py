@@ -76,6 +76,8 @@ def get_current_engine():
     return exporter_configs.engine_configs_list
 
 def get_current_project_assets_path():
+    """Returns a String Path for the current project Asset folder"""
+
     addon_prefs = get_addon_prefs()
     active_project = addon_prefs.registered_projects
 
@@ -87,6 +89,18 @@ def get_current_project_assets_path():
     projects_json = json.load(projects_file_path.open())
 
     return projects_json[active_project]['assets']
+
+def get_current_project_structure_json():
+    """Returns the project_structure.json file created by BitPipe as a json Object. Returns None if file not found."""
+    asset_path = Path(get_current_project_assets_path())
+    json_path = asset_path.joinpath('project_structure.json')
+
+    try:
+        json_file = json.load(json_path.open())
+    except FileNotFoundError:
+        return None
+
+    return json_file
 
 def get_registered_projects_path():
     addon_path = None

@@ -4,7 +4,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_current_engine, select_and_make_active, get_registered_projects_path, get_engine_configs_path, get_markers_configs_file_path, get_addon_prefs, get_current_project_assets_path
+from ..helpers import get_current_engine, select_and_make_active, get_registered_projects_path, get_engine_configs_path, get_markers_configs_file_path, get_addon_prefs, get_current_project_assets_path, get_current_project_structure_json
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 class BITCAKE_OT_universal_exporter(Operator):
@@ -202,6 +202,18 @@ def construct_export_directory(self):
     wip = False
     pathway = []
 
+    # Get the current project's project_structure.json object to get its folder structure
+    structure_json = get_current_project_structure_json()
+    if not structure_json:
+        self.report({"ERROR"},
+                    "No project_structure.json found! Please use BitPipe to create one for your project!")
+        return {'CANCELLED'}
+
+    # First, add the parent folder where all assets in the project reside
+    pathway.append(structure_json['folderName'])
+
+    # Search the .blend Path for BitCake's folder structure
+    # Change _WIP folder to Art then construct the rest of the path
     for part in blend_path.parts:
         if wip is True:
             split_part = part.split('_')
@@ -216,8 +228,9 @@ def construct_export_directory(self):
                     "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment")
         return {'CANCELLED'}
 
+    # Construct final directory and return it
     current_project_path = Path(get_current_project_assets_path())
-    constructed_directory = current_project_path.joinpath(*pathway)
+    constructed_directory = current_project_path.joinpath(*pathway) # Unpacks the list as arguments
 
     return constructed_directory
 
@@ -411,7 +424,7 @@ def process_objs_paths_and_export(objects_list, export_directory, markers_json, 
     # Create the filename based on this .blend name
     filename = Path(bpy.data.filepath).stem + '.fbx'
     # Constructs final path
-    constructed_path = Path(export_directory + filename)
+    constructed_path = export_directory.joinpath(filename)
     # If folder doesn't exist, create it
     constructed_path.parent.mkdir(parents=True, exist_ok=True)
     # Pass the Json Dict and dump it to create the actual file in the directory
