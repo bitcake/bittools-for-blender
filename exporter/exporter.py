@@ -5,6 +5,7 @@ from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
 from ..helpers import get_current_engine, select_and_make_active, get_registered_projects_path, get_engine_configs_path, get_markers_configs_file_path, get_addon_prefs, get_current_project_assets_path
+from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 class BITCAKE_OT_universal_exporter(Operator):
     bl_idname = "bitcake.universal_exporter"
@@ -162,18 +163,6 @@ def change_active_collection(context=bpy.context):
 
     return
 
-def toggle_all_colliders_visibility(force_on_off=None):
-    all_colliders = get_all_colliders()
-
-    is_hidden = force_on_off
-
-    for col in all_colliders:
-        if force_on_off is None:
-            is_hidden = col.hide_viewport
-        col.hide_set(not is_hidden)
-        col.hide_viewport = not is_hidden
-
-    return
 
 def filter_object_list(object_list):
     '''Removes all objects that are inside an Ignored Collection or are Linked inside one'''
@@ -207,21 +196,6 @@ def get_collider_prefixes():
                          addon_prefs.mesh_collider_prefix]
 
     return collider_prefixes
-
-
-def get_all_colliders():
-    collider_prefixes = get_collider_prefixes()
-
-    all_objects = bpy.context.scene.objects
-
-    all_colliders_list = []
-    for obj in all_objects:
-        split = obj.name.split('_')
-        if collider_prefixes.__contains__(split[0]):
-            all_colliders_list.append(obj)
-
-    return all_colliders_list
-
 
 def construct_export_directory(self):
     blend_path = Path(bpy.path.abspath('//'))

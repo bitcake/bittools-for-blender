@@ -17,8 +17,6 @@ def draw_panel(self, context):
     row.prop(exporter_configs, 'export_selected', toggle=1, icon='RESTRICT_SELECT_OFF')
     row.prop(exporter_configs, 'export_collection', toggle=1, icon='OUTLINER_COLLECTION')
 
-    row = layout.row()
-    row.operator('bitcake.toggle_all_colliders_visibility', text='Toggle Colliders Visibility', icon='HIDE_OFF')
 
     return
 

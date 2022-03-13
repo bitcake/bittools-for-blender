@@ -1,10 +1,7 @@
 import json
-import addon_utils
-from pathlib   import Path
 from bpy.types import AddonPreferences
 from bpy.props import BoolProperty, IntProperty, StringProperty, EnumProperty
 from .helpers import get_registered_projects_path
-
 from . import scene_setup
 
 
@@ -26,9 +23,14 @@ def update_registered_projects(self, context):
 class BitCakeToolsPreferences(AddonPreferences):
     bl_idname = __package__
 
-    isDefaultKeymaps: BoolProperty(
-        name="Using Blender Default Keymaps",
-        default=False,
+    toggle_collider_tools: BoolProperty(
+        name="Collider Tools",
+        default=True,
+    )
+
+    toggle_rigging_tools: BoolProperty(
+        name="Rigging Tools",
+        default=True,
     )
 
     registered_projects: EnumProperty(items=update_registered_projects,
@@ -64,6 +66,13 @@ class BitCakeToolsPreferences(AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
+
+        box = layout.box().column_flow(columns=1)
+        column = box.column()
+        column.label(text="Menu Configs")
+        column.prop(self, "toggle_collider_tools")
+        column.prop(self, "toggle_rigging_tools")
+
 
         box = layout.box().column_flow(columns=2)
         column = box.column()

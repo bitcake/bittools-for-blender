@@ -70,6 +70,16 @@ class BITCAKE_OT_set_deform_bones(Operator):
         return {'FINISHED'}
 
 
+def draw_panel(self, context):
+    layout = self.layout
+    row = layout.row()
+    row.operator('bitcake.set_deform_bones', text='Set Deform Bones', icon='BONE_DATA')
+    row = layout.row()
+    row.operator('bitcake.shape_keys_to_custom_props', text='Shape Keys to Props', icon='CON_ACTION')
+
+    return
+
+
 classes = (BITCAKE_OT_shape_keys_to_custom_props,
            BITCAKE_OT_set_deform_bones,)
 

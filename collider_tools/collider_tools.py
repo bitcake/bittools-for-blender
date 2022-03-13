@@ -1,9 +1,23 @@
 import logging
 import bpy
-from bpy.types import Operator
-from mathutils import Vector
 import mathutils
+from mathutils import Vector
+from bpy.types import Operator
+from ..helpers import get_addon_prefs, get_current_engine
 
+class BITCAKE_OT_toggle_all_colliders_visibility(Operator):
+    bl_idname = "bitcake.toggle_all_colliders_visibility"
+    bl_label = "Toggles Colliders Visibility"
+    bl_description = "Colliders must be prefixed by UBX_, UCX_, USP_, UCP_ or UMX_"
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT'
+
+    def execute(self, context):
+        toggle_all_colliders_visibility()
+
+        return {'FINISHED'}
 
 class BITCAKE_OT_add_box_collider(Operator):
     bl_idname = "bitcake.add_box_collider"
@@ -104,6 +118,34 @@ class BITCAKE_OT_add_mesh_collider(Operator):
             create_mesh_collider_from_selected_objects(self, context)
 
         return {'FINISHED'}
+
+
+def toggle_all_colliders_visibility(force_on_off=None):
+    all_colliders = get_all_colliders()
+
+    is_hidden = force_on_off
+
+    for col in all_colliders:
+        if force_on_off is None:
+            is_hidden = col.hide_viewport
+        col.hide_set(not is_hidden)
+        col.hide_viewport = not is_hidden
+
+    return
+
+
+def get_all_colliders():
+    collider_prefixes = get_collider_prefixes()
+
+    all_objects = bpy.context.scene.objects
+
+    all_colliders_list = []
+    for obj in all_objects:
+        split = obj.name.split('_')
+        if collider_prefixes.__contains__(split[0]):
+            all_colliders_list.append(obj)
+
+    return all_colliders_list
 
 
 def found_issues_during_checking(self, context):
@@ -519,7 +561,38 @@ def find_center_from_vertices(vertices, obj):
     return global_bbox_center
 
 
-classes = (BITCAKE_OT_add_box_collider,
+def draw_panel(self, context):
+    addon_prefs = get_addon_prefs()
+    pcol = [addon_prefs.box_collider_prefix,
+            addon_prefs.capsule_collider_prefix,
+            addon_prefs.sphere_collider_prefix,
+            addon_prefs.convex_collider_prefix,
+            addon_prefs.mesh_collider_prefix]
+    layout = self.layout
+
+    current_engine = get_current_engine()
+
+
+    row = layout.row()
+    row.operator('bitcake.toggle_all_colliders_visibility', text='Toggle Colliders Visibility', icon='HIDE_OFF')
+
+    layout.separator()
+    row = layout.row()
+    row.operator('bitcake.add_box_collider', text=f'Add Box Collider ({pcol[0]})', icon='CUBE')
+    row = layout.row()
+    row.operator('bitcake.add_sphere_collider', text=f'Add Sphere Collider ({pcol[2]})', icon='SPHERE')
+    row = layout.row()
+    row.operator('bitcake.add_convex_collider', text=f'Add Convex Collider ({pcol[3]})', icon='MESH_ICOSPHERE')
+
+    if current_engine == 'Unity':
+        row = layout.row()
+        row.operator('bitcake.add_mesh_collider', text=f'Add Mesh Collider ({pcol[4]})', icon='MESH_MONKEY')
+
+    return
+
+
+classes = (BITCAKE_OT_toggle_all_colliders_visibility,
+           BITCAKE_OT_add_box_collider,
            BITCAKE_OT_add_sphere_collider,
            BITCAKE_OT_add_convex_collider,
            BITCAKE_OT_add_mesh_collider)
