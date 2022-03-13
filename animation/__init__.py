@@ -1,5 +1,6 @@
 import bpy
 from bpy.types import Panel
+from ..helpers import get_addon_prefs
 
 modules = [
     'actions_manager',
@@ -17,6 +18,11 @@ class BITCAKE_PT_animtools(Panel):
     bl_category = "Item"
 
     draw_funcs = []
+
+    @classmethod
+    def poll(cls, context):
+        addon_prefs = get_addon_prefs()
+        return addon_prefs.toggle_animation_tools
 
     def draw(self, context):
         for draw_func in __class__.draw_funcs:

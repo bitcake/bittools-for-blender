@@ -290,7 +290,6 @@ def create_mesh_collider_from_selected_objects(self, context):
 
 def create_mesh_collider_from_selected_vertices(self, context):
     verts = get_vertices_from_selection()
-    print(verts)
     if not verts:
         return
 

@@ -23,6 +23,11 @@ def update_registered_projects(self, context):
 class BitCakeToolsPreferences(AddonPreferences):
     bl_idname = __package__
 
+    toggle_animation_tools: BoolProperty(
+        name="Animation Tools",
+        default=True,
+    )
+
     toggle_collider_tools: BoolProperty(
         name="Collider Tools",
         default=True,
@@ -75,6 +80,7 @@ class BitCakeToolsPreferences(AddonPreferences):
         box = layout.box().column_flow(columns=1)
         column = box.column()
         column.label(text="Menu Configs")
+        column.prop(self, "toggle_animation_tools")
         column.prop(self, "toggle_collider_tools")
         column.prop(self, "toggle_rigging_tools")
         column.prop(self, "toggle_dev_tools")
