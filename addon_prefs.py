@@ -11,10 +11,6 @@ from . import scene_setup
 def update_registered_projects(self, context):
     projects_list = []
 
-    for mod in addon_utils.modules():
-        if mod.bl_info['name'] == __package__:
-            addon_path = Path(mod.__file__)
-
     projects_file_path = get_registered_projects_path()
 
     if projects_file_path.is_file():

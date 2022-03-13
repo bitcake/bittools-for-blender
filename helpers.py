@@ -71,15 +71,9 @@ def clear_pose(obj, clear_armature_properties=True, clear_bone_properties=True):
         pose_bone.scale = Vector((1.0, 1.0, 1.0))
 
 def get_current_engine():
-    registered_projects_path = get_registered_projects_path()
-    addon_prefs = get_addon_prefs()
+    exporter_configs = bpy.context.scene.exporter_configs
 
-    current_engine = None
-    if registered_projects_path.is_file():
-        projects_json = json.load(registered_projects_path.open())
-        current_engine = projects_json[addon_prefs.registered_projects]['engine']
-
-    return current_engine
+    return exporter_configs.engine_configs_list
 
 def get_current_project_assets_path():
     addon_prefs = get_addon_prefs()
