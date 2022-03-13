@@ -179,7 +179,6 @@ def filter_object_list(object_list):
     return object_list
 
 
-
 def construct_export_directory(self):
     blend_path = Path(bpy.path.abspath('//'))
     wip = False
@@ -278,45 +277,45 @@ def actions_cleanup(context):
             action.use_fake_user = True
 
 def construct_animation_events_json(self, context, obj):
-        if obj.type != 'ARMATURE':
-            return
+    if obj.type != 'ARMATURE':
+        return
 
-        # Verify if file has markers, if not, don't build .json
-        has_markers = False
-        for action in bpy.data.actions:
-            for marker in action.pose_markers:
-                has_markers = True
-
-        for mrks in context.scene.timeline_markers:
+    # Verify if file has markers, if not, don't build .json
+    has_markers = False
+    for action in bpy.data.actions:
+        for marker in action.pose_markers:
             has_markers = True
 
-        if not has_markers:
-            return
+    for mrks in context.scene.timeline_markers:
+        has_markers = True
 
-        markers_json = Path(get_markers_configs_file_path())
-        markers_json = json.load(markers_json.open())
+    if not has_markers:
+        return
 
-        fps = context.scene.render.fps
-        markers_json['FPS'] = fps
-        if fps % 30 != 0:
-            self.report({"ERROR"}, "Scene is not currently at 30 or 60FPS! Please FIX!")
+    markers_json = Path(get_markers_configs_file_path())
+    markers_json = json.load(markers_json.open())
 
-        markers_json['Character'] = obj.name
+    fps = context.scene.render.fps
+    markers_json['FPS'] = fps
+    if fps % 30 != 0:
+        self.report({"ERROR"}, "Scene is not currently at 30 or 60FPS! Please FIX!")
 
-        markers_json['TimelineMarkers'] = []
-        for mrks in context.scene.timeline_markers:
-            dictionary = {"Name": mrks.name, "Frame": mrks.frame}
-            markers_json['TimelineMarkers'].append(dictionary)
+    markers_json['Character'] = obj.name
 
-        markers_json['ActionsMarkers'] = []
-        for action in bpy.data.actions:
-            action_marker = {"Name": action.name, "Markers": []}
-            for marker in action.pose_markers:
-                marker_dict = {"Name": marker.name, "Frame": marker.frame}
-                action_marker['Markers'].append(marker_dict)
-            markers_json['ActionsMarkers'].append(action_marker)
+    markers_json['TimelineMarkers'] = []
+    for mrks in context.scene.timeline_markers:
+        dictionary = {"Name": mrks.name, "Frame": mrks.frame}
+        markers_json['TimelineMarkers'].append(dictionary)
 
-        return markers_json
+    markers_json['ActionsMarkers'] = []
+    for action in bpy.data.actions:
+        action_marker = {"Name": action.name, "Markers": []}
+        for marker in action.pose_markers:
+            marker_dict = {"Name": marker.name, "Frame": marker.frame}
+            action_marker['Markers'].append(marker_dict)
+        markers_json['ActionsMarkers'].append(action_marker)
+
+    return markers_json
 
 def create_animation_markers_json_file(path, markers_json):
     if markers_json is None:
@@ -414,6 +413,8 @@ def process_objs_paths_and_export(objects_list, export_directory, markers_json, 
     create_animation_markers_json_file(constructed_path, markers_json)
     # Finally, export the file
     exporter(constructed_path, panel_prefs)
+
+    return
 
 def batch_process_objs_paths_and_export(context, objects_list, export_directory, markers_json, panel_prefs):
     """Process each object in the list, constructs each path, creates Animation Markers Json and Exports Files"""
