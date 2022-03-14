@@ -136,7 +136,7 @@ def get_markers_configs_file_path():
 def select_and_make_active(context, obj):
     # Deselects everything then selects obj and make it active
     bpy.ops.object.select_all(action='DESELECT')
-    bpy.data.objects[obj.name].select = True
+    bpy.data.objects[obj.name].select_set(True)
     context.view_layer.objects.active = obj
 
     return
