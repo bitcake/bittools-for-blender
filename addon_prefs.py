@@ -1,3 +1,4 @@
+from email.policy import default
 import json
 from bpy.types import AddonPreferences
 from bpy.props import BoolProperty, IntProperty, StringProperty, EnumProperty

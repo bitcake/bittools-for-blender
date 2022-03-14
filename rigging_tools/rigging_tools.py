@@ -59,6 +59,8 @@ class BITCAKE_OT_set_deform_bones(Operator):
 
     @classmethod
     def poll(cls, context):
+        if context.object is None:
+            return False
         return context.mode == 'OBJECT' and context.object.type == 'ARMATURE'
 
     def execute(self, context):

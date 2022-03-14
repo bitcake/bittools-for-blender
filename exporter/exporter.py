@@ -66,6 +66,7 @@ class BITCAKE_OT_universal_exporter(Operator):
         # Init empty dict in case we'll need to revert Origin Transforms
         obj_location_dict = {}
         for obj in objects_list:
+            print(f'NOME DO OBJETO é {objects_list}')
             select_and_make_active(context, obj)
 
             # Rename current object according to rules
@@ -374,7 +375,7 @@ def get_collection_hierarchy_list_as_path(context, obj):
     return collection_hierarchy
 
 def exporter(path, panel_preferences):
-    configs = get_engine_configs()
+    configs = get_engine_configs(panel_preferences)
 
     export_nla = panel_preferences.export_nla_strips
 
@@ -438,15 +439,12 @@ def batch_process_objs_paths_and_export(context, objects_list, export_directory,
     return
 
 
-def get_engine_configs():
-    registered_projects_file = get_registered_projects_path()
-    projects = json.load(registered_projects_file.open())
+def get_engine_configs(panel_preferences):
     engine_configs_file = get_engine_configs_path()
     configs = json.load(engine_configs_file.open())
 
-    addon_prefs = get_addon_prefs()
-    current_project = projects[addon_prefs.registered_projects]
-    current_config = configs[current_project['engine']]
+    current_engine = panel_preferences.engine_configs_list
+    current_config = configs[current_engine]
 
     return current_config
 

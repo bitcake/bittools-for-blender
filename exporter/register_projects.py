@@ -131,7 +131,6 @@ def get_previous_project(current_project):
 
 def draw_panel(self, context):
     addon_prefs = get_addon_prefs()
-    current_engine = get_current_engine()
     exporter_configs = context.scene.exporter_configs
 
     layout = self.layout
@@ -141,7 +140,7 @@ def draw_panel(self, context):
     row.prop(addon_prefs, 'registered_projects')
     row.operator('bitcake.register_project', icon='ADD', text='')
 
-    if current_engine:
+    if addon_prefs.registered_projects:
         row.operator('bitcake.unregister_project', icon='REMOVE', text='')
 
     row = layout.row()
