@@ -2,8 +2,8 @@ import bpy
 import json
 import os
 from bpy.types import PropertyGroup, Scene
-from bpy.props import BoolProperty, EnumProperty
-from ..helpers import get_engine_configs_path, get_current_engine
+from bpy.props import BoolProperty, EnumProperty, StringProperty
+from ..helpers import get_engine_configs_path
 
 def list_registered_engine_configs(self, context):
     pcoll = preview_collections["main"]
@@ -26,12 +26,15 @@ class BITCAKE_PROPS_exporter_configs(PropertyGroup):
                                     name='',
                                     description='List all available engine export configurations.',
                                     )
+
     export_selected: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
     export_collection: BoolProperty(name="Collection", description="Exports entire collection", default=False)
     export_batch: BoolProperty(name="Batch", description="Exports objects in a separate file", default=False)
     origin_transform: BoolProperty(name="Origin", description="Place objects in origin before exporting", default=False)
     apply_transform: BoolProperty(name="Apply", description="Apply transforms before exporting", default=False)
     export_nla_strips: BoolProperty(name="Export NLA Strips", description="Separate NLA Strips into their own animations when exporting.\nYou'll usually want this turned OFF for Game Engine", default=False)
+
+    custom_directory: StringProperty(name='', description='Custom Directory to Export to', subtype='DIR_PATH')
 
 
 classes = (BITCAKE_PROPS_exporter_configs,)

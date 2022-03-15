@@ -140,7 +140,7 @@ def draw_panel(self, context):
     row.prop(addon_prefs, 'registered_projects')
     row.operator('bitcake.register_project', icon='ADD', text='')
 
-    if addon_prefs.registered_projects:
+    if not addon_prefs.registered_projects == 'NONE':
         row.operator('bitcake.unregister_project', icon='REMOVE', text='')
 
     row = layout.row()

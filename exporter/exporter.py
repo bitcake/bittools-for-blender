@@ -22,7 +22,8 @@ class BITCAKE_OT_universal_exporter(Operator):
         return context.mode == 'OBJECT'
 
     def invoke(self, context, event):
-        if self.use_custom_dir:
+        panel_prefs = context.scene.exporter_configs
+        if self.use_custom_dir and panel_prefs.custom_directory is '':
             context.window_manager.fileselect_add(self)
             return {'RUNNING_MODAL'}
 
@@ -33,6 +34,8 @@ class BITCAKE_OT_universal_exporter(Operator):
 
         # Get List of objects to export according to export type (Selected, Collection, All)
         objects_list = make_objects_list(context, panel_prefs)
+
+
 
         # Verify if there are actual objects to export...
         if len(objects_list) == 0:
@@ -45,8 +48,15 @@ class BITCAKE_OT_universal_exporter(Operator):
             return {'CANCELLED'}
 
         # Setup Export Directory, if any error occur during path setup, stop!
+        if panel_prefs.custom_directory is '':
+             panel_prefs.custom_directory = self.directory
         if self.use_custom_dir:
-            export_directory = Path(self.directory)
+            custom_directory = panel_prefs.custom_directory
+            if os.path.isdir(custom_directory):
+                export_directory = Path(custom_directory)
+            else:
+                self.report({'ERROR'}, 'Chosen Directory does not exist or is invalid!')
+                return {'CANCELLED'}
         else:
             export_directory = construct_export_directory(self)
             if export_directory == {'CANCELLED'}:
@@ -66,7 +76,6 @@ class BITCAKE_OT_universal_exporter(Operator):
         # Init empty dict in case we'll need to revert Origin Transforms
         obj_location_dict = {}
         for obj in objects_list:
-            print(f'NOME DO OBJETO é {objects_list}')
             select_and_make_active(context, obj)
 
             # Rename current object according to rules
@@ -469,6 +478,11 @@ def draw_panel(self, context):
     row = layout.row()
     op = row.operator('bitcake.universal_exporter', text=f'{batch}Send to {current_engine} Project', icon_value=engine_logo.icon_id)
     op.is_batch = configs.export_batch
+
+    row = layout.row()
+    row.separator()
+    row = layout.row()
+    row.prop(configs, 'custom_directory')
 
     row = layout.row()
     op = row.operator('bitcake.universal_exporter', text=f'{batch}Send to Custom Directory', icon='EXPORT')

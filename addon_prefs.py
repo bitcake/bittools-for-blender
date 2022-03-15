@@ -11,12 +11,16 @@ def update_registered_projects(self, context):
 
     projects_file_path = get_registered_projects_path()
 
+
+
     if projects_file_path.is_file():
         with open(str(projects_file_path), 'r') as projects:
             projects_json = json.load(projects)
 
             for i, project in enumerate(projects_json):
                 projects_list.append((project, project, '', i))
+    else:
+        projects_list = [("NONE", "No Projects Registered", "", 0),]
 
     return projects_list
 
