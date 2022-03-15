@@ -463,13 +463,17 @@ def batch_process_objs_paths_and_export(self, context, objects_list, export_dire
 
         # Selects the object and all its hierachy
         select_object_hierarchy(obj)
-        # Gets object Collection Hierarchy as a path in string list format
-        collection_hierarchy = get_collection_hierarchy_list_as_path(context, obj)
-        collection_hierarchy_with_obj = collection_hierarchy.copy()
-        collection_hierarchy_with_obj.append(obj.name + '.fbx')
-        # Constructs the export Path with filename as objname.fbx
-        constructed_path = export_directory.joinpath(*collection_hierarchy_with_obj)
-        # If folder doesn't exist, create it
+
+        if panel_prefs.collection_to_folder:
+            # Gets object Collection Hierarchy as a path in string list format
+            collection_hierarchy = get_collection_hierarchy_list_as_path(context, obj)
+            # Constructs the export Path without filename
+            constructed_path = export_directory.joinpath(*collection_hierarchy)
+        else:
+            constructed_path = export_directory
+
+        constructed_path = constructed_path.joinpath(obj.name + '.fbx')
+        # Create dir if not found
         constructed_path.parent.mkdir(parents=True, exist_ok=True)
         # Pass the Json Dict and dump it to create the actual file in the directory
         create_animation_markers_json_file(constructed_path, markers_json)
@@ -479,7 +483,8 @@ def batch_process_objs_paths_and_export(self, context, objects_list, export_dire
         # Copy the created FBX to its published folder
         if not self.use_custom_dir:
             published_dir = construct_registered_project_published_export_directory(self)
-            published_dir = published_dir.joinpath(*collection_hierarchy)
+            if panel_prefs.collection_to_folder:
+                published_dir = published_dir.joinpath(*collection_hierarchy)
             published_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy(constructed_path, published_dir)
 
