@@ -14,7 +14,7 @@ class BITCAKE_OT_dev_operator(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        print(construct_export_directory(self))
+        print(construct_published_export_directory(self))
 
         return {'FINISHED'}
 
@@ -53,6 +53,32 @@ def construct_export_directory(self):
     # Construct final directory and return it
     current_project_path = Path(get_current_project_assets_path())
     constructed_directory = current_project_path.joinpath(*pathway) # Unpacks the list as arguments
+
+    return constructed_directory
+
+
+def construct_published_export_directory(self):
+    blend_path = Path(bpy.path.abspath('//'))
+    wip = False
+    pathway = []
+
+    # Search the .blend Path for BitCake's folder structure
+    # Change _WIP folder to Art then construct the rest of the path
+    for part in blend_path.parts:
+        pathway.append(part)
+        if part.__contains__('02_WIP'):
+            wip = True
+            pathway.pop()
+            pathway.append('03_Published')
+
+    # If no WIP folder found then fail
+    if wip is False:
+        self.report({"ERROR"},
+                    "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment")
+        return {'CANCELLED'}
+
+    # Construct final directory and return it
+    constructed_directory = Path().joinpath(*pathway) # Unpacks the list as arguments
 
     return constructed_directory
 

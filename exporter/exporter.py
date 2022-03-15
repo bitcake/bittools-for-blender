@@ -1,10 +1,11 @@
+import shutil
 import bpy
 import os
 import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_current_engine, select_and_make_active, get_registered_projects_path, get_engine_configs_path, get_markers_configs_file_path, get_addon_prefs, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
+from ..helpers import get_current_engine, select_and_make_active, get_engine_configs_path, get_markers_configs_file_path, get_addon_prefs, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 class BITCAKE_OT_universal_exporter(Operator):
@@ -23,7 +24,7 @@ class BITCAKE_OT_universal_exporter(Operator):
 
     def invoke(self, context, event):
         panel_prefs = context.scene.exporter_configs
-        if self.use_custom_dir and panel_prefs.custom_directory is '':
+        if self.use_custom_dir and panel_prefs.custom_directory == '':
             context.window_manager.fileselect_add(self)
             return {'RUNNING_MODAL'}
 
@@ -34,8 +35,6 @@ class BITCAKE_OT_universal_exporter(Operator):
 
         # Get List of objects to export according to export type (Selected, Collection, All)
         objects_list = make_objects_list(context, panel_prefs)
-
-
 
         # Verify if there are actual objects to export...
         if len(objects_list) == 0:
@@ -48,7 +47,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             return {'CANCELLED'}
 
         # Setup Export Directory, if any error occur during path setup, stop!
-        if panel_prefs.custom_directory is '':
+        if panel_prefs.custom_directory == '':
              panel_prefs.custom_directory = self.directory
         if self.use_custom_dir:
             custom_directory = panel_prefs.custom_directory
@@ -58,7 +57,7 @@ class BITCAKE_OT_universal_exporter(Operator):
                 self.report({'ERROR'}, 'Chosen Directory does not exist or is invalid!')
                 return {'CANCELLED'}
         else:
-            export_directory = construct_export_directory(self)
+            export_directory = construct_registered_project_export_directory(self)
             if export_directory == {'CANCELLED'}:
                 return export_directory
 
@@ -97,15 +96,15 @@ class BITCAKE_OT_universal_exporter(Operator):
 
         # Process all types of paths then export accordingly
         if self.use_custom_dir and not self.is_batch:
-            process_objs_paths_and_export(objects_list, export_directory, markers_json, panel_prefs)
+            process_objs_paths_and_export(self, objects_list, export_directory, markers_json, panel_prefs)
 
         elif self.use_custom_dir and self.is_batch:
-            batch_process_objs_paths_and_export(context, objects_list, export_directory, markers_json, panel_prefs)
+            batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json, panel_prefs)
 
         elif not self.use_custom_dir and self.is_batch:
-            batch_process_objs_paths_and_export(context, objects_list, export_directory, markers_json, panel_prefs)
+            batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json, panel_prefs)
         else:
-            process_objs_paths_and_export(objects_list, export_directory, markers_json, panel_prefs)
+            process_objs_paths_and_export(self, objects_list, export_directory, markers_json, panel_prefs)
 
         # If only apply transform was selected, end Operation
         if panel_prefs.apply_transform and not panel_prefs.origin_transform:
@@ -189,7 +188,7 @@ def filter_object_list(object_list):
     return object_list
 
 
-def construct_export_directory(self):
+def construct_registered_project_export_directory(self):
     blend_path = Path(bpy.path.abspath('//'))
     wip = False
     pathway = []
@@ -223,6 +222,31 @@ def construct_export_directory(self):
     # Construct final directory and return it
     current_project_path = Path(get_current_project_assets_path())
     constructed_directory = current_project_path.joinpath(*pathway) # Unpacks the list as arguments
+
+    return constructed_directory
+
+def construct_registered_project_published_export_directory(self):
+    blend_path = Path(bpy.path.abspath('//'))
+    wip = False
+    pathway = []
+
+    # Search the .blend Path for BitCake's folder structure
+    # Change _WIP folder to Art then construct the rest of the path
+    for part in blend_path.parts:
+        pathway.append(part)
+        if part.__contains__('02_WIP'):
+            wip = True
+            pathway.pop()
+            pathway.append('03_Published')
+
+    # If no WIP folder found then fail
+    if wip is False:
+        self.report({"ERROR"},
+                    "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment")
+        return {'CANCELLED'}
+
+    # Construct final directory and return it
+    constructed_directory = Path().joinpath(*pathway) # Unpacks the list as arguments
 
     return constructed_directory
 
@@ -379,7 +403,6 @@ def get_collection_hierarchy_list_as_path(context, obj):
     collection_hierarchy = []
     collection_hierarchy = get_object_collection_hierarchy(context, parent_collection, collection_hierarchy)
     collection_hierarchy = [c.name for c in collection_hierarchy]
-    collection_hierarchy.append(obj.name + '.fbx')
 
     return collection_hierarchy
 
@@ -389,7 +412,7 @@ def exporter(path, panel_preferences):
     export_nla = panel_preferences.export_nla_strips
 
     # Export file
-    bpy.ops.export_scene.fbx(
+    teste = bpy.ops.export_scene.fbx(
         filepath=str(path),
         apply_scale_options=configs['apply_scale'],
         use_space_transform=configs['space_transform'],
@@ -411,7 +434,7 @@ def exporter(path, panel_preferences):
     return
 
 
-def process_objs_paths_and_export(objects_list, export_directory, markers_json, panel_prefs):
+def process_objs_paths_and_export(self, objects_list, export_directory, markers_json, panel_prefs):
     select_objects_in_list(objects_list)
     # Create the filename based on this .blend name
     filename = Path(bpy.data.filepath).stem + '.fbx'
@@ -424,9 +447,15 @@ def process_objs_paths_and_export(objects_list, export_directory, markers_json, 
     # Finally, export the file
     exporter(constructed_path, panel_prefs)
 
+    # Copy the created FBX to its published folder
+    if not self.use_custom_dir:
+        published_dir = construct_registered_project_published_export_directory(self)
+        published_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy(constructed_path, published_dir)
+
     return
 
-def batch_process_objs_paths_and_export(context, objects_list, export_directory, markers_json, panel_prefs):
+def batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json, panel_prefs):
     """Process each object in the list, constructs each path, creates Animation Markers Json and Exports Files"""
     for obj in objects_list:
         if obj.parent is not None:
@@ -436,14 +465,23 @@ def batch_process_objs_paths_and_export(context, objects_list, export_directory,
         select_object_hierarchy(obj)
         # Gets object Collection Hierarchy as a path in string list format
         collection_hierarchy = get_collection_hierarchy_list_as_path(context, obj)
+        collection_hierarchy_with_obj = collection_hierarchy.copy()
+        collection_hierarchy_with_obj.append(obj.name + '.fbx')
         # Constructs the export Path with filename as objname.fbx
-        constructed_path = export_directory.joinpath(*collection_hierarchy)
+        constructed_path = export_directory.joinpath(*collection_hierarchy_with_obj)
         # If folder doesn't exist, create it
         constructed_path.parent.mkdir(parents=True, exist_ok=True)
         # Pass the Json Dict and dump it to create the actual file in the directory
         create_animation_markers_json_file(constructed_path, markers_json)
         # Finally, export the file
         exporter(constructed_path, panel_prefs)
+
+        # Copy the created FBX to its published folder
+        if not self.use_custom_dir:
+            published_dir = construct_registered_project_published_export_directory(self)
+            published_dir = published_dir.joinpath(*collection_hierarchy)
+            published_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy(constructed_path, published_dir)
 
     return
 
