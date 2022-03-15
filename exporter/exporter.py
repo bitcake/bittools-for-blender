@@ -375,7 +375,7 @@ def select_objects_in_list(objects_list):
 def get_object_collection_hierarchy(context, parent_collection, collection_list=[]):
 
     if parent_collection == context.scene.collection:
-        return None
+        return []
 
     parent = find_parent_collection(context, parent_collection)
     get_object_collection_hierarchy(context, parent, collection_list)
