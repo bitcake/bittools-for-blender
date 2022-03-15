@@ -50,7 +50,7 @@ class BITCAKE_OT_universal_exporter(Operator):
         if panel_prefs.custom_directory == '':
              panel_prefs.custom_directory = self.directory
         if self.use_custom_dir:
-            custom_directory = panel_prefs.custom_directory
+            custom_directory = bpy.path.abspath(panel_prefs.custom_directory)
             if os.path.isdir(custom_directory):
                 export_directory = Path(custom_directory)
             else:
