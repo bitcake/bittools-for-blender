@@ -427,6 +427,7 @@ def exporter(path, panel_preferences):
         bake_anim_simplify_factor=configs['anim_simplify'],
         use_selection=True,
         use_active_collection=False,
+        embed_textures=False,
         axis_forward=configs['forward_axis'],
         axis_up=configs['up_axis'],
     )
