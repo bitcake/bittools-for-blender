@@ -35,6 +35,14 @@ class BITCAKE_PROPS_exporter_configs(PropertyGroup):
     apply_transform: BoolProperty(name="Apply", description="Apply transforms before exporting", default=False)
     export_nla_strips: BoolProperty(name="Export NLA Strips", description="Separate NLA Strips into their own animations when exporting.\nYou'll usually want this turned OFF for Game Engine", default=False)
 
+    # Prefixes Setup (user changeable)
+    separator: StringProperty(name='Separator', default='_')
+    static_mesh_prefix: StringProperty(name='Static Mesh', default='SM')
+    skeletal_mesh_prefix: StringProperty(name='Skeletal Mesh', default='SK')
+    animation_prefix: StringProperty(name='Animation', default='Anim')
+    pose_prefix: StringProperty(name='Pose', default='Pose')
+    camera_prefix: StringProperty(name='Camera', default='Cam')
+
     custom_directory: StringProperty(name='', description='Custom Directory to Export to', subtype='DIR_PATH')
 
 

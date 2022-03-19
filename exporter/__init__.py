@@ -25,7 +25,36 @@ class BITCAKE_PT_universal_exporter(Panel):
             draw_func(self, context)
 
 
-classes = (BITCAKE_PT_universal_exporter,)
+class BITCAKE_PT_nomenclature(Panel):
+    bl_idname = "BITCAKE_PT_nomenclature"
+    bl_label = "Export Nomenclature"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "BitTools"
+    bl_parent_id = "BITCAKE_PT_universal_exporter"
+
+    def draw(self, context):
+        exporter_configs = context.scene.exporter_configs
+        layout = self.layout
+
+        layout.label(text='Prefixes')
+
+        # row = layout.row(align=True)
+        # row.prop(exporter_configs, 'separator')
+        row = layout.row(align=True)
+        row.prop(exporter_configs, 'static_mesh_prefix')
+        row = layout.row(align=True)
+        row.prop(exporter_configs, 'skeletal_mesh_prefix')
+        row = layout.row(align=True)
+        row.prop(exporter_configs, 'animation_prefix')
+        row = layout.row(align=True)
+        row.prop(exporter_configs, 'pose_prefix')
+        row = layout.row(align=True)
+        row.prop(exporter_configs, 'camera_prefix')
+
+        return
+
+classes = (BITCAKE_PT_universal_exporter, BITCAKE_PT_nomenclature,)
 
 def register():
     for module in modules:

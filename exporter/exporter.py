@@ -73,18 +73,20 @@ class BITCAKE_OT_universal_exporter(Operator):
         actions_cleanup(context)
 
         # Init empty dict in case we'll need to revert Origin Transforms
-        obj_location_dict = {}
+        obj_original_info_dict = {}
         for obj in objects_list:
+            # Create dict entry so we can revert things later
+            obj_original_info_dict[obj] = {'name': obj.name, 'location': obj.location.copy()}
+
             select_and_make_active(context, obj)
 
-            # Rename current object according to rules
-            rename_with_prefix(obj)
+            # Save original name and rename current object according to rules
+            rename_with_prefix(context, obj)
 
             # Create the json object if object has animation events
             markers_json = construct_animation_events_json(self, context, obj)
 
             if panel_prefs.origin_transform:
-                obj_location_dict[obj] = obj.location.copy()
                 obj.location = 0, 0, 0
 
 
@@ -115,10 +117,10 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             return {'FINISHED'}
 
-        # If origin transform was selected, return to original position
-        elif panel_prefs.origin_transform and panel_prefs.apply_transform:
-            for obj in obj_location_dict:
-                obj.location = obj_location_dict[obj]
+        # Return things to original state
+        for obj in obj_original_info_dict:
+            obj.name = obj_original_info_dict[obj]['name']
+            obj.location = obj_original_info_dict[obj]['location']
 
         # Re-hide all colliders for good measure
         toggle_all_colliders_visibility(False)
@@ -250,32 +252,32 @@ def construct_registered_project_published_export_directory(self):
 
     return constructed_directory
 
-def rename_with_prefix(obj):
+def rename_with_prefix(context, obj):
     """Renames current obj and all its children."""
 
     if obj.parent is None:
         all_children = get_all_child_of_child(obj)
 
         for child in all_children:
-            prefix = get_correct_prefix(child)
+            prefix = get_correct_prefix(context, child)
             # Checks if object already has correct prefix in name
-            if not check_object_name_for_prefix(prefix, child):
+            if not check_object_name_for_prefix(context, prefix, child):
                 child.name = prefix + child.name
 
-    prefix = get_correct_prefix(obj)
+    prefix = get_correct_prefix(context, obj)
     # Checks if object already has correct prefix in name
-    if not check_object_name_for_prefix(prefix, obj):
+    if not check_object_name_for_prefix(context, prefix, obj):
         obj.name = prefix + obj.name
 
-def get_correct_prefix(obj):
+def get_correct_prefix(context, obj):
     # Create list of Collider Prefixes to use so that Colliders don't get renamed
     collider_prefixes = get_collider_prefixes()
 
     # Get user-defined prefixes
-    addon_prefs = get_addon_prefs()
-    separator = addon_prefs.separator
-    sm_prefix = addon_prefs.static_mesh_prefix
-    sk_prefix = addon_prefs.skeletal_mesh_prefix
+    panel_prefs = context.scene.exporter_configs
+    separator = panel_prefs.separator
+    sm_prefix = panel_prefs.static_mesh_prefix
+    sk_prefix = panel_prefs.skeletal_mesh_prefix
 
     # If object is correctly named, return its prefix
     split_name = obj.name.split(separator)
@@ -290,9 +292,9 @@ def get_correct_prefix(obj):
     else:
         return sm_prefix + separator
 
-def check_object_name_for_prefix(prefix, obj):
-    addon_prefs = get_addon_prefs()
-    separator = addon_prefs.separator
+def check_object_name_for_prefix(context, prefix, obj):
+    panel_prefs = context.scene.exporter_configs
+    separator = panel_prefs.separator
 
     split_name = obj.name.split(separator)
     if split_name[0] == prefix:

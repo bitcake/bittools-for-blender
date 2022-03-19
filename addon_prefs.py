@@ -1,4 +1,3 @@
-from email.policy import default
 import json
 from bpy.types import AddonPreferences
 from bpy.props import BoolProperty, IntProperty, StringProperty, EnumProperty
@@ -55,21 +54,14 @@ class BitCakeToolsPreferences(AddonPreferences):
 
     separator: StringProperty(name='Characater that separates naming', default='_')
 
-    # Prefixes Setup (user changeable)
-    static_mesh_prefix: StringProperty(name='Static Mesh Prefix', default='SM')
-    skeletal_mesh_prefix: StringProperty(name='Skeletal Mesh Prefix', default='SK')
-    animation_prefix: StringProperty(name='Animation Prefix', default='Anim')
-    pose_prefix: StringProperty(name='Pose Prefix', default='Pose')
-    camera_prefix: StringProperty(name='Camera Prefix', default='Cam')
-
-    # Collider Prefixes Setup (user changeable)
+    # Collider Prefixes Setup (NOT user changeable)
     box_collider_prefix: StringProperty(name='Box Collider Prefix', default='UBX')
     capsule_collider_prefix: StringProperty(name='Capsule Collider Prefix', default='UCP')
     sphere_collider_prefix: StringProperty(name='Sphere Collider Prefix', default='USP')
     convex_collider_prefix: StringProperty(name='Convex Collider Prefix', default='UCX')
     mesh_collider_prefix: StringProperty(name='Mesh Collider Prefix', default='UME')
 
-    # Folder Paths (not user changeable)
+    # Folder Paths (NOT user changeable)
     static_mesh_path: StringProperty(name='Static Mesh Path', default='/Art/StaticMeshes/',)
     skeletal_mesh_path: StringProperty(name='Skeletal Mesh Path', default='/Art/SkeletalMeshes/')
     animation_path: StringProperty(name='Animation Path', default='/Art/Animations/')
