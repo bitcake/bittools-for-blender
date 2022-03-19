@@ -87,13 +87,6 @@ class BitCakeToolsPreferences(AddonPreferences):
         column = box.column()
         column2 = box.column()
 
-        column.label(text="Prefixes")
-        column.prop(self, "static_mesh_prefix")
-        column.prop(self, "skeletal_mesh_prefix")
-        column.prop(self, "animation_prefix")
-        column.prop(self, "pose_prefix")
-        column.prop(self, "camera_prefix")
-
         column2.label(text='Scene Configs')
         column2.prop(self, "fps")
 
