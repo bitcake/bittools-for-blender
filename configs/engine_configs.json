@@ -29,9 +29,9 @@
         "space_transform": false,
         "primary_bone": "Y",
         "secondary_bone": "X",
-        "forward_axis": "-Z",
-        "up_axis": "Y",
-        "apply_scale": "FBX_SCALE_ALL",
+        "forward_axis": "X",
+        "up_axis": "Z",
+        "apply_scale": "FBX_SCALE_NONE",
         "anim_sampling": 0.5,
         "anim_simplify": 0,
         "add_leaf_bones": false
