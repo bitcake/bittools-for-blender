@@ -10,6 +10,9 @@ def draw_panel(self, context):
     row.prop(exporter_configs, 'apply_transform', toggle=1, icon_value=1, icon='CHECKMARK')
     row.prop(exporter_configs, 'export_batch', toggle=1, icon_value=1, icon='FILE_NEW')
 
+    row = layout.row(align=True)
+    row.prop(exporter_configs, 'export_textures', toggle=1, icon_value=1, icon='TEXTURE')
+
     if exporter_configs.export_batch:
         row = layout.row(align=True)
         row.prop(exporter_configs, 'collection_to_folder', toggle=1, icon_value=1, icon='FILEBROWSER')

@@ -33,6 +33,7 @@ class BITCAKE_PROPS_exporter_configs(PropertyGroup):
     collection_to_folder: BoolProperty(name="Use Collections as Folders", description="Collections are turned into folders on export.", default=True)
     origin_transform: BoolProperty(name="Origin", description="Place objects in origin before exporting", default=False)
     apply_transform: BoolProperty(name="Apply", description="Apply transforms before exporting", default=False)
+    export_textures: BoolProperty(name="Export Textures", description="Embed Textures on FBX or not", default=False)
     export_nla_strips: BoolProperty(name="Export NLA Strips", description="Separate NLA Strips into their own animations when exporting.\nYou'll usually want this turned OFF for Game Engine", default=False)
 
     # Prefixes Setup (user changeable)

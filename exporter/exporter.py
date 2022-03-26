@@ -1,3 +1,4 @@
+from multiprocessing import reduction
 import shutil
 import bpy
 import os
@@ -76,7 +77,10 @@ class BITCAKE_OT_universal_exporter(Operator):
         obj_original_info_dict = {}
         for obj in objects_list:
             # Create dict entry so we can revert things later
-            obj_original_info_dict[obj] = {'name': obj.name, 'location': obj.location.copy()}
+            obj_original_info_dict[obj] = {'name': obj.name,
+                                           'location': obj.location.copy(),
+                                           'materials': obj.data.materials.items().copy()
+                                           }
 
             select_and_make_active(context, obj)
 
@@ -89,6 +93,8 @@ class BITCAKE_OT_universal_exporter(Operator):
             if panel_prefs.origin_transform:
                 obj.location = 0, 0, 0
 
+            if not panel_prefs.export_textures:
+                unlink_materials(obj)
 
             if panel_prefs.apply_transform:
                 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
@@ -121,6 +127,7 @@ class BITCAKE_OT_universal_exporter(Operator):
         for obj in obj_original_info_dict:
             obj.name = obj_original_info_dict[obj]['name']
             obj.location = obj_original_info_dict[obj]['location']
+            relink_materials(obj, obj_original_info_dict[obj]['materials'])
 
         # Re-hide all colliders for good measure
         toggle_all_colliders_visibility(False)
@@ -352,6 +359,18 @@ def construct_animation_events_json(self, context, obj):
         markers_json['ActionsMarkers'].append(action_marker)
 
     return markers_json
+
+def unlink_materials(obj):
+    for index, material in enumerate(obj.material_slots):
+        obj.material_slots[index].material = None
+
+    return
+
+def relink_materials(obj, materials):
+    for index, slot in enumerate(obj.material_slots):
+        slot.material = materials[index][1]
+
+    return
 
 def create_animation_markers_json_file(path, markers_json):
     if markers_json is None:
