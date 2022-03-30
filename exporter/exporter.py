@@ -1,4 +1,3 @@
-from multiprocessing import reduction
 import shutil
 import bpy
 import os
@@ -74,12 +73,12 @@ class BITCAKE_OT_universal_exporter(Operator):
         actions_cleanup(context)
 
         # Init empty dict in case we'll need to revert Origin Transforms
-        obj_original_info_dict = {}
+        obj_original_info_dict = {'active_object': context.active_object,}
         for obj in objects_list:
             # Create dict entry so we can revert things later
             obj_original_info_dict[obj] = {'name': obj.name,
                                            'location': obj.location.copy(),
-                                           'materials': obj.data.materials.items().copy()
+                                           'materials': obj.data.materials.items().copy(),
                                            }
 
             select_and_make_active(context, obj)
@@ -104,7 +103,7 @@ class BITCAKE_OT_universal_exporter(Operator):
 
         # Process all types of paths then export accordingly
         if self.use_custom_dir and not self.is_batch:
-            process_objs_paths_and_export(self, objects_list, export_directory, markers_json, panel_prefs)
+            process_objs_paths_and_export(self, obj_original_info_dict, objects_list, export_directory, markers_json, panel_prefs)
 
         elif self.use_custom_dir and self.is_batch:
             batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json, panel_prefs)
@@ -112,7 +111,7 @@ class BITCAKE_OT_universal_exporter(Operator):
         elif not self.use_custom_dir and self.is_batch:
             batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json, panel_prefs)
         else:
-            process_objs_paths_and_export(self, objects_list, export_directory, markers_json, panel_prefs)
+            process_objs_paths_and_export(self, obj_original_info_dict, objects_list, export_directory, markers_json, panel_prefs)
 
         # If only apply transform was selected, end Operation
         if panel_prefs.apply_transform and not panel_prefs.origin_transform:
@@ -124,7 +123,11 @@ class BITCAKE_OT_universal_exporter(Operator):
             return {'FINISHED'}
 
         # Return things to original state
-        for obj in obj_original_info_dict:
+        for index, obj in enumerate(obj_original_info_dict):
+            # We skip the first item in the dictionary, which is the current active object.
+            if index == 0:
+                continue
+
             obj.name = obj_original_info_dict[obj]['name']
             obj.location = obj_original_info_dict[obj]['location']
             relink_materials(obj, obj_original_info_dict[obj]['materials'])
@@ -460,10 +463,11 @@ def exporter(path, panel_preferences):
     return
 
 
-def process_objs_paths_and_export(self, objects_list, export_directory, markers_json, panel_prefs):
+def process_objs_paths_and_export(self, original_info_dict, objects_list, export_directory, markers_json, panel_prefs):
     select_objects_in_list(objects_list)
     # Create the filename based on this .blend name
-    filename = Path(bpy.data.filepath).stem + '.fbx'
+    print(f'O OBJETO ATIVO ORIGINAL ERA: {original_info_dict}')
+    filename = original_info_dict['active_object'].name + '.fbx'
     # Constructs final path
     constructed_path = export_directory.joinpath(filename)
     # If folder doesn't exist, create it
