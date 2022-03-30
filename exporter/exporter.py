@@ -72,7 +72,8 @@ class BITCAKE_OT_universal_exporter(Operator):
         # Perform Animation Cleanup
         actions_cleanup(context)
 
-        # Init empty dict in case we'll need to revert Origin Transforms
+        # Init dict in case we'll need to revert Original Transforms.
+        # It's important that 'active_object' is the first key.
         obj_original_info_dict = {'active_object': context.active_object,}
         for obj in objects_list:
             # Create dict entry so we can revert things later
