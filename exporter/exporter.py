@@ -367,6 +367,9 @@ def unlink_materials(obj):
     return
 
 def relink_materials(obj, materials):
+    if materials == []:
+        return
+
     for index, slot in enumerate(obj.material_slots):
         slot.material = materials[index][1]
 
