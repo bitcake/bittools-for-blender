@@ -2,6 +2,7 @@ import bpy
 import json
 import os
 from bpy.types import PropertyGroup, Scene
+from bpy.utils import previews
 from bpy.props import BoolProperty, EnumProperty, StringProperty
 from ..helpers import get_engine_configs_path
 
@@ -56,7 +57,7 @@ def register():
         bpy.utils.register_class(cls)
 
     # Register Custom Icons
-    pcoll = bpy.utils.previews.new()
+    pcoll = previews.new()
     bittools_icons_dir = os.path.join(os.path.dirname(__file__), "icons")
     pcoll.load("Unity", os.path.join(bittools_icons_dir, "unity_logo.png"), 'IMAGE')
     pcoll.load("Unreal", os.path.join(bittools_icons_dir, "unreal_logo.png"), 'IMAGE')
@@ -71,7 +72,7 @@ def unregister():
 
     # UnRegister Custom Icons
     for pcoll in preview_collections.values():
-        bpy.utils.previews.remove(pcoll)
+        previews.remove(pcoll)
     preview_collections.clear()
 
     del Scene.exporter_configs
