@@ -97,7 +97,7 @@ class BITCAKE_OT_universal_exporter(Operator):
                 unlink_materials(obj)
 
             if panel_prefs.apply_transform:
-                bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+                bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
         # Only Select objects inside the list before exporting
         toggle_all_colliders_visibility(True)
