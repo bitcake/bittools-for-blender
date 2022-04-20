@@ -1,27 +1,7 @@
-import json
 from bpy.types import AddonPreferences
-from bpy.props import BoolProperty, IntProperty, StringProperty, EnumProperty
-from .helpers import get_registered_projects_path
+from bpy.props import BoolProperty, IntProperty, StringProperty
+
 from . import scene_setup
-
-
-def update_registered_projects(self, context):
-    projects_list = []
-
-    projects_file_path = get_registered_projects_path()
-
-
-
-    if projects_file_path.is_file():
-        with open(str(projects_file_path), 'r') as projects:
-            projects_json = json.load(projects)
-
-            for i, project in enumerate(projects_json):
-                projects_list.append((project, project, '', i))
-    else:
-        projects_list = [("NONE", "No Projects Registered", "", 0),]
-
-    return projects_list
 
 
 class BitCakeToolsPreferences(AddonPreferences):
@@ -46,11 +26,6 @@ class BitCakeToolsPreferences(AddonPreferences):
         name="Development Tools",
         default=True,
     )
-
-    registered_projects: EnumProperty(items=update_registered_projects,
-                                      name='',
-                                      description='Register projects here before starting. Current Active project',
-                                      )
 
     separator: StringProperty(name='Characater that separates naming', default='_')
 

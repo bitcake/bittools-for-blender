@@ -4,7 +4,23 @@ import os
 from bpy.types import PropertyGroup, Scene
 from bpy.utils import previews
 from bpy.props import BoolProperty, EnumProperty, StringProperty
-from ..helpers import get_engine_configs_path
+from ..helpers import get_engine_configs_path, get_registered_projects_path
+
+def update_registered_projects(self, context):
+    projects_list = []
+
+    projects_file_path = get_registered_projects_path()
+
+    if projects_file_path.is_file():
+        with open(str(projects_file_path), 'r') as projects:
+            projects_json = json.load(projects)
+
+            for i, project in enumerate(projects_json):
+                projects_list.append((project, project, '', i))
+    else:
+        projects_list = [("NONE", "No Projects Registered", "", 0),]
+
+    return projects_list
 
 def list_registered_engine_configs(self, context):
     pcoll = preview_collections["main"]
@@ -23,6 +39,11 @@ def list_registered_engine_configs(self, context):
     return engine_list
 
 class BITCAKE_PROPS_exporter_configs(PropertyGroup):
+    registered_projects: EnumProperty(items=update_registered_projects,
+                                      name='',
+                                      description='Register projects here before starting. Current Active project',
+                                      )
+
     engine_configs_list: EnumProperty(items=list_registered_engine_configs,
                                     name='',
                                     description='List all available engine export configurations.',

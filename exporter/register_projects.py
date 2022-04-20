@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from bpy.types import Operator
 from bpy_extras.io_utils import ImportHelper
-from ..helpers import get_registered_projects_path, get_addon_prefs, get_current_engine
+from ..helpers import get_exporter_configs, get_registered_projects_path, get_addon_prefs
 
 
 class BITCAKE_OT_register_project(Operator, ImportHelper):
@@ -53,13 +53,13 @@ class BITCAKE_OT_unregister_project(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        addon_prefs = get_addon_prefs()
-        current_project = addon_prefs.registered_projects
+        exporter_configs = get_addon_prefs()
+        current_project = exporter_configs.registered_projects
 
         previous_project = get_previous_project(current_project)
         unregister_project(current_project)
         if previous_project is not None:
-            addon_prefs.registered_projects = previous_project
+            exporter_configs.registered_projects = previous_project
 
         return {'FINISHED'}
 
@@ -130,17 +130,16 @@ def get_previous_project(current_project):
 
 
 def draw_panel(self, context):
-    addon_prefs = get_addon_prefs()
-    exporter_configs = context.scene.exporter_configs
+    exporter_configs = get_exporter_configs()
 
     layout = self.layout
     row = layout.row()
     row.label(text="Project Configs")
     row = layout.row()
-    row.prop(addon_prefs, 'registered_projects')
+    row.prop(exporter_configs, 'registered_projects')
     row.operator('bitcake.register_project', icon='ADD', text='')
 
-    if not addon_prefs.registered_projects == 'NONE':
+    if not exporter_configs.registered_projects == 'NONE':
         row.operator('bitcake.unregister_project', icon='REMOVE', text='')
 
     row = layout.row()

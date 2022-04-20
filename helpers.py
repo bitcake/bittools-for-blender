@@ -70,16 +70,12 @@ def clear_pose(obj, clear_armature_properties=True, clear_bone_properties=True):
         pose_bone.rotation_axis_angle = [0.0, 0.0, 1.0, 0.0]
         pose_bone.scale = Vector((1.0, 1.0, 1.0))
 
-def get_current_engine():
-    exporter_configs = bpy.context.scene.exporter_configs
 
-    return exporter_configs.engine_configs_list
 
 def get_current_project_assets_path():
     """Returns a String Path for the current project Asset folder"""
 
-    addon_prefs = get_addon_prefs()
-    active_project = addon_prefs.registered_projects
+    active_project = get_exporter_configs().registered_projects
 
     for mod in addon_utils.modules():
         if mod.bl_info['name'] == __package__:
@@ -142,12 +138,12 @@ def select_and_make_active(context, obj):
     return
 
 def get_collider_prefixes():
-    addon_prefs = get_addon_prefs()
-    collider_prefixes = [addon_prefs.box_collider_prefix,
-                         addon_prefs.capsule_collider_prefix,
-                         addon_prefs.sphere_collider_prefix,
-                         addon_prefs.convex_collider_prefix,
-                         addon_prefs.mesh_collider_prefix]
+    exporter_configs = get_addon_prefs()
+    collider_prefixes = [exporter_configs.box_collider_prefix,
+                         exporter_configs.capsule_collider_prefix,
+                         exporter_configs.sphere_collider_prefix,
+                         exporter_configs.convex_collider_prefix,
+                         exporter_configs.mesh_collider_prefix]
 
     return collider_prefixes
 
@@ -176,3 +172,10 @@ def select_object_hierarchy(obj):
 def get_addon_prefs():
     # Prefs for the BitTools addon instead of the BitTools.exporter module
     return bpy.context.preferences.addons[__package__.split('.')[0]].preferences
+
+def get_exporter_configs():
+    # Prefs for the BitTools addon instead of the BitTools.exporter module
+    return bpy.context.scene.exporter_configs
+
+def get_current_engine():
+    return get_exporter_configs().engine_configs_list

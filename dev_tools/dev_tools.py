@@ -1,8 +1,6 @@
 from re import I
 import bpy
-from pathlib import Path
 from bpy.types import Operator
-from ..helpers import get_current_project_assets_path, get_current_project_structure_json
 
 class BITCAKE_OT_dev_operator(Operator):
     bl_idname = "bitcake.dev_operator"
