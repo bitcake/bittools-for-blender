@@ -137,7 +137,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             obj.name = obj_original_info_dict[obj]['name']
             obj.location = obj_original_info_dict[obj]['location']
             relink_materials(obj, obj_original_info_dict[obj]['materials'])
-            if obj_original_info_dict[obj]['linked_mesh'] is not None:
+            if 'linked_mesh' in obj_original_info_dict[obj]:
                 obj.data.user_remap(obj_original_info_dict[obj]['linked_mesh'])
 
         # Deletes all data created in the process that has no users to clean the file
@@ -376,6 +376,8 @@ def construct_animation_events_json(self, context, obj):
     return markers_json
 
 def unlink_materials(obj):
+    bpy.ops.object.material_slot_remove_unused()
+
     for index, material in enumerate(obj.material_slots):
         obj.material_slots[index].material = None
 
