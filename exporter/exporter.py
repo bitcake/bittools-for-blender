@@ -96,6 +96,11 @@ class BITCAKE_OT_universal_exporter(Operator):
             if not panel_prefs.export_textures:
                 unlink_materials(obj)
 
+            # Deal with linked objects (multi user)
+            if obj.data.users > 1:
+                obj_original_info_dict[obj]['linked_mesh'] = obj.data.original
+                bpy.ops.object.make_single_user(object=True, obdata=True, material=True, animation=True, obdata_animation=True)
+
             if panel_prefs.apply_transform:
                 bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
@@ -132,6 +137,11 @@ class BITCAKE_OT_universal_exporter(Operator):
             obj.name = obj_original_info_dict[obj]['name']
             obj.location = obj_original_info_dict[obj]['location']
             relink_materials(obj, obj_original_info_dict[obj]['materials'])
+            if obj_original_info_dict[obj]['linked_mesh'] is not None:
+                obj.data.user_remap(obj_original_info_dict[obj]['linked_mesh'])
+
+        # Deletes all data created in the process that has no users to clean the file
+        bpy.ops.outliner.orphans_purge()
 
         # Re-hide all colliders for good measure
         toggle_all_colliders_visibility(False)
@@ -189,7 +199,8 @@ def change_active_collection(context=bpy.context):
 
 
 def filter_object_list(object_list):
-    '''Removes all objects that are inside an Ignored Collection or are Linked inside one'''
+    '''Removes all objects that are:
+    - Inside an Ignored Collection or are Linked inside one'''
 
     list_copy = object_list.copy()
 
