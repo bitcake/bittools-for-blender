@@ -73,15 +73,12 @@ class BITCAKE_OT_universal_exporter(Operator):
         actions_cleanup(context)
 
         # Active Object can be None, so let's fix that.
-        active_object = None
-        if context.active_object is not None:
-            active_object = context.active_object
-        else:
-            active_object = context.selected_objects[0]
+        if context.active_object is None:
+            context.view_layer.objects.active = context.selected_objects[0]
 
         # Init dict in case we'll need to revert Original Transforms.
         # It's important that 'active_object' is the first key.
-        obj_original_info_dict = {'active_object': active_object,}
+        obj_original_info_dict = {'active_object': context.active_object,}
         for obj in objects_list:
             # Create dict entry so we can revert things later
             obj_original_info_dict[obj] = {'name': obj.name,
