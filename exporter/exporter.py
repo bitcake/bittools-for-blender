@@ -43,7 +43,7 @@ class BITCAKE_OT_universal_exporter(Operator):
 
         # If file has never been saved...
         if bpy.data.filepath == '':
-            self.report({'ERROR'}, 'Please Save the file once before running the export.')
+            self.report({'ERROR'}, 'Please Save the file once before running the exporter.')
             return {'CANCELLED'}
 
         # Setup Export Directory, if any error occur during path setup, stop!
@@ -72,9 +72,16 @@ class BITCAKE_OT_universal_exporter(Operator):
         # Perform Animation Cleanup
         actions_cleanup(context)
 
+        # Active Object can be None, so let's fix that.
+        active_object = None
+        if context.active_object is not None:
+            active_object = context.active_object
+        else:
+            active_object = context.selected_objects[0]
+
         # Init dict in case we'll need to revert Original Transforms.
         # It's important that 'active_object' is the first key.
-        obj_original_info_dict = {'active_object': context.active_object,}
+        obj_original_info_dict = {'active_object': active_object,}
         for obj in objects_list:
             # Create dict entry so we can revert things later
             obj_original_info_dict[obj] = {'name': obj.name,
@@ -90,7 +97,8 @@ class BITCAKE_OT_universal_exporter(Operator):
             # Create the json object if object has animation events
             markers_json = construct_animation_events_json(self, context, obj)
 
-            if panel_prefs.origin_transform:
+            # Only move root objects to 0,0,0 to avoid errors with Custom Pivots.
+            if panel_prefs.origin_transform and obj.parent is None:
                 obj.location = 0, 0, 0
 
             if not panel_prefs.export_textures:
