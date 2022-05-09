@@ -154,6 +154,9 @@ def get_unlinked_action_list():
 
 
 def draw_panel(self, context):
+    if not bpy.data.actions.items():
+        return
+
     obj = context.object
     layout = self.layout
     box = layout.box()
@@ -163,6 +166,9 @@ def draw_panel(self, context):
     row.operator('bitcake.action_add', icon='ADD', text="")
 
     col = box.column(align=True)
+
+    if obj is None:
+        return
 
     active_action = obj.animation_data.action if obj.animation_data else None
     for action in get_unlinked_action_list():

@@ -5,7 +5,9 @@ from ..helpers import get_addon_prefs
 modules = [
     'actions_manager',
     'breakdowner',
+    'threadmill',
 ]
+
 from .. import import_or_reload_modules
 modules = import_or_reload_modules(modules, __name__)
 
@@ -14,8 +16,8 @@ class BITCAKE_PT_animtools(Panel):
     bl_label = "Animation Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_context = "posemode"
-    bl_category = "Item"
+    # bl_context = "posemode"
+    bl_category = "BitAnim"
 
     draw_funcs = []
 

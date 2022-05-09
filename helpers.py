@@ -169,6 +169,29 @@ def select_object_hierarchy(obj):
 
     return
 
+def delete_hierarchy(parent_obj_name):
+    bpy.ops.object.select_all(action='DESELECT')
+    obj = bpy.data.objects[parent_obj_name]
+    obj.animation_data_clear()
+    names = set()
+
+    def get_child_names(obj):
+        for child in obj.children:
+            names.add(child.name)
+            if child.children:
+                get_child_names(child)
+
+    get_child_names(obj)
+
+    objects = bpy.data.objects
+    [setattr(objects[n], 'select', True) for n in names]
+    # Remove the animation from the all the child objects
+    for child_name in names:
+        bpy.data.objects[child_name].animation_data_clear()
+
+    bpy.ops.object.delete()
+
+
 def get_addon_prefs():
     # Prefs for the BitTools addon instead of the BitTools.exporter module
     return bpy.context.preferences.addons[__package__.split('.')[0]].preferences
