@@ -173,7 +173,7 @@ def delete_hierarchy(parent_obj_name):
     bpy.ops.object.select_all(action='DESELECT')
     obj = bpy.data.objects[parent_obj_name]
     obj.animation_data_clear()
-    names = set()
+    names = []
 
     def get_child_names(obj):
         for child in obj.children:
