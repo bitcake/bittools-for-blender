@@ -177,7 +177,7 @@ def delete_hierarchy(parent_obj_name):
 
     def get_child_names(obj):
         for child in obj.children:
-            names.add(child.name)
+            names.append(child.name)
             if child.children:
                 get_child_names(child)
 
