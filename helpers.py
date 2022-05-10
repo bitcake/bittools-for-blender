@@ -188,7 +188,6 @@ def delete_hierarchy(parent_obj_name):
         n = objects[n]
         n.select_set(True)
 
-    # [setattr(objects[n], 'select', True) for n in names]
     # Remove the animation from the all the child objects
     for child_name in names:
         bpy.data.objects[child_name].animation_data_clear()

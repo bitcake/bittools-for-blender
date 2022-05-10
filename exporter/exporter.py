@@ -141,9 +141,9 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             obj.name = obj_original_info_dict[obj]['name']
             obj.location = obj_original_info_dict[obj]['location']
-            relink_materials(obj, obj_original_info_dict[obj]['materials'])
             if 'linked_mesh' in obj_original_info_dict[obj]:
                 obj.data.user_remap(obj_original_info_dict[obj]['linked_mesh'])
+            relink_materials(obj, obj_original_info_dict[obj]['materials'])
 
         # Deletes all data created in the process that has no users to clean the file
         bpy.ops.outliner.orphans_purge()
