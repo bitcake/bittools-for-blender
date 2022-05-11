@@ -80,6 +80,9 @@ class BITCAKE_OT_universal_exporter(Operator):
         # It's important that 'active_object' is the first key.
         obj_original_info_dict = {'active_object': context.active_object,}
         for obj in objects_list:
+            if obj.type == 'ARMATURE':
+                continue
+
             # Create dict entry so we can revert things later
             obj_original_info_dict[obj] = {'name': obj.name,
                                            'location': obj.location.copy(),
