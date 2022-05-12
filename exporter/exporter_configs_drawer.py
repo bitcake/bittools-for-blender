@@ -13,16 +13,23 @@ def draw_panel(self, context):
     row = layout.row(align=True)
     row.prop(exporter_configs, 'export_textures', toggle=1, icon_value=1, icon='TEXTURE')
 
-    if exporter_configs.export_batch:
-        row = layout.row(align=True)
-        row.prop(exporter_configs, 'collection_to_folder', toggle=1, icon_value=1, icon='FILEBROWSER')
 
     row = layout.row(align=True)
     row.prop(exporter_configs, 'export_nla_strips', toggle=1, icon_value=1, icon='NLA')
 
+    if exporter_configs.export_batch:
+        row = layout.row(align=True)
+        row.prop(exporter_configs, 'collection_to_folder', toggle=1, icon_value=1, icon='FILEBROWSER')
+    else:
+        row = layout.row(align=True)
+        row.alert = exporter_configs.filename_alert
+        row.prop(exporter_configs, 'non_batch_filename', toggle=1)
+
+
     row = layout.row(align=True)
     row.prop(exporter_configs, 'export_selected', toggle=1, icon='RESTRICT_SELECT_OFF')
     row.prop(exporter_configs, 'export_collection', toggle=1, icon='OUTLINER_COLLECTION')
+
 
 
     return

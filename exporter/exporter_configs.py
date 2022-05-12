@@ -1,3 +1,4 @@
+from posixpath import basename
 import bpy
 import json
 import os
@@ -38,6 +39,18 @@ def list_registered_engine_configs(self, context):
 
     return engine_list
 
+def check_for_prefixes(self, context):
+    exporter_configs = context.scene.exporter_configs
+    separator = exporter_configs.separator
+    non_batch_filename = exporter_configs.non_batch_filename
+    prefix_list = [exporter_configs.static_mesh_prefix , exporter_configs.skeletal_mesh_prefix]
+
+    if prefix_list.__contains__(non_batch_filename.split(separator)[0]):
+        exporter_configs.filename_alert = False
+    else:
+        exporter_configs.filename_alert = True
+
+
 class BITCAKE_PROPS_exporter_configs(PropertyGroup):
     registered_projects: EnumProperty(items=update_registered_projects,
                                       name='',
@@ -57,6 +70,7 @@ class BITCAKE_PROPS_exporter_configs(PropertyGroup):
     apply_transform: BoolProperty(name="Apply", description="Apply transforms before exporting", default=False)
     export_textures: BoolProperty(name="Embed Textures", description="Embed Textures on FBX or not", default=False)
     export_nla_strips: BoolProperty(name="Export NLA Strips", description="Separate NLA Strips into their own animations when exporting.\nYou'll usually want this turned OFF for Game Engine", default=False)
+    filename_alert: BoolProperty(name="Filename Alert", default=True)
 
     # Prefixes Setup (user changeable)
     separator: StringProperty(name='Separator', default='_')
@@ -66,7 +80,10 @@ class BITCAKE_PROPS_exporter_configs(PropertyGroup):
     pose_prefix: StringProperty(name='Pose', default='Pose')
     camera_prefix: StringProperty(name='Camera', default='Cam')
 
+    non_batch_filename: StringProperty(name='Filename', default='', description=f"Name of the exported file. You SHOULD prefix your file with the correct Static Mesh or Skeletal Mesh prefixes! It'll be red until you do so, but won't stop you from exporting the file.", update=check_for_prefixes)
     custom_directory: StringProperty(name='', description='Custom Directory to Export to', subtype='DIR_PATH')
+
+
 
 
 classes = (BITCAKE_PROPS_exporter_configs,)

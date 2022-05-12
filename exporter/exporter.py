@@ -80,13 +80,15 @@ class BITCAKE_OT_universal_exporter(Operator):
         # It's important that 'active_object' is the first key.
         obj_original_info_dict = {'active_object': context.active_object,}
         for obj in objects_list:
-            if obj.type == 'ARMATURE':
-                continue
+
+            obj_material = []
+            if obj.type != 'ARMATURE':
+                obj_material = obj.data.materials.items().copy()
 
             # Create dict entry so we can revert things later
             obj_original_info_dict[obj] = {'name': obj.name,
                                            'location': obj.location.copy(),
-                                           'materials': obj.data.materials.items().copy(),
+                                           'materials': obj_material,
                                            }
 
             select_and_make_active(context, obj)
@@ -101,7 +103,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             if panel_prefs.origin_transform and obj.parent is None:
                 obj.location = 0, 0, 0
 
-            if not panel_prefs.export_textures:
+            if not panel_prefs.export_textures and obj.type != 'ARMATURE':
                 unlink_materials(obj)
 
             # Deal with linked objects (multi user)
@@ -480,6 +482,7 @@ def exporter(path, panel_preferences):
         embed_textures=False,
         axis_forward=configs['forward_axis'],
         axis_up=configs['up_axis'],
+        bake_anim_force_startend_keying=True,
     )
 
     return
@@ -488,8 +491,9 @@ def exporter(path, panel_preferences):
 def process_objs_paths_and_export(self, original_info_dict, objects_list, export_directory, markers_json, panel_prefs):
     select_objects_in_list(objects_list)
     # Create the filename based on this .blend name
-    print(f'O OBJETO ATIVO ORIGINAL ERA: {original_info_dict}')
-    filename = original_info_dict['active_object'].name + '.fbx'
+    filename = panel_prefs.non_batch_filename + '.fbx'
+    if filename == '':
+        filename = original_info_dict['active_object'].name + '.fbx'
     # Constructs final path
     constructed_path = export_directory.joinpath(filename)
     # If folder doesn't exist, create it
