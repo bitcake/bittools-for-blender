@@ -171,6 +171,12 @@ def draw_panel(self, context):
         return
 
     active_action = obj.animation_data.action if obj.animation_data else None
+    if active_action is None:
+        row = box.row()
+        row.alert = True
+        row.label(text='Select a valid Object with an Action')
+        return
+
     for action in get_unlinked_action_list():
         actions_row = col.row(align=True)
         selected = action == active_action
