@@ -574,6 +574,12 @@ def draw_panel(self, context):
     layout = self.layout
     layout.separator()
     layout.label(text='Export')
+
+    if not configs.export_batch:
+        row = layout.row(align=True)
+        row.alert = configs.filename_alert
+        row.prop(configs, 'non_batch_filename', toggle=1)
+
     row = layout.row()
     op = row.operator('bitcake.universal_exporter', text=f'{batch}Send to {current_engine} Project', icon_value=engine_logo.icon_id)
     op.is_batch = configs.export_batch
