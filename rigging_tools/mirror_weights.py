@@ -72,7 +72,7 @@ class BITCAKE_OT_mirror_weights_active_vertex_group(Operator):
         elif side_to_mirror == configs.right_side:
             side_to_delete = configs.left_side
         else:
-            self.report({'ERROR'}, 'Object is not mirroable! Make sure its name ends with a .r or .l !')
+            self.report({'ERROR'}, 'Active Vertex Group is not mirroable! Make sure its name ends with a .r or .l !')
             return {'CANCELLED'}
 
         # Duplicate Active Vertex Group and Mirror it
