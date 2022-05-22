@@ -39,6 +39,8 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
         for vertex_group in vgs_to_mirror:
             context.object.vertex_groups.active = vertex_group
             bpy.ops.object.vertex_group_copy()
+            context.object.data.use_paint_mask = False
+            context.object.data.use_paint_mask_vertex = False
             bpy.ops.object.vertex_group_mirror(use_topology=False)
             context.object.vertex_groups.active.name = vertex_group.name[:-1] + side_to_delete
 
@@ -75,6 +77,8 @@ class BITCAKE_OT_mirror_weights_active_vertex_group(Operator):
 
         # Duplicate Active Vertex Group and Mirror it
         bpy.ops.object.vertex_group_copy()
+        context.object.data.use_paint_mask = False
+        context.object.data.use_paint_mask_vertex = False
         bpy.ops.object.vertex_group_mirror(use_topology=False)
 
         vertex_group_to_delete = bpy.context.object.vertex_groups.get(active_vg.name[:-1] + side_to_delete)
