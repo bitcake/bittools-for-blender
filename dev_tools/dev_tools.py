@@ -13,8 +13,12 @@ class BITCAKE_OT_dev_operator(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        string_test = 'Penis.01'
-        print(string_test[:-1])
+        mesh = context.object.data
+        selected_verts = [v for v in mesh.vertices if v.select]
+
+        print(selected_verts[0].groups.items())
+        print(selected_verts[0].groups.items()[2][1].weight)
+
 
         return {'FINISHED'}
 

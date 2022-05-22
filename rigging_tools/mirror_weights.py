@@ -24,7 +24,7 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
             side_to_mirror = configs.right_side
             side_to_delete = configs.left_side
 
-        active_vg = context.object.vertex_groups.active
+        active_vg = context.object.vertex_groups.active.name
 
         vgs_to_mirror = []
         for vertex_group in context.object.vertex_groups.items():
@@ -42,7 +42,8 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
             bpy.ops.object.vertex_group_mirror(use_topology=False)
             context.object.vertex_groups.active.name = vertex_group.name[:-1] + side_to_delete
 
-        context.object.vertex_groups.active = active_vg
+        # In case you were selecting a Vertex Group that gets deleted midway we do this to pick the new one
+        context.object.vertex_groups.active = context.object.vertex_groups.get(active_vg)
 
         return {'FINISHED'}
 
