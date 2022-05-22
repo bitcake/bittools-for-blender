@@ -3,7 +3,9 @@ from bpy.types import Panel
 from ..helpers import get_addon_prefs
 
 modules = [
+    'rigging_configs',
     'rigging_tools',
+    'mirror_weights',
 ]
 
 from .. import import_or_reload_modules

@@ -13,16 +13,12 @@ class BITCAKE_OT_dev_operator(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        unlink_materials(context.object)
+        string_test = 'Penis.01'
+        print(string_test[:-1])
 
         return {'FINISHED'}
 
 
-def unlink_materials(obj):
-    for index, material in enumerate(obj.material_slots):
-        obj.material_slots[index].material = None
-
-    return
 
 def draw_panel(self, context):
     layout = self.layout
