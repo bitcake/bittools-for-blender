@@ -24,6 +24,8 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
             side_to_mirror = configs.right_side
             side_to_delete = configs.left_side
 
+        active_vg = context.object.vertex_groups.active
+
         vgs_to_mirror = []
         for vertex_group in context.object.vertex_groups.items():
             vg_split = vertex_group[0].split(configs.separator)
@@ -39,6 +41,8 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
             bpy.ops.object.vertex_group_copy()
             bpy.ops.object.vertex_group_mirror(use_topology=False)
             context.object.vertex_groups.active.name = vertex_group.name[:-1] + side_to_delete
+
+        context.object.vertex_groups.active = active_vg
 
         return {'FINISHED'}
 
