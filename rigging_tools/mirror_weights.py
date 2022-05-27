@@ -1,3 +1,4 @@
+from unicodedata import name
 import bpy
 from bpy.types import Operator
 
@@ -18,10 +19,10 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
         left_to_right = configs.left_to_right
 
         if left_to_right:
-            side_to_mirror = configs.left_side
+            split_vg_name = configs.left_side
             side_to_delete = configs.right_side
         else:
-            side_to_mirror = configs.right_side
+            split_vg_name = configs.right_side
             side_to_delete = configs.left_side
 
         active_vg = context.object.vertex_groups.active.name
@@ -33,7 +34,7 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
             if vg_split[-1] == side_to_delete:
                 context.object.vertex_groups.remove(vertex_group[1])
 
-            if vg_split[-1] == side_to_mirror:
+            if vg_split[-1] == split_vg_name:
                 vgs_to_mirror.append(vertex_group[1])
 
         for vertex_group in vgs_to_mirror:
@@ -66,12 +67,21 @@ class BITCAKE_OT_mirror_weights_active_vertex_group(Operator):
         configs = context.scene.rigging_configs
         active_vg = context.object.vertex_groups.active
 
-        side_to_mirror = active_vg.name.split(configs.separator)[-1]
-        if side_to_mirror == configs.left_side:
-            side_to_delete = configs.right_side
-        elif side_to_mirror == configs.right_side:
-            side_to_delete = configs.left_side
-        else:
+        split_vg_name = active_vg.name.split(configs.separator)
+        new_name = split_vg_name.copy()
+        for index, item in enumerate(split_vg_name):
+            print(f'O Index é {index} e o item é {item}')
+            if item == configs.left_side:
+                new_name.pop(index)
+                new_name.insert(index, configs.right_side)
+                new_name = configs.separator.join(new_name)
+            elif item == configs.right_side:
+                new_name.pop(index)
+                new_name.insert(index, configs.left_side)
+                new_name = configs.separator.join(new_name)
+
+        # If a New Name wasn't created then cancel since it couldn't find a mirror.
+        if new_name == split_vg_name:
             self.report({'ERROR'}, 'Active Vertex Group is not mirroable! Make sure its name ends with a .r or .l !')
             return {'CANCELLED'}
 
@@ -81,12 +91,12 @@ class BITCAKE_OT_mirror_weights_active_vertex_group(Operator):
         context.object.data.use_paint_mask_vertex = False
         bpy.ops.object.vertex_group_mirror(use_topology=False)
 
-        vertex_group_to_delete = bpy.context.object.vertex_groups.get(active_vg.name[:-1] + side_to_delete)
+        vertex_group_to_delete = bpy.context.object.vertex_groups.get(new_name)
         if vertex_group_to_delete is not None:
             bpy.context.object.vertex_groups.remove(vertex_group_to_delete)
 
         # Renames duplicated Vertex Group so there's no suffix added
-        context.object.vertex_groups.active.name = active_vg.name[:-1] + side_to_delete
+        context.object.vertex_groups.active.name = new_name
 
         return {'FINISHED'}
 
