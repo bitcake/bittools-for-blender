@@ -1,4 +1,3 @@
-from unicodedata import name
 import bpy
 from bpy.types import Operator
 
@@ -17,36 +16,24 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
     def execute(self, context):
         configs = context.scene.rigging_configs
         left_to_right = configs.left_to_right
+        active_vg_name = context.object.vertex_groups.active.name
 
         if left_to_right:
-            split_vg_name = configs.left_side
-            side_to_delete = configs.right_side
+            side_to_mirror = configs.left_side
         else:
-            split_vg_name = configs.right_side
-            side_to_delete = configs.left_side
+            side_to_mirror = configs.right_side
 
-        active_vg = context.object.vertex_groups.active.name
+        vertex_groups = context.object.vertex_groups.items().copy()
+        for vertex_group in vertex_groups:
+            current_side = get_mirror_side(vertex_group[0])
+            if current_side is None:
+                self.report({'ERROR'}, f"Bone named {vertex_group[0]} cannot be mirror'd. Make sure its naming has the correct Side Keywords that are separated by the correct separator.")
+            elif current_side == configs.middle:
+                continue
+            elif current_side == side_to_mirror:
+                mirror_vertex_group_sides(context, vertex_group[1])
 
-        vgs_to_mirror = []
-        for vertex_group in context.object.vertex_groups.items():
-            vg_split = vertex_group[0].split(configs.separator)
-
-            if vg_split[-1] == side_to_delete:
-                context.object.vertex_groups.remove(vertex_group[1])
-
-            if vg_split[-1] == split_vg_name:
-                vgs_to_mirror.append(vertex_group[1])
-
-        for vertex_group in vgs_to_mirror:
-            context.object.vertex_groups.active = vertex_group
-            bpy.ops.object.vertex_group_copy()
-            context.object.data.use_paint_mask = False
-            context.object.data.use_paint_mask_vertex = False
-            bpy.ops.object.vertex_group_mirror(use_topology=False)
-            context.object.vertex_groups.active.name = vertex_group.name[:-1] + side_to_delete
-
-        # In case you were selecting a Vertex Group that gets deleted midway we do this to pick the new one
-        context.object.vertex_groups.active = context.object.vertex_groups.get(active_vg)
+        context.object.vertex_groups.active = context.object.vertex_groups.get(active_vg_name)
 
         return {'FINISHED'}
 
@@ -54,7 +41,7 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
 class BITCAKE_OT_mirror_weights_active_vertex_group(Operator):
     bl_idname = "bitcake.mirror_weights_active"
     bl_label = "Mirror Goddamn Weights Properly (Active)"
-    bl_description = "Does what this software should do out of the box. MIRROR MY WEIGHTS! Works for only the active Vertex Group of this mesh, needs naming scheme ending with .r or .l"
+    bl_description = "Does what this software should do out of the box. MIRROR MY WEIGHTS! Works for only the active Vertex Group of this mesh, needs correct naming scheme!"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -66,40 +53,95 @@ class BITCAKE_OT_mirror_weights_active_vertex_group(Operator):
     def execute(self, context):
         configs = context.scene.rigging_configs
         active_vg = context.object.vertex_groups.active
+        active_vg_name = active_vg.name
 
-        split_vg_name = active_vg.name.split(configs.separator)
-        new_name = split_vg_name.copy()
-        for index, item in enumerate(split_vg_name):
-            print(f'O Index é {index} e o item é {item}')
-            if item == configs.left_side:
-                new_name.pop(index)
-                new_name.insert(index, configs.right_side)
-                new_name = configs.separator.join(new_name)
-            elif item == configs.right_side:
-                new_name.pop(index)
-                new_name.insert(index, configs.left_side)
-                new_name = configs.separator.join(new_name)
+        side_to_mirror = get_mirror_side(active_vg_name)
+        if side_to_mirror is None:
+            self.report({'ERROR'}, "Bone cannot be mirror'd. Make sure its naming has the correct Side Keywords that are separated by the correct separator.")
+            return {'CANCELED'}
+        elif side_to_mirror == configs.middle:
+            mirror_vertex_group_middle(context, active_vg)
+        else:
+            mirror_vertex_group_sides(context, active_vg)
 
-        # If a New Name wasn't created then cancel since it couldn't find a mirror.
-        if new_name == split_vg_name:
-            self.report({'ERROR'}, 'Active Vertex Group is not mirroable! Make sure its name ends with a .r or .l !')
-            return {'CANCELLED'}
-
-        # Duplicate Active Vertex Group and Mirror it
-        bpy.ops.object.vertex_group_copy()
-        context.object.data.use_paint_mask = False
-        context.object.data.use_paint_mask_vertex = False
-        bpy.ops.object.vertex_group_mirror(use_topology=False)
-
-        vertex_group_to_delete = bpy.context.object.vertex_groups.get(new_name)
-        if vertex_group_to_delete is not None:
-            bpy.context.object.vertex_groups.remove(vertex_group_to_delete)
-
-        # Renames duplicated Vertex Group so there's no suffix added
-        context.object.vertex_groups.active.name = new_name
+        context.object.vertex_groups.active = context.object.vertex_groups.get(active_vg_name)
 
         return {'FINISHED'}
 
+def get_mirror_side(name_to_mirror):
+    configs = bpy.context.scene.rigging_configs
+    split_name = name_to_mirror.split(configs.separator)
+
+    for item in split_name:
+        if item == configs.left_side:
+            return configs.left_side
+        elif item == configs.right_side:
+            return configs.right_side
+        elif item == configs.middle:
+            return configs.middle
+
+    return None
+
+def mirror_vertex_group_middle(context, vertex_group):
+    vertex_a = vertex_group.name
+
+    bpy.ops.object.vertex_group_copy()
+    context.object.data.use_paint_mask = False
+    context.object.data.use_paint_mask_vertex = False
+    bpy.ops.object.vertex_group_mirror(use_topology=False)
+
+    vertex_b = context.object.vertex_groups.active.name
+
+    modifier_name = "VertexWeightMix"
+    mix_modifier = context.object.modifiers.new(name=modifier_name, type='VERTEX_WEIGHT_MIX')
+    mix_modifier.vertex_group_a = vertex_a
+    mix_modifier.vertex_group_b = vertex_b
+    mix_modifier.mix_set = 'OR'
+    mix_modifier.mix_mode = 'ADD'
+
+    bpy.ops.object.modifier_apply(modifier=modifier_name)
+
+    context.object.vertex_groups.remove(context.object.vertex_groups.get(vertex_b))
+
+    context.object.vertex_groups.active = context.object.vertex_groups.get(vertex_a)
+
+def mirror_vertex_group_sides(context, vertex_group):
+    context.object.vertex_groups.active = context.object.vertex_groups.get(vertex_group.name)
+    new_name = mirror_naming(vertex_group.name)
+
+    # Duplicate Active Vertex Group and Mirror it
+    bpy.ops.object.vertex_group_copy()
+    context.object.data.use_paint_mask = False
+    context.object.data.use_paint_mask_vertex = False
+    bpy.ops.object.vertex_group_mirror(use_topology=False)
+
+    vertex_group_to_delete = context.object.vertex_groups.get(new_name)
+    if vertex_group_to_delete is not None:
+        context.object.vertex_groups.remove(vertex_group_to_delete)
+
+    # Renames duplicated Vertex Group so there's no suffix added
+    context.object.vertex_groups.active.name = new_name
+
+    return
+
+def mirror_naming(name_to_mirror):
+    configs = bpy.context.scene.rigging_configs
+    split_name = name_to_mirror.split(configs.separator)
+    new_name = split_name.copy()
+
+    for index, item in enumerate(split_name):
+        if item == configs.left_side:
+            new_name.pop(index)
+            new_name.insert(index, configs.right_side)
+            new_name = configs.separator.join(new_name)
+        elif item == configs.right_side:
+            new_name.pop(index)
+            new_name.insert(index, configs.left_side)
+            new_name = configs.separator.join(new_name)
+        elif item == configs.middle:
+            new_name = configs.separator.join(new_name)
+
+    return new_name
 
 def draw_panel(self, context):
     configs = context.scene.rigging_configs

@@ -10,14 +10,29 @@ class BITCAKE_OT_dev_operator(Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.mode == 'OBJECT'
+        return True
 
     def execute(self, context):
-        mesh = context.object.data
-        selected_verts = [v for v in mesh.vertices if v.select]
+        vertex_a = context.object.vertex_groups.active.name
 
-        print(selected_verts[0].groups.items())
-        print(selected_verts[0].groups.items()[2][1].weight)
+        bpy.ops.object.vertex_group_copy()
+        context.object.data.use_paint_mask = False
+        context.object.data.use_paint_mask_vertex = False
+        bpy.ops.object.vertex_group_mirror(use_topology=False)
+
+        vertex_b = context.object.vertex_groups.active.name
+
+        modifier_name = "VertexWeightMix"
+        mix_modifier = context.object.modifiers.new(name=modifier_name, type='VERTEX_WEIGHT_MIX')
+        mix_modifier.vertex_group_a = vertex_a
+        mix_modifier.vertex_group_b = vertex_b
+        mix_modifier.mix_mode = 'ADD'
+
+        bpy.ops.object.modifier_apply(modifier=modifier_name)
+
+        context.object.vertex_groups.remove(context.object.vertex_groups.get(vertex_b))
+
+        context.object.vertex_groups.active = context.object.vertex_groups.get(vertex_a)
 
 
         return {'FINISHED'}

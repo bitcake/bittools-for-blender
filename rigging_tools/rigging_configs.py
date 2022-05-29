@@ -8,6 +8,7 @@ class BITCAKE_PROPS_rigging_configs(PropertyGroup):
     # Prefixes Setup (user changeable)
     separator: StringProperty(name='Separator', default='.')
     left_side: StringProperty(name='Left Side', default='l')
+    middle: StringProperty(name='Middle', default='x')
     right_side: StringProperty(name='Right Side', default='r')
 
 
