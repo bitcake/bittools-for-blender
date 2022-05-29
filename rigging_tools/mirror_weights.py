@@ -28,8 +28,6 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
             current_side = get_mirror_side(vertex_group[0])
             if current_side is None:
                 self.report({'ERROR'}, f"Bone named {vertex_group[0]} cannot be mirror'd. Make sure its naming has the correct Side Keywords that are separated by the correct separator.")
-            elif current_side == configs.middle:
-                continue
             elif current_side == side_to_mirror:
                 mirror_vertex_group_sides(context, vertex_group[1])
 
