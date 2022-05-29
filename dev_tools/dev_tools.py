@@ -1,4 +1,4 @@
-from re import I
+import time
 import bpy
 from bpy.types import Operator
 
@@ -13,29 +13,37 @@ class BITCAKE_OT_dev_operator(Operator):
         return True
 
     def execute(self, context):
-        vertex_a = context.object.vertex_groups.active.name
-
-        bpy.ops.object.vertex_group_copy()
-        context.object.data.use_paint_mask = False
-        context.object.data.use_paint_mask_vertex = False
-        bpy.ops.object.vertex_group_mirror(use_topology=False)
-
-        vertex_b = context.object.vertex_groups.active.name
-
-        modifier_name = "VertexWeightMix"
-        mix_modifier = context.object.modifiers.new(name=modifier_name, type='VERTEX_WEIGHT_MIX')
-        mix_modifier.vertex_group_a = vertex_a
-        mix_modifier.vertex_group_b = vertex_b
-        mix_modifier.mix_mode = 'ADD'
-
-        bpy.ops.object.modifier_apply(modifier=modifier_name)
-
-        context.object.vertex_groups.remove(context.object.vertex_groups.get(vertex_b))
-
-        context.object.vertex_groups.active = context.object.vertex_groups.get(vertex_a)
-
+        clear_weights_on_opposite_side(context)
 
         return {'FINISHED'}
+
+def clear_weights_on_opposite_side(context):
+    start_time = time.time()
+
+    vertices = context.object.data.vertices
+    active_vertex_group = context.object.vertex_groups.active
+    left_to_right = context.scene.rigging_configs.left_to_right
+
+    for verts in vertices.items():
+        if left_to_right:
+            if verts[1].co[0] < -0.0001:
+                active_vertex_group.remove([verts[0]])
+        else:
+            if verts[1].co[0] > 0.0001:
+                active_vertex_group.remove([verts[0]])
+
+        if  0.0001 >= verts[1].co[0] >= -0.0001:
+            verts[1].select = True
+            try:
+                new_weight = active_vertex_group.weight(verts[0]) / 2
+                active_vertex_group.add([verts[0]], new_weight, 'REPLACE')
+            except RuntimeError:
+                continue
+
+    executionTime = (time.time() - start_time)
+    print('Execution time in seconds: ' + str(executionTime))
+
+    return
 
 
 

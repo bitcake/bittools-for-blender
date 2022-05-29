@@ -28,6 +28,10 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
             current_side = get_mirror_side(vertex_group[0])
             if current_side is None:
                 self.report({'ERROR'}, f"Bone named {vertex_group[0]} cannot be mirror'd. Make sure its naming has the correct Side Keywords that are separated by the correct separator.")
+            elif configs.mirror_middle and current_side == configs.middle:
+                print(f'MIRRORANDO O MEIO! Aqui a joint atual {vertex_group[0]}')
+                clear_weights_on_opposite_side(context, vertex_group[1])
+                mirror_vertex_group_middle(context, vertex_group[1])
             elif current_side == side_to_mirror:
                 mirror_vertex_group_sides(context, vertex_group[1])
 
@@ -57,6 +61,7 @@ class BITCAKE_OT_mirror_weights_active_vertex_group(Operator):
             self.report({'ERROR'}, "Bone cannot be mirror'd. Make sure its naming has the correct Side Keywords that are separated by the correct separator.")
             return {'CANCELED'}
         elif side_to_mirror == configs.middle:
+            clear_weights_on_opposite_side(context, active_vg)
             mirror_vertex_group_middle(context, active_vg)
         else:
             mirror_vertex_group_sides(context, active_vg)
@@ -79,7 +84,32 @@ def get_mirror_side(name_to_mirror):
 
     return None
 
+def clear_weights_on_opposite_side(context, vertex_group):
+    context.object.vertex_groups.active = context.object.vertex_groups.get(vertex_group.name)
+    vertices = context.object.data.vertices
+    active_vertex_group = context.object.vertex_groups.active
+    left_to_right = context.scene.rigging_configs.left_to_right
+
+    for verts in vertices.items():
+        if left_to_right:
+            if verts[1].co[0] < -0.0001:
+                active_vertex_group.remove([verts[0]])
+        else:
+            if verts[1].co[0] > 0.0001:
+                active_vertex_group.remove([verts[0]])
+
+        if  0.0001 >= verts[1].co[0] >= -0.0001:
+            verts[1].select = True
+            try:
+                new_weight = active_vertex_group.weight(verts[0]) / 2
+                active_vertex_group.add([verts[0]], new_weight, 'REPLACE')
+            except RuntimeError:
+                continue
+
+    return
+
 def mirror_vertex_group_middle(context, vertex_group):
+    context.object.vertex_groups.active = context.object.vertex_groups.get(vertex_group.name)
     vertex_a = vertex_group.name
 
     bpy.ops.object.vertex_group_copy()
@@ -100,7 +130,7 @@ def mirror_vertex_group_middle(context, vertex_group):
 
     context.object.vertex_groups.remove(context.object.vertex_groups.get(vertex_b))
 
-    context.object.vertex_groups.active = context.object.vertex_groups.get(vertex_a)
+    return
 
 def mirror_vertex_group_sides(context, vertex_group):
     context.object.vertex_groups.active = context.object.vertex_groups.get(vertex_group.name)
@@ -151,9 +181,11 @@ def draw_panel(self, context):
 
     layout.separator()
     layout.label(text='Mirror Tool')
-    row = layout.row()
-    row.prop(configs, 'left_to_right', text='Switch L->R or R->L', toggle=1, icon='RESTRICT_SELECT_OFF')
-    row = layout.row()
+    column = layout.column(align=True)
+    row = column.row(align=True)
+    row.prop(configs, 'left_to_right', text='L -> R or R -> L', toggle=1)
+    row.prop(configs, 'mirror_middle', text='Mirror Middle Bones', toggle=1)
+    row = column.row()
     row.operator('bitcake.mirror_weights_all', text=label_text, icon='MOD_MIRROR')
     row = layout.row()
     row.operator('bitcake.mirror_weights_active', text='Mirror Active Vertex Group', icon='MOD_MIRROR')
