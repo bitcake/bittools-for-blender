@@ -4,7 +4,7 @@ from bpy.types import Operator
 class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
     bl_idname = "bitcake.mirror_weights_all"
     bl_label = "Mirror Goddamn Weights Properly (All Vertex Groups)"
-    bl_description = "Does what this software should do out of the box: MIRROR MY WEIGHTS! Works for all Vertex Groups in this mesh, needs naming scheme ending with .r or .l"
+    bl_description = "Copies the default Maya Mirroring behavior! Works for all Vertex Groups in this mesh, needs correct naming scheme!"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -43,7 +43,7 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
 class BITCAKE_OT_mirror_weights_active_vertex_group(Operator):
     bl_idname = "bitcake.mirror_weights_active"
     bl_label = "Mirror Goddamn Weights Properly (Active)"
-    bl_description = "Does what this software should do out of the box. MIRROR MY WEIGHTS! Works for only the active Vertex Group of this mesh, needs correct naming scheme!"
+    bl_description = "Copies the default Maya Mirroring behavior! Works for only the active Vertex Group of this mesh, needs correct naming scheme!"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -180,7 +180,7 @@ def draw_panel(self, context):
         label_text = 'Mirror All Right to Left'
 
     layout.separator()
-    layout.label(text='Mirror Tool')
+    layout.label(text='Mirror Skin Weights Tool')
     column = layout.column(align=True)
     row = column.row(align=True)
     row.prop(configs, 'left_to_right', text='L -> R or R -> L', toggle=1)
