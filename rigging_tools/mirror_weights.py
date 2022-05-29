@@ -51,9 +51,8 @@ class BITCAKE_OT_mirror_weights_active_vertex_group(Operator):
     def execute(self, context):
         configs = context.scene.rigging_configs
         active_vg = context.object.vertex_groups.active
-        active_vg_name = active_vg.name
 
-        side_to_mirror = get_mirror_side(active_vg_name)
+        side_to_mirror = get_mirror_side(active_vg.name)
         if side_to_mirror is None:
             self.report({'ERROR'}, "Bone cannot be mirror'd. Make sure its naming has the correct Side Keywords that are separated by the correct separator.")
             return {'CANCELED'}
@@ -62,7 +61,7 @@ class BITCAKE_OT_mirror_weights_active_vertex_group(Operator):
         else:
             mirror_vertex_group_sides(context, active_vg)
 
-        context.object.vertex_groups.active = context.object.vertex_groups.get(active_vg_name)
+        context.object.vertex_groups.active = context.object.vertex_groups.get(active_vg.name)
 
         return {'FINISHED'}
 
