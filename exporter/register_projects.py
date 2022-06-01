@@ -53,7 +53,7 @@ class BITCAKE_OT_unregister_project(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        exporter_configs = get_addon_prefs()
+        exporter_configs = context.scene.exporter_configs
         current_project = exporter_configs.registered_projects
 
         previous_project = get_previous_project(current_project)
