@@ -62,6 +62,10 @@ class BITCAKE_PROPS_exporter_configs(PropertyGroup):
                                     description='List all available engine export configurations.',
                                     )
 
+    export_selection_types: EnumProperty(items=[('SELECTED', 'Selected Only', 'Export Selected Objects Only', 'RESTRICT_SELECT_OFF', 0),
+                                                ('COLLECTION', 'Entire Active Collection', "Export Objects in the Active Object's Collection", 'OUTLINER_COLLECTION', 1),
+                                                ('ALL', 'All', "Export All Objects", 'OUTLINER', 2)], name='', default='ALL')
+
     export_selected: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
     export_collection: BoolProperty(name="Collection", description="Exports entire collection", default=False)
     export_batch: BoolProperty(name="Batch", description="Exports objects in a separate file", default=False)

@@ -36,6 +36,9 @@ class BITCAKE_OT_universal_exporter(Operator):
         # Get List of objects to export according to export type (Selected, Collection, All)
         objects_list = make_objects_list(context, panel_prefs)
 
+        # Filter List, removing unwanted objects
+        objects_list = filter_object_list(objects_list)
+
         # Verify if there are actual objects to export...
         if len(objects_list) == 0:
             self.report({'ERROR'}, 'No objects to export. Check if Active Object is part of an Ignored Collection')
@@ -43,7 +46,7 @@ class BITCAKE_OT_universal_exporter(Operator):
 
         # If file has never been saved...
         if bpy.data.filepath == '':
-            self.report({'ERROR'}, 'Please Save the file once before running the exporter.')
+            self.report({'ERROR'}, 'This file has never been saved, please save this file in an appropriate WIP folder.')
             return {'CANCELLED'}
 
         # Setup Export Directory, if any error occur during path setup, stop!
@@ -82,7 +85,7 @@ class BITCAKE_OT_universal_exporter(Operator):
         for obj in objects_list:
 
             obj_material = []
-            if obj.type != 'ARMATURE':
+            if obj.type != 'ARMATURE' and obj.override_library is None:
                 obj_material = obj.data.materials.items().copy()
 
             # Create dict entry so we can revert things later
@@ -103,11 +106,12 @@ class BITCAKE_OT_universal_exporter(Operator):
             if panel_prefs.origin_transform and obj.parent is None:
                 obj.location = 0, 0, 0
 
-            if not panel_prefs.export_textures and obj.type != 'ARMATURE':
+            if not panel_prefs.export_textures and obj.type != 'ARMATURE' and obj.override_library is None:
                 unlink_materials(obj)
 
             # Deal with linked objects (multi user)
-            if obj.data.users > 1:
+            print(obj.name)
+            if obj.data is not None and obj.data.users > 1:
                 obj_original_info_dict[obj]['linked_mesh'] = obj.data.original
                 bpy.ops.object.make_single_user(object=True, obdata=True, material=True, animation=True, obdata_animation=True)
 
@@ -148,7 +152,8 @@ class BITCAKE_OT_universal_exporter(Operator):
             obj.location = obj_original_info_dict[obj]['location']
             if 'linked_mesh' in obj_original_info_dict[obj]:
                 obj.data.user_remap(obj_original_info_dict[obj]['linked_mesh'])
-            relink_materials(obj, obj_original_info_dict[obj]['materials'])
+            if obj.override_library is None:
+                relink_materials(obj, obj_original_info_dict[obj]['materials'])
 
         # Deletes all data created in the process that has no users to clean the file
         bpy.ops.outliner.orphans_purge()
@@ -163,14 +168,14 @@ class BITCAKE_OT_universal_exporter(Operator):
 
 
 def make_objects_list(context, panel_prefs):
-
     objects_list = []
-    if panel_prefs.export_selected:
+
+    if panel_prefs.export_selection_types == 'SELECTED':
         selected_objects = context.selected_objects
         selected_objects = append_child_colliders(selected_objects)
         objects_list = selected_objects
 
-    elif panel_prefs.export_collection:
+    elif panel_prefs.export_selection_types == 'COLLECTION':
         change_active_collection(context)
         collection_objects = context.active_object.users_collection[0].all_objects
         collection_objects = append_child_colliders([obj for obj in collection_objects])
@@ -182,7 +187,7 @@ def make_objects_list(context, panel_prefs):
         bpy.ops.object.select_all()
         objects_list = context.selected_objects
 
-    return filter_object_list(objects_list)
+    return objects_list
 
 def append_child_colliders(obj_list):
     for obj in obj_list:
