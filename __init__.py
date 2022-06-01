@@ -1,7 +1,7 @@
 bl_info = {
     "name": "BitTools",
     "author": "Eduardo Lamhut",
-    "version": (0, 0, 1),
+    "version": (0, 3, 1),
     "blender": (3, 0, 0),
     "location": "3D View > Properties> Auto-Rig Pro",
     "description": "Automatic rig generation based on reference bones and various tools",

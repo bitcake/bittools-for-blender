@@ -27,7 +27,7 @@ class BITCAKE_PT_universal_exporter(Panel):
 
 class BITCAKE_PT_nomenclature(Panel):
     bl_idname = "BITCAKE_PT_nomenclature"
-    bl_label = "Export Nomenclature"
+    bl_label = "Export Types"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "BitTools"
@@ -41,16 +41,18 @@ class BITCAKE_PT_nomenclature(Panel):
 
         # row = layout.row(align=True)
         # row.prop(exporter_configs, 'separator')
-        row = layout.row(align=True)
-        row.prop(exporter_configs, 'static_mesh_prefix')
-        row = layout.row(align=True)
-        row.prop(exporter_configs, 'skeletal_mesh_prefix')
-        row = layout.row(align=True)
-        row.prop(exporter_configs, 'animation_prefix')
-        row = layout.row(align=True)
-        row.prop(exporter_configs, 'pose_prefix')
-        row = layout.row(align=True)
-        row.prop(exporter_configs, 'camera_prefix')
+        split = layout.split(factor=0.95, align=True)
+        split.prop(exporter_configs, 'static_mesh_prefix', expand=True)
+        split.prop(exporter_configs, 'static_mesh_export', icon_only=True, text='')
+        split = layout.split(factor=0.95, align=True)
+        split.prop(exporter_configs, 'skeletal_mesh_prefix')
+        split.prop(exporter_configs, 'skeletal_mesh_export', icon_only=True, text='')
+        split = layout.split(factor=0.95, align=True)
+        split.prop(exporter_configs, 'animation_prefix')
+        split.prop(exporter_configs, 'animation_export', icon_only=True, text='')
+        split = layout.split(factor=0.95, align=True)
+        split.prop(exporter_configs, 'camera_prefix')
+        split.prop(exporter_configs, 'camera_export', icon_only=True, text='')
 
         return
 
