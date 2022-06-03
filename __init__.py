@@ -32,8 +32,9 @@ from . import scene_setup
 
 module_names = [
     'animation',
-    'exporter',
+    'custom_commands',
     'collider_tools',
+    'exporter',
     'rigging_tools',
     'dev_tools',
 ]
