@@ -84,15 +84,16 @@ class BITCAKE_OT_universal_exporter(Operator):
         obj_original_info_dict = {'active_object': context.active_object,}
         for obj in objects_list:
 
-            obj_material = []
-            if obj.type != 'ARMATURE' and obj.override_library is None:
-                obj_material = obj.data.materials.items().copy()
-
-            # Create dict entry so we can revert things later
+            # Add some base obj information first
             obj_original_info_dict[obj] = {'name': obj.name,
                                            'location': obj.location.copy(),
-                                           'materials': obj_material,
                                            }
+
+            # Let's save all object's materials to return them back later
+            obj_material = []
+            if obj.type == 'MESH':
+                obj_material = obj.data.materials.items().copy()
+                obj_original_info_dict[obj]['materials'] = obj_material
 
             select_and_make_active(context, obj)
 
@@ -106,11 +107,10 @@ class BITCAKE_OT_universal_exporter(Operator):
             if panel_prefs.origin_transform and obj.parent is None:
                 obj.location = 0, 0, 0
 
-            if not panel_prefs.export_textures and obj.type != 'ARMATURE' and obj.override_library is None:
+            if not panel_prefs.export_textures and obj.type == 'MESH':
                 unlink_materials(obj)
 
             # Deal with linked objects (multi user)
-            print(obj.name)
             if obj.data is not None and obj.data.users > 1:
                 obj_original_info_dict[obj]['linked_mesh'] = obj.data.original
                 bpy.ops.object.make_single_user(object=True, obdata=True, material=True, animation=True, obdata_animation=True)
@@ -130,6 +130,7 @@ class BITCAKE_OT_universal_exporter(Operator):
 
         elif not self.use_custom_dir and self.is_batch:
             batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json, panel_prefs)
+
         else:
             process_objs_paths_and_export(self, obj_original_info_dict, objects_list, export_directory, markers_json, panel_prefs)
 
@@ -150,9 +151,11 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             obj.name = obj_original_info_dict[obj]['name']
             obj.location = obj_original_info_dict[obj]['location']
+
             if 'linked_mesh' in obj_original_info_dict[obj]:
                 obj.data.user_remap(obj_original_info_dict[obj]['linked_mesh'])
-            if obj.override_library is None:
+
+            if 'materials' in obj_original_info_dict[obj]:
                 relink_materials(obj, obj_original_info_dict[obj]['materials'])
 
         # Deletes all data created in the process that has no users to clean the file
@@ -391,14 +394,24 @@ def construct_animation_events_json(self, context, obj):
     return markers_json
 
 def unlink_materials(obj):
-    bpy.ops.object.material_slot_remove_unused()
+    if obj.override_library is not None and obj.type != 'EMPTY':
+        print(f'OBJETO {obj.name} TEM LIBRARY OVERRIDE')
+        obj.data.override_create(remap_local_usages=True)
 
-    for index, material in enumerate(obj.material_slots):
-        obj.material_slots[index].material = None
+    try:
+        bpy.ops.object.material_slot_remove_unused()
+
+    except RuntimeError:
+        pass
+
+    finally:
+        for index, material in enumerate(obj.material_slots):
+            obj.material_slots[index].material = None
 
     return
 
 def relink_materials(obj, materials):
+    print(f'LISTA DE MATERIAIS DESSE OBJETO {obj} AQUI: {materials}')
     if materials == []:
         return
 

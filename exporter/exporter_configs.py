@@ -1,4 +1,3 @@
-from posixpath import basename
 import bpy
 import json
 import os
