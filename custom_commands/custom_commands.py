@@ -6,7 +6,7 @@ from bpy.types import Operator
 
 class BITCAKE_OT_incremental_save(Operator):
     bl_idname = "bitcake.incremental_save"
-    bl_label = "BitTools Incremental Save"
+    bl_label = "Incremental Save"
     bl_description = "Increases or Adds a number count at the end of the file and saves it!"
     bl_options = {'INTERNAL', 'UNDO'}
 
@@ -29,7 +29,7 @@ class BITCAKE_OT_incremental_save(Operator):
 
 class BITCAKE_OT_increment_and_master_save(Operator):
     bl_idname = "bitcake.increment_and_master_save"
-    bl_label = "BitTools Incremental Save"
+    bl_label = "Incremental Save and Send to Published"
     bl_description = "Increases or Adds a number count at the end of the file and saves it!"
     bl_options = {'INTERNAL', 'UNDO'}
 
@@ -95,7 +95,7 @@ def draw_panel(self, context):
     row = layout.row()
     row.operator('bitcake.incremental_save', text='Incremental Save')
     row = layout.row()
-    row.operator('bitcake.increment_and_master_save', text='Increment and Master Save')
+    row.operator('bitcake.increment_and_master_save', text='Incremental Save and Send to Published')
 
     return
 
@@ -113,6 +113,10 @@ def register():
     if kc:
         km = wm.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
         kmi = km.keymap_items.new(BITCAKE_OT_incremental_save.bl_idname, type='S', value='PRESS', ctrl=True, alt=True)
+        addon_keymaps.append((km, kmi))
+
+        km = wm.keyconfigs.addon.keymaps.new(name='3D View', space_type='VIEW_3D')
+        kmi = km.keymap_items.new(BITCAKE_OT_increment_and_master_save.bl_idname, type='S', value='PRESS', ctrl=True, alt=True, shift=True)
         addon_keymaps.append((km, kmi))
 
 
