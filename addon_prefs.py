@@ -22,9 +22,14 @@ class BitCakeToolsPreferences(AddonPreferences):
         default=True,
     )
 
+    toggle_custom_commands: BoolProperty(
+        name="Custom Commands Menu",
+        default=False,
+    )
+
     toggle_dev_tools: BoolProperty(
         name="Development Tools",
-        default=True,
+        default=False,
     )
 
     separator: StringProperty(name='Characater that separates naming', default='_')
@@ -54,6 +59,7 @@ class BitCakeToolsPreferences(AddonPreferences):
         column.label(text="Menu Configs")
         column.prop(self, "toggle_animation_tools")
         column.prop(self, "toggle_collider_tools")
+        column.prop(self, "toggle_custom_commands")
         column.prop(self, "toggle_rigging_tools")
         column.prop(self, "toggle_dev_tools")
 

@@ -43,7 +43,7 @@ def draw_panel(self, context):
     layout = self.layout
 
     row = layout.row()
-    row.operator('bitcake.incremental_save', text='Test Butten')
+    row.operator('bitcake.incremental_save', text='Incremental Save')
 
     return
 

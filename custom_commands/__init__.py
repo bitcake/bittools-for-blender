@@ -21,7 +21,7 @@ class BITCAKE_PT_custom_commands(Panel):
     @classmethod
     def poll(cls, context):
         addon_prefs = get_addon_prefs()
-        return addon_prefs.toggle_dev_tools
+        return addon_prefs.toggle_custom_commands
 
     def draw(self, context):
         for draw_func in __class__.draw_funcs:
