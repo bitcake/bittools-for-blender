@@ -24,7 +24,7 @@ class BitCakeToolsPreferences(AddonPreferences):
 
     toggle_custom_commands: BoolProperty(
         name="Custom Commands Menu",
-        default=False,
+        default=True,
     )
 
     toggle_dev_tools: BoolProperty(
@@ -33,6 +33,9 @@ class BitCakeToolsPreferences(AddonPreferences):
     )
 
     separator: StringProperty(name='Characater that separates naming', default='_')
+    wip: StringProperty(name='WIP Folder name', default='WIP')
+    published: StringProperty(name='Published Folder name', default='Published')
+    art: StringProperty(name='In-Engine Art Folder name', default='Art')
 
     # Collider Prefixes Setup (NOT user changeable)
     box_collider_prefix: StringProperty(name='Box Collider Prefix', default='UBX')

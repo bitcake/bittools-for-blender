@@ -5,7 +5,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_current_engine, select_and_make_active, get_engine_configs_path, get_markers_configs_file_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
+from ..helpers import get_current_engine, get_published_path, is_wip_in_path, select_and_make_active, get_engine_configs_path, get_markers_configs_file_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 class BITCAKE_OT_universal_exporter(Operator):
@@ -267,31 +267,6 @@ def construct_registered_project_export_directory(self):
 
     return constructed_directory
 
-def construct_registered_project_published_export_directory(self):
-    blend_path = Path(bpy.path.abspath('//'))
-    wip = False
-    pathway = []
-
-    # Search the .blend Path for BitCake's folder structure
-    # Change _WIP folder to Art then construct the rest of the path
-    for part in blend_path.parts:
-        pathway.append(part)
-        if part.__contains__('02_WIP'):
-            wip = True
-            pathway.pop()
-            pathway.append('03_Published')
-
-    # If no WIP folder found then fail
-    if wip is False:
-        self.report({"ERROR"},
-                    "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word '_WIP' like in c:/BitTools/02_WIP/Environment")
-        return {'CANCELLED'}
-
-    # Construct final directory and return it
-    constructed_directory = Path().joinpath(*pathway) # Unpacks the list as arguments
-
-    return constructed_directory
-
 def rename_with_prefix(context, obj):
     """Renames current obj and all its children."""
 
@@ -523,7 +498,7 @@ def process_objs_paths_and_export(self, original_info_dict, objects_list, export
 
     # Copy the created FBX to its published folder
     if not self.use_custom_dir:
-        published_dir = construct_registered_project_published_export_directory(self)
+        published_dir = get_published_path().parent
         published_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy(constructed_path, published_dir)
 
@@ -556,7 +531,7 @@ def batch_process_objs_paths_and_export(self, context, objects_list, export_dire
 
         # Copy the created FBX to its published folder
         if not self.use_custom_dir:
-            published_dir = construct_registered_project_published_export_directory(self)
+            published_dir = get_published_path().parent
             if panel_prefs.collection_to_folder:
                 published_dir = published_dir.joinpath(*collection_hierarchy)
             published_dir.mkdir(parents=True, exist_ok=True)

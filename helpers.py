@@ -1,6 +1,8 @@
+import imp
 import addon_utils
 import json
 import bpy
+import os
 from pathlib import Path
 from mathutils import Vector, Quaternion, Euler
 
@@ -29,10 +31,94 @@ arp_default_pose_values = {
 }
 default_pose_values = {}
 
+
+def is_wip_in_path():
+    """Receives a Path object and checks if there's a WIP folder in one of the parent folders"""
+    filepath = Path(bpy.data.filepath)
+    addon_prefs = get_addon_prefs()
+    parts = filepath.parts
+
+    for part in parts:
+        split_parts = part.split(addon_prefs.separator)
+        for split_part in split_parts:
+            if split_part == addon_prefs.wip:
+                return True
+
+    return False
+
+def get_published_path():
+    if not is_wip_in_path():
+        return None
+
+    addon_prefs = get_addon_prefs()
+    filepath = Path(bpy.data.filepath)
+    parts = filepath.parts
+
+    # How many folders in Path until WIP folder?
+    walk = 0
+    for part in parts:
+        wip = False
+        split_parts = part.split(addon_prefs.separator)
+        for split_part in split_parts:
+            if split_part == addon_prefs.wip:
+                wip = True
+        if wip == True:
+            walk += 1
+            break
+
+        walk += 1
+
+    # Now we do the reverse so we can Path walk until the WIP's parent
+    folders_to_walk = len(parts) - walk
+
+    project_root = filepath.parents[folders_to_walk]
+    relative_parents = parts[-folders_to_walk:]
+
+    published = get_published_folder_name_inside_a_dir(project_root)
+    published_path = project_root.joinpath(published).joinpath(*relative_parents)
+
+    return published_path
+
+def get_published_folder_name_inside_a_dir(directory):
+    """Finds wether or not a Published folder exists inside a directory and returns it. In case none found, creates its name and returns it."""
+    addon_prefs = get_addon_prefs()
+    sep = addon_prefs.separator
+    pub = addon_prefs.published
+    wip = addon_prefs.wip
+    root, dirs, files = next(os.walk(directory))
+
+    wip_folder = None
+    published_folder = None
+    for folder in dirs:
+        split_parts = folder.split(sep)
+
+        for part in split_parts:
+            if part == pub:
+                published_folder = folder
+            if part == wip:
+                wip_folder = folder
+
+    if published_folder:
+        return published_folder
+
+    else:
+        split_wip = wip_folder.split(sep)
+        if split_wip[0].isnumeric():
+            zsize = len(split_wip[0])
+            num = int(split_wip[0]) + 1
+            split_wip.pop(0)
+            split_wip.insert(0, str(num).zfill(zsize))
+            split_wip[1] = pub
+            published_folder = sep.join(split_wip)
+
+            return published_folder
+
+        else:
+            return pub
+
 def is_object_arp(obj):
     """Returns whether the object is an Auto-Rig Pro armature."""
     return obj and obj.type == 'ARMATURE' and "c_pos" in obj.data.bones
-
 
 def clear_pose(obj, clear_armature_properties=True, clear_bone_properties=True):
     """Resets the given armature."""
@@ -69,7 +155,6 @@ def clear_pose(obj, clear_armature_properties=True, clear_bone_properties=True):
         pose_bone.rotation_euler = Euler()
         pose_bone.rotation_axis_angle = [0.0, 0.0, 1.0, 0.0]
         pose_bone.scale = Vector((1.0, 1.0, 1.0))
-
 
 
 def get_current_project_assets_path():
