@@ -20,7 +20,7 @@ class BITCAKE_OT_universal_exporter(Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.mode == 'OBJECT'
+        return context.mode == 'OBJECT' or context.mode == 'POSE'
 
     def invoke(self, context, event):
         panel_prefs = context.scene.exporter_configs
@@ -32,9 +32,14 @@ class BITCAKE_OT_universal_exporter(Operator):
 
     def execute(self, context):
         panel_prefs = context.scene.exporter_configs
+        original_context = context.mode
+
+        # If started from Pose mode, let's put in Object so the Operator works then later on, let's revert it.
+        if original_context == 'POSE' and context.object is not None:
+            bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
         # Get List of objects to export according to export type (Selected, Collection, All)
-        objects_list = make_objects_list(context, panel_prefs)
+        objects_list = make_objects_list(context)
 
         # Filter List, removing unwanted objects
         objects_list = filter_object_list(objects_list)
@@ -123,16 +128,16 @@ class BITCAKE_OT_universal_exporter(Operator):
 
         # Process all types of paths then export accordingly
         if self.use_custom_dir and not self.is_batch:
-            process_objs_paths_and_export(self, obj_original_info_dict, objects_list, export_directory, markers_json, panel_prefs)
+            process_objs_paths_and_export(self, obj_original_info_dict, objects_list, export_directory, markers_json)
 
         elif self.use_custom_dir and self.is_batch:
-            batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json, panel_prefs)
+            batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json)
 
         elif not self.use_custom_dir and self.is_batch:
-            batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json, panel_prefs)
+            batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json)
 
         else:
-            process_objs_paths_and_export(self, obj_original_info_dict, objects_list, export_directory, markers_json, panel_prefs)
+            process_objs_paths_and_export(self, obj_original_info_dict, objects_list, export_directory, markers_json)
 
         # If only apply transform was selected, end Operation
         if panel_prefs.apply_transform and not panel_prefs.origin_transform:
@@ -145,7 +150,7 @@ class BITCAKE_OT_universal_exporter(Operator):
 
         # Return things to original state
         for index, obj in enumerate(obj_original_info_dict):
-            # We skip the first item in the dictionary, which is the current active object.
+            # We skip the first item in the dictionary, which was the current active object.
             if index == 0:
                 continue
 
@@ -164,13 +169,19 @@ class BITCAKE_OT_universal_exporter(Operator):
         # Re-hide all colliders for good measure
         toggle_all_colliders_visibility(False)
 
+        # Go back to Pose Mode if that's what it was
+        if original_context == 'POSE':
+            bpy.context.view_layer.objects.active = obj_original_info_dict['active_object']
+            bpy.ops.object.mode_set(mode='POSE', toggle=False)
+
         # Save! :D
         bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
         return {'FINISHED'}
 
 
-def make_objects_list(context, panel_prefs):
+def make_objects_list(context):
+    panel_prefs = bpy.context.scene.exporter_configs
     objects_list = []
 
     if panel_prefs.export_selection_types == 'SELECTED':
@@ -220,12 +231,23 @@ def filter_object_list(object_list):
     '''Removes all objects that are:
     - Inside an Ignored Collection or are Linked inside one'''
 
+    panel_prefs = bpy.context.scene.exporter_configs
+    sm = panel_prefs.static_mesh_export
+    sk = panel_prefs.skeletal_mesh_export
+    cam = panel_prefs.camera_export
+
     list_copy = object_list.copy()
 
     for obj in list_copy:
         for col in obj.users_collection:
             if col.get('Ignore'):
                 object_list.remove(obj)
+        if sm is False and obj.type == 'MESH':
+            object_list.remove(obj)
+        if sk is False and obj.type == 'ARMATURE':
+            object_list.remove(obj)
+        if cam is False and obj.type == 'CAMERA':
+            object_list.remove(obj)
 
     return object_list
 
@@ -450,10 +472,11 @@ def get_collection_hierarchy_list_as_path(context, obj):
 
     return collection_hierarchy
 
-def exporter(path, panel_preferences):
-    configs = get_engine_configs(panel_preferences)
+def exporter(path):
+    panel_prefs = bpy.context.scene.exporter_configs
+    configs = get_engine_configs(panel_prefs)
 
-    export_nla = panel_preferences.export_nla_strips
+    export_nla = panel_prefs.export_nla_strips
 
     # Export file
     teste = bpy.ops.export_scene.fbx(
@@ -466,22 +489,25 @@ def exporter(path, panel_preferences):
         add_leaf_bones=configs['add_leaf_bones'],
         primary_bone_axis=configs['primary_bone'],
         secondary_bone_axis=configs['secondary_bone'],
+        bake_anim=panel_prefs.animation_export,
         bake_anim_use_nla_strips=export_nla,
         bake_anim_step=configs['anim_sampling'],
         bake_anim_simplify_factor=configs['anim_simplify'],
+        bake_anim_force_startend_keying=True,
         use_selection=True,
         use_active_collection=False,
         path_mode='COPY',
         embed_textures=False,
         axis_forward=configs['forward_axis'],
         axis_up=configs['up_axis'],
-        bake_anim_force_startend_keying=True,
     )
 
     return
 
 
-def process_objs_paths_and_export(self, original_info_dict, objects_list, export_directory, markers_json, panel_prefs):
+def process_objs_paths_and_export(self, original_info_dict, objects_list, export_directory, markers_json):
+    panel_prefs = bpy.context.scene.exporter_configs
+
     select_objects_in_list(objects_list)
     # Create the filename based on this .blend name
     filename = panel_prefs.non_batch_filename + '.fbx'
@@ -494,7 +520,7 @@ def process_objs_paths_and_export(self, original_info_dict, objects_list, export
     # Pass the Json Dict and dump it to create the actual file in the directory
     create_animation_markers_json_file(constructed_path, markers_json)
     # Finally, export the file
-    exporter(constructed_path, panel_prefs)
+    exporter(constructed_path)
 
     # Copy the created FBX to its published folder
     if not self.use_custom_dir:
@@ -504,8 +530,10 @@ def process_objs_paths_and_export(self, original_info_dict, objects_list, export
 
     return
 
-def batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json, panel_prefs):
+def batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json):
     """Process each object in the list, constructs each path, creates Animation Markers Json and Exports Files"""
+    panel_prefs = bpy.context.scene.exporter_configs
+
     for obj in objects_list:
         if obj.parent is not None:
             continue
@@ -527,7 +555,7 @@ def batch_process_objs_paths_and_export(self, context, objects_list, export_dire
         # Pass the Json Dict and dump it to create the actual file in the directory
         create_animation_markers_json_file(constructed_path, markers_json)
         # Finally, export the file
-        exporter(constructed_path, panel_prefs)
+        exporter(constructed_path)
 
         # Copy the created FBX to its published folder
         if not self.use_custom_dir:
@@ -540,11 +568,11 @@ def batch_process_objs_paths_and_export(self, context, objects_list, export_dire
     return
 
 
-def get_engine_configs(panel_preferences):
+def get_engine_configs(panel_prefs):
     engine_configs_file = get_engine_configs_path()
     configs = json.load(engine_configs_file.open())
 
-    current_engine = panel_preferences.engine_configs_list
+    current_engine = panel_prefs.engine_configs_list
     current_config = configs[current_engine]
 
     return current_config

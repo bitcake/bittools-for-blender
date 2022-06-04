@@ -16,7 +16,7 @@ class BITCAKE_OT_dev_operator(Operator):
         return True
 
     def execute(self, context):
-        construct_registered_project_published_export_directory(self)
+        print(bpy.context.mode)
 
         return {'FINISHED'}
 
