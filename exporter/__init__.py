@@ -37,22 +37,19 @@ class BITCAKE_PT_nomenclature(Panel):
         exporter_configs = context.scene.exporter_configs
         layout = self.layout
 
-        layout.label(text='Prefixes')
+        layout.prop(exporter_configs, 'animation_export', text='Export Animations')
 
-        # row = layout.row(align=True)
-        # row.prop(exporter_configs, 'separator')
-        split = layout.split(factor=0.95, align=True)
-        split.prop(exporter_configs, 'static_mesh_prefix', expand=True)
-        split.prop(exporter_configs, 'static_mesh_export', icon_only=True, text='')
-        split = layout.split(factor=0.95, align=True)
-        split.prop(exporter_configs, 'skeletal_mesh_prefix')
-        split.prop(exporter_configs, 'skeletal_mesh_export', icon_only=True, text='')
-        split = layout.split(factor=0.95, align=True)
-        split.prop(exporter_configs, 'animation_prefix')
-        split.prop(exporter_configs, 'animation_export', icon_only=True, text='')
         split = layout.split(factor=0.95, align=True)
         split.prop(exporter_configs, 'camera_prefix')
         split.prop(exporter_configs, 'camera_export', icon_only=True, text='')
+
+        split = layout.split(factor=0.95, align=True)
+        split.prop(exporter_configs, 'skeletal_mesh_prefix')
+        split.prop(exporter_configs, 'skeletal_mesh_export', icon_only=True, text='')
+
+        split = layout.split(factor=0.95, align=True)
+        split.prop(exporter_configs, 'static_mesh_prefix', expand=True)
+        split.prop(exporter_configs, 'static_mesh_export', icon_only=True, text='')
 
         return
 
