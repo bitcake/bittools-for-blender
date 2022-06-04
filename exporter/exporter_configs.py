@@ -61,9 +61,9 @@ class BITCAKE_PROPS_exporter_configs(PropertyGroup):
                                     description='List all available engine export configurations.',
                                     )
 
-    export_selection_types: EnumProperty(items=[('SELECTED', 'Selected Only', 'Export Selected Objects Only', 'RESTRICT_SELECT_OFF', 0),
-                                                ('COLLECTION', 'Entire Active Collection', "Export Objects in the Active Object's Collection", 'OUTLINER_COLLECTION', 1),
-                                                ('ALL', 'All', "Export All Objects", 'OUTLINER', 2)], name='', default='SELECTED')
+    export_selection_types: EnumProperty(items=[('SELECTED', 'Selected', 'Export Selected Objects Only', 'RESTRICT_SELECT_OFF', 0),
+                                                ('COLLECTION', 'Collection', "Export Objects in the Active Object's Collection", 'OUTLINER_COLLECTION', 1),
+                                                ('ALL', 'All', "Export All Objects", 'OUTLINER', 2)], default='SELECTED')
 
     export_selected: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
     export_collection: BoolProperty(name="Collection", description="Exports entire collection", default=False)
@@ -82,9 +82,9 @@ class BITCAKE_PROPS_exporter_configs(PropertyGroup):
     camera_prefix: StringProperty(name='Camera', default='Cam')
     camera_export: BoolProperty(name="Camera Export", description="Enables or disables exporting of Cameras", default=False)
     skeletal_mesh_prefix: StringProperty(name='Skeletal Mesh', default='SK')
-    skeletal_mesh_export: BoolProperty(name="Skeletal Mesh Export", description="Enables or disables exporting of Skeletal Meshes (Armatures)", default=True)
     static_mesh_prefix: StringProperty(name='Static Mesh', default='SM')
     static_mesh_export: BoolProperty(name="Static Mesh Export", description="Enables or disables exporting of Static Meshes", default=True)
+    skeletal_mesh_export: BoolProperty(name="Skeletal Mesh Export", description="Enables or disables exporting of Skeletal Meshes (Armatures)", default=True)
 
     non_batch_filename: StringProperty(name='Filename', default='', description=f"Name of the exported file. You SHOULD prefix your file with the correct Static Mesh or Skeletal Mesh prefixes! It'll be red until you do so, but won't stop you from exporting the file.", update=check_for_prefixes)
     custom_directory: StringProperty(name='', description='Custom Directory to Export to', subtype='DIR_PATH')

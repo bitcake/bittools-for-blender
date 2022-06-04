@@ -21,15 +21,10 @@ def draw_panel(self, context):
         row = layout.row(align=True)
         row.prop(exporter_configs, 'collection_to_folder', toggle=1, icon_value=1, icon='FILEBROWSER')
 
-    row = layout.row(align=True)
-    # row.prop(exporter_configs, 'export_selected', toggle=1, icon='RESTRICT_SELECT_OFF')
-    # row.prop(exporter_configs, 'export_collection', toggle=1, icon='OUTLINER_COLLECTION')
-
     box = layout.box()
-    box.label(text='Export Selection Type')
-    row = box.row(align=True)
-    # row.prop(exporter_configs, 'export_selection_types')
-    row.props_enum(exporter_configs, 'export_selection_types')
+    col = box.column(align=True)
+    row = col.row(align=True)
+    row.prop(exporter_configs, 'export_selection_types', expand=True)
 
     return
 
