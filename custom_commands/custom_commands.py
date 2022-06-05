@@ -1,7 +1,7 @@
 import bpy
 import re
 from pathlib import Path
-from ..helpers import get_addon_prefs, get_published_path, is_wip_in_path
+from ..helpers import get_addon_prefs, get_published_path
 from bpy.types import Operator
 
 class BITCAKE_OT_incremental_save(Operator):

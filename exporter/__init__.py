@@ -1,6 +1,7 @@
 import bpy
 from bpy.types import Panel
 
+
 modules = [
     'exporter_configs',
     'register_projects',

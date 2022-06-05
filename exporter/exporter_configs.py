@@ -1,10 +1,11 @@
 import bpy
 import json
 import os
+from bpy.app.handlers import persistent
 from bpy.types import PropertyGroup, Scene
 from bpy.utils import previews
 from bpy.props import BoolProperty, EnumProperty, StringProperty
-from ..helpers import get_engine_configs_path, get_registered_projects_path
+from ..helpers import get_current_project_structure_json, get_engine_configs_path, get_exporter_configs, get_registered_projects_path
 
 def update_registered_projects(self, context):
     projects_list = []
@@ -21,6 +22,20 @@ def update_registered_projects(self, context):
         projects_list = [("NONE", "No Projects Registered", "", 0),]
 
     return projects_list
+
+@persistent     # Persistent function so it runs when Blender opens.
+def check_project_for_settings(self, context):
+    exporter_configs = get_exporter_configs()
+    project_settings_file = get_current_project_structure_json()
+
+    if project_settings_file:
+        exporter_configs.project_has_settings = True
+    else:
+        exporter_configs.project_has_settings = False
+
+    print(exporter_configs.project_has_settings)
+
+    return
 
 def list_registered_engine_configs(self, context):
     pcoll = preview_collections["main"]
@@ -54,6 +69,7 @@ class BITCAKE_PROPS_exporter_configs(PropertyGroup):
     registered_projects: EnumProperty(items=update_registered_projects,
                                       name='',
                                       description='Register projects here before starting. Current Active project',
+                                      update=check_project_for_settings,
                                       )
 
     engine_configs_list: EnumProperty(items=list_registered_engine_configs,
@@ -65,6 +81,8 @@ class BITCAKE_PROPS_exporter_configs(PropertyGroup):
                                                 ('COLLECTION', 'Collection', "Export Objects in the Active Object's Collection", 'OUTLINER_COLLECTION', 1),
                                                 ('ALL', 'All', "Export All Objects", 'OUTLINER', 2)], default='SELECTED')
 
+
+    project_has_settings: BoolProperty(name="Project Has Settings", description="Checks if current active project has a project_settings.json file in the Asset folder root", default=False)
     export_selected: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
     export_collection: BoolProperty(name="Collection", description="Exports entire collection", default=False)
     export_batch: BoolProperty(name="Batch", description="Exports objects in a separate file", default=False)
@@ -90,8 +108,6 @@ class BITCAKE_PROPS_exporter_configs(PropertyGroup):
     custom_directory: StringProperty(name='', description='Custom Directory to Export to', subtype='DIR_PATH')
 
 
-
-
 classes = (BITCAKE_PROPS_exporter_configs,)
 
 preview_collections = {}
@@ -110,7 +126,11 @@ def register():
 
     Scene.exporter_configs = bpy.props.PointerProperty(type=BITCAKE_PROPS_exporter_configs)
 
+    bpy.app.handlers.load_post.append(check_project_for_settings)
+
 def unregister():
+    bpy.app.handlers.load_post.remove(check_project_for_settings)
+
     for cls in classes:
         bpy.utils.unregister_class(cls)
 

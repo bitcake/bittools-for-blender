@@ -1,0 +1,46 @@
+{
+    "folderName": "_Internal",
+    "childFolders": [
+        {
+            "folderName": "Art",
+            "childFolders": []
+        },
+        {
+            "folderName": "MaterialLibrary",
+            "childFolders": []
+        },
+        {
+            "folderName": "Prefabs",
+            "childFolders": []
+        },
+        {
+            "folderName": "Data",
+            "childFolders": []
+        },
+        {
+            "folderName": "Scenes",
+            "childFolders": []
+        },
+        {
+            "folderName": "Scripts",
+            "childFolders": []
+        },
+        {
+            "folderName": "Shaders",
+            "childFolders": []
+        },
+        {
+            "folderName": "Tools",
+            "childFolders": [
+                {
+                    "folderName": "Editor",
+                    "childFolders": []
+                }
+            ]
+        },
+        {
+            "folderName": "VFX",
+            "childFolders": []
+        }
+    ]
+}

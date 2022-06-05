@@ -171,6 +171,18 @@ def get_current_project_assets_path():
 
     return projects_json[active_project]['assets']
 
+def get_generic_project_structure_json():
+    """Returns a json Object from the BitTools generic project_structure.json file"""
+
+    for mod in addon_utils.modules():
+        if mod.bl_info['name'] == __package__:
+            addon_path = Path(mod.__file__)
+
+    project_structure_json_path = Path(addon_path.parent / 'configs' / 'project_structure.json')
+    project_structure_json = json.load(project_structure_json_path.open())
+
+    return project_structure_json
+
 def get_current_project_structure_json():
     """Returns the project_structure.json file created by BitPipe as a json Object. Returns None if file not found."""
     asset_path = Path(get_current_project_assets_path())
@@ -287,6 +299,10 @@ def get_addon_prefs():
 def get_exporter_configs():
     # Prefs for the BitTools addon instead of the BitTools.exporter module
     return bpy.context.scene.exporter_configs
+
+def get_current_project():
+    # Gets the current active registered project
+    return bpy.context.scene.exporter_configs.registered_projects
 
 def get_current_engine():
     return get_exporter_configs().engine_configs_list

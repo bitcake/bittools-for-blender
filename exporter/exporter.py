@@ -5,7 +5,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_current_engine, get_published_path, is_wip_in_path, select_and_make_active, get_engine_configs_path, get_markers_configs_file_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
+from ..helpers import get_current_engine, get_published_path, select_and_make_active, get_engine_configs_path, get_markers_configs_file_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 class BITCAKE_OT_universal_exporter(Operator):
