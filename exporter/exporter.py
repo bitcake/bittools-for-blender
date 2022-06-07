@@ -118,7 +118,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             # Deal with linked objects (multi user)
             if obj.data is not None and obj.data.users > 1:
                 obj_original_info_dict[obj]['linked_mesh'] = obj.data.original
-                bpy.ops.object.make_single_user(object=True, obdata=True, material=True, animation=True, obdata_animation=True)
+                bpy.ops.object.make_single_user(object=True, obdata=True, material=True, animation=False, obdata_animation=True)
 
             if panel_prefs.apply_transform:
                 bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
@@ -371,7 +371,7 @@ def construct_animation_events_json(self, context, obj):
     fps = context.scene.render.fps
     markers_json['FPS'] = fps
     if fps % 30 != 0:
-        self.report({"ERROR"}, "Scene is not currently at 30 or 60FPS! Please FIX!")
+        self.report({"ERROR"}, "Scene is not currently at 30 or 60FPS! Please FIX and re-export!")
 
     markers_json['Character'] = obj.name
 
