@@ -185,10 +185,10 @@ def get_generic_project_structure_json():
 
 def get_current_project_structure_json():
     """Returns the project_structure.json file created by BitPipe as a json Object. Returns None if file not found."""
-    asset_path = Path(get_current_project_assets_path())
-    json_path = asset_path.joinpath('project_structure.json')
-
     try:
+        asset_path = Path(get_current_project_assets_path())
+        json_path = asset_path.joinpath('project_structure.json')
+
         json_file = json.load(json_path.open())
     except FileNotFoundError:
         return None

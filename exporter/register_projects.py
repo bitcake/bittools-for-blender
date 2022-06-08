@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from bpy.types import Operator
 from bpy_extras.io_utils import ImportHelper
+
+from ..exporter.exporter_configs import check_project_for_settings
 from ..helpers import get_current_project_assets_path, get_exporter_configs, get_generic_project_structure_json, get_registered_projects_path
 
 
@@ -41,6 +43,8 @@ class BITCAKE_OT_register_project(Operator, ImportHelper):
             self.report({"ERROR"},
                         "Folder is not a valid Game Project. Please point to a valid Cocos, Unity or Unreal project folder.")
             return {'CANCELLED'}
+
+        check_project_for_settings(self, context)
 
         return {'FINISHED'}
 

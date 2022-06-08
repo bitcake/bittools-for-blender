@@ -33,8 +33,6 @@ def check_project_for_settings(self, context):
     else:
         exporter_configs.project_has_settings = False
 
-    print(exporter_configs.project_has_settings)
-
     return
 
 def list_registered_engine_configs(self, context):

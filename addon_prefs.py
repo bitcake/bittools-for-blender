@@ -29,7 +29,7 @@ class BitCakeToolsPreferences(AddonPreferences):
 
     toggle_dev_tools: BoolProperty(
         name="Development Tools",
-        default=False,
+        default=True,
     )
 
     separator: StringProperty(name='Characater that separates naming', default='_')

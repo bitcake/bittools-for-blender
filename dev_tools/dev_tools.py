@@ -16,7 +16,14 @@ class BITCAKE_OT_dev_operator(Operator):
         return True
 
     def execute(self, context):
-        print(bpy.context.mode)
+        c = bpy.context
+        bones = c.object.data.bones
+
+        for bone in bones.items():
+            print(f'TAMO ALTERANDO O BONE {bone[1].name} QUE TEM O TIPO DE INHERIT SCALE {bone[1].inherit_scale}')
+            bone[1].inherit_scale = 'FULL'
+            print(f'{bone[1].name} AGORA TEM O TIPO DE INHERIT SCALE {bone[1].inherit_scale}')
+
 
         return {'FINISHED'}
 
