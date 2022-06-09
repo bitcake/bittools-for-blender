@@ -1,5 +1,6 @@
 import bpy
 import re
+import os
 from pathlib import Path
 from ..helpers import get_addon_prefs, get_published_path
 from bpy.types import Operator
@@ -45,6 +46,8 @@ class BITCAKE_OT_increment_and_master_save(Operator):
         incremental_path = filepath.with_stem(incremental_name)
         master_name = master_filename(incremental_name)
         master_path = published_path.with_stem(master_name)
+
+        os.makedirs(published_path.parent, exist_ok=True)
 
         bpy.ops.wm.save_mainfile(filepath=str(master_path))
         bpy.ops.wm.save_mainfile(filepath=str(incremental_path))
