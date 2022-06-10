@@ -4,7 +4,6 @@ from ..helpers import get_addon_prefs
 
 modules = [
     'actions_manager',
-    'breakdowner',
     'threadmill',
 ]
 
