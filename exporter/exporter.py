@@ -5,7 +5,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_current_engine, get_published_path, select_and_make_active, get_engine_configs_path, get_markers_configs_file_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
+from ..helpers import get_anim_configs_file_path, get_current_engine, get_published_path, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 class BITCAKE_OT_universal_exporter(Operator):
@@ -106,7 +106,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             rename_with_prefix(context, obj)
 
             # Create the json object if object has animation events
-            markers_json = construct_animation_events_json(self, context, obj)
+            markers_json = construct_animation_configs_json(self, context, obj)
 
             # Only move root objects to 0,0,0 to avoid errors with Custom Pivots.
             if panel_prefs.origin_transform and obj.parent is None:
@@ -349,23 +349,11 @@ def actions_cleanup(context):
         elif not action.use_fake_user:
             action.use_fake_user = True
 
-def construct_animation_events_json(self, context, obj):
+def construct_animation_configs_json(self, context, obj):
     if obj.type != 'ARMATURE':
         return
 
-    # Verify if file has markers, if not, don't build .json
-    has_markers = False
-    for action in bpy.data.actions:
-        for marker in action.pose_markers:
-            has_markers = True
-
-    for mrks in context.scene.timeline_markers:
-        has_markers = True
-
-    if not has_markers:
-        return
-
-    markers_json = Path(get_markers_configs_file_path())
+    markers_json = Path(get_anim_configs_file_path())
     markers_json = json.load(markers_json.open())
 
     fps = context.scene.render.fps
@@ -380,13 +368,21 @@ def construct_animation_events_json(self, context, obj):
         dictionary = {"Name": mrks.name, "Frame": mrks.frame}
         markers_json['TimelineMarkers'].append(dictionary)
 
-    markers_json['ActionsMarkers'] = []
+    markers_json['ActionsData'] = []
     for action in bpy.data.actions:
-        action_marker = {"Name": action.name, "Markers": []}
+        action_marker = {"Name": action.name, "Markers": [], "StartEndFrames": [], "Loop": action.use_cyclic}
         for marker in action.pose_markers:
             marker_dict = {"Name": marker.name, "Frame": marker.frame}
             action_marker['Markers'].append(marker_dict)
-        markers_json['ActionsMarkers'].append(action_marker)
+
+        if action.use_frame_range:
+            action_marker['StartEndFrames'].append(int(action.frame_start))
+            action_marker['StartEndFrames'].append(int(action.frame_end))
+        else:
+            action_marker['StartEndFrames'].append(int(action.curve_frame_range[0]))
+            action_marker['StartEndFrames'].append(int(action.curve_frame_range[1]))
+
+        markers_json['ActionsData'].append(action_marker)
 
     return markers_json
 
@@ -421,7 +417,7 @@ def create_animation_markers_json_file(path, markers_json):
     if markers_json is None:
         return
 
-    path = path.with_stem(path.stem + '_events')
+    path = path.with_stem(path.stem + '_configs')
     path = path.with_suffix('.json')
 
     with open(path, 'w') as json_file:

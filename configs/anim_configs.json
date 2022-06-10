@@ -1,0 +1,13 @@
+{
+    "FPS": 30,
+    "Character": "Joaozinhodafebem",
+    "TimelineMarkers": [],
+    "ActionsData": [
+        {
+            "Name": "Test",
+            "Markers": [],
+            "StartEndFrames": [],
+            "Loop": false
+        }
+    ]
+}

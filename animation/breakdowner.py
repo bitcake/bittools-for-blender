@@ -142,16 +142,16 @@ classes = (
     AnimToolProperties,
     )
 
-def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
+# def register():
+#     for cls in classes:
+#         bpy.utils.register_class(cls)
 
-    Scene.animtool_props = bpy.props.PointerProperty(type=AnimToolProperties)
+#     Scene.animtool_props = bpy.props.PointerProperty(type=AnimToolProperties)
 
 
 
-def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
+# def unregister():
+#     for cls in classes:
+#         bpy.utils.unregister_class(cls)
 
-    del Scene.animtool_props
+#     del Scene.animtool_props

@@ -215,13 +215,13 @@ def get_engine_configs_path():
 
     return engine_configs_path
 
-def get_markers_configs_file_path():
+def get_anim_configs_file_path():
     # Gets Addon Path (__init__.py)
     for mod in addon_utils.modules():
         if mod.bl_info['name'] == __package__:
             addon_path = Path(mod.__file__)
 
-    engine_configs_path = Path(addon_path.parent / 'configs' / 'anim_events.json')
+    engine_configs_path = Path(addon_path.parent / 'configs' / 'anim_configs.json')
 
     return engine_configs_path
 
