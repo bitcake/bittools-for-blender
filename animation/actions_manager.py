@@ -141,6 +141,31 @@ class BITCAKE_OT_action_duplicate(Operator):
         return {'FINISHED'}
 
 
+class BITCAKE_OT_set_manual_frame_range(bpy.types.Operator):
+    #tooltip - Made an operator so it doesn't light up on the panel due to boolean
+    """Set Manual Frame Range for Action"""
+
+    bl_idname = 'bitcake.set_manual_frame_range'
+    bl_label = "Set Manual Frame Range"
+    bl_options = {'INTERNAL', 'UNDO'}
+
+    name: bpy.props.StringProperty()
+
+    @classmethod
+    def poll(cls, context):
+        return context.object is not None
+
+    def execute(self, context):
+        obj = context.object
+        action = bpy.data.actions.get(self.name, None)
+        if not action:
+            return {'CANCELLED'}
+
+        action.use_frame_range = not action.use_frame_range
+
+        return {'FINISHED'}
+
+
 def get_unlinked_action_list():
     action_list = []
     for action in bpy.data.actions:
@@ -177,30 +202,42 @@ def draw_panel(self, context):
         return
 
     for action in get_unlinked_action_list():
-        actions_row = col.row(align=True)
+        row = col.row(align=True)
         selected = action == active_action
 
         if selected and context.screen.is_animation_playing:
-            op = actions_row.operator('screen.animation_cancel', icon='PAUSE', text='', emboss=False)
+            op = row.operator('screen.animation_cancel', icon='PAUSE', text='', emboss=False)
             op.restore_frame = False
         else:
             icon = 'PLAY' if action == active_action else 'TRIA_RIGHT'
-            op = actions_row.operator('bitcake.actions_set', icon=icon, text='', emboss=False)
+            op = row.operator('bitcake.actions_set', icon=icon, text='', emboss=False)
             op.name = action.name
             op.play = True
 
-        op = actions_row.operator('bitcake.actions_set', text=action.name)
+        op = row.operator('bitcake.actions_set', text=action.name)
         op.name = action.name
         op.play = False
 
-        actions_row.operator('bitcake.action_duplicate', icon='DUPLICATE', text='').name = action.name
-        actions_row.operator('bitcake.action_remove', icon='TRASH', text='').name = action.name
+        if action.use_frame_range:
+            range_icon = 'KEYFRAME_HLT'
+        else:
+            range_icon = 'KEYFRAME'
 
+        row.operator('bitcake.set_manual_frame_range', icon=range_icon, text="").name = action.name
+        row.operator('bitcake.action_duplicate', icon='DUPLICATE', text='').name = action.name
+        row.operator('bitcake.action_remove', icon='TRASH', text='').name = action.name
+
+    if active_action and active_action.use_frame_range:
+        row = layout.row(align=True)
+        row.prop(active_action, 'frame_start')
+        row.prop(active_action, 'frame_end')
+        row.prop(active_action, 'use_cyclic', icon='FILE_REFRESH', text="")
 
 classes = (BITCAKE_OT_actions_set,
            BITCAKE_OT_action_add,
            BITCAKE_OT_action_duplicate,
            BITCAKE_OT_action_remove,
+           BITCAKE_OT_set_manual_frame_range,
            )
 
 def register():
