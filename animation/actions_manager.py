@@ -5,17 +5,16 @@ from bpy.props import StringProperty, BoolProperty
 from ..helpers import clear_pose
 
 # Most of this code comes from the amazing GRET plugin, check it out
-# I swear I type everything myself so I could learn, tho :P
-# I also have permission from the author to copy parts of her plugin :)
+# I have permission from the author to copy parts of her plugin :)
 
 class BITCAKE_OT_actions_set(Operator):
     bl_idname = "bitcake.actions_set"
     bl_label = "Set Action"
     bl_options = {'INTERNAL', 'UNDO'}
 
-    new_name: StringProperty(name='New Name', default='')
-    action_name: StringProperty(default='', options={'HIDDEN'})
-    play: BoolProperty(default=False, options={'HIDDEN'})
+    name: bpy.props.StringProperty(options={'HIDDEN'})
+    new_name: bpy.props.StringProperty(name="New name", default="")
+    play: bpy.props.BoolProperty(options={'HIDDEN'}, default=False)
 
     @classmethod
     def poll(cls, context):
@@ -23,46 +22,46 @@ class BITCAKE_OT_actions_set(Operator):
 
     def execute(self, context):
         obj = context.object
-
-        if not self.action_name:
+        if not self.name:
             obj.animation_data.action = None
             return {'FINISHED'}
 
-        action = bpy.data.actions.get(self.action_name)
+        action = bpy.data.actions.get(self.name, None)
         if action:
+            # Always save it, just in case
             action.use_fake_user = True
 
             if self.new_name:
+                # Rename
                 action.name = self.new_name
             elif not self.play and obj.animation_data.action == action:
+                # Action was already active, stop editing
                 obj.animation_data.action = None
-                bpy.ops.screen.animation_cancel(restore_frame=False)
             else:
                 clear_pose(obj)
                 obj.animation_data.action = action
 
-                context.scene.frame_preview_start = action.frame_range[0]
-                context.scene.frame_preview_end = action.frame_range[1]
-
-                for marker in action.pose_markers:
-                    if marker.name.lower() == "start":
-                        context.scene.frame_preview_start = marker.frame
-                    elif marker.name.lower() == "end":
-                        context.scene.frame_preview_end = marker.frame
+                # Set preview range. Use start and end markers if they exist
+                if action.use_frame_range:
+                    context.scene.frame_preview_start = int(action.frame_start)
+                    context.scene.frame_preview_end = int(action.frame_end)
+                else:
+                    context.scene.frame_preview_start = int(action.curve_frame_range[0])
+                    context.scene.frame_preview_end = int(action.curve_frame_range[1])
 
                 context.scene.use_preview_range = True
 
-            if self.play:
-                context.scene.frame_current = action.frame_range[0]
-                bpy.ops.screen.animation_cancel(restore_frame=False)
-                bpy.ops.screen.animation_play()
+                if self.play:
+                    context.scene.frame_current = int(action.curve_frame_range[0])
+                    bpy.ops.screen.animation_cancel(restore_frame=False)
+                    bpy.ops.screen.animation_play()
 
         return {'FINISHED'}
 
     def invoke(self, context, event):
         if event.ctrl:
             # Rename
-            self.new_name = self.action_name
+            self.new_name = self.name
             return context.window_manager.invoke_props_dialog(self)
         else:
             self.new_name = ""
@@ -187,11 +186,11 @@ def draw_panel(self, context):
         else:
             icon = 'PLAY' if action == active_action else 'TRIA_RIGHT'
             op = actions_row.operator('bitcake.actions_set', icon=icon, text='', emboss=False)
-            op.action_name = action.name
+            op.name = action.name
             op.play = True
 
         op = actions_row.operator('bitcake.actions_set', text=action.name)
-        op.action_name = action.name
+        op.name = action.name
         op.play = False
 
         actions_row.operator('bitcake.action_duplicate', icon='DUPLICATE', text='').name = action.name
