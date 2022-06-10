@@ -353,6 +353,9 @@ def construct_animation_configs_json(self, context, obj):
     if obj.type != 'ARMATURE':
         return
 
+    if bpy.data.actions.items() == []:
+        return
+
     markers_json = Path(get_anim_configs_file_path())
     markers_json = json.load(markers_json.open())
 
