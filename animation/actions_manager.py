@@ -56,6 +56,16 @@ class BITCAKE_OT_actions_set(Operator):
                     bpy.ops.screen.animation_cancel(restore_frame=False)
                     bpy.ops.screen.animation_play()
 
+            treadmill_col = context.scene.collection.children.get('Treadmill')
+            if treadmill_col:
+                treadmill = action.get('HasTreadmill')
+
+                if not treadmill:
+                    treadmill_col.hide_viewport = True
+                else:
+                    treadmill_col.hide_viewport = False
+
+
         return {'FINISHED'}
 
     def invoke(self, context, event):

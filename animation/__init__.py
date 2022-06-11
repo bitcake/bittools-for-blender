@@ -4,7 +4,7 @@ from ..helpers import get_addon_prefs
 
 modules = [
     'actions_manager',
-    'threadmill',
+    'treadmill',
 ]
 
 from .. import import_or_reload_modules
