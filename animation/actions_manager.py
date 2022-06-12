@@ -64,18 +64,33 @@ class BITCAKE_OT_actions_set(Operator):
             elif treadmill_col is not None and not treadmill:
                 treadmill_col.hide_viewport = True
 
+            temp_steps_number = action.get('steps_number')
+            temp_steps_spacing = action.get('steps_spacing')
+            temp_steps_offset = action.get('steps_offset')
+            temp_treadmill_speed = action.get('treadmill_speed')
+
+            treadmill_configs = context.scene.treadmill_configs
+
             if treadmill:
-                treadmill_configs = context.scene.treadmill_configs
+                if treadmill_configs.steps_number != temp_steps_number:
+                    treadmill_configs.steps_number = temp_steps_number
 
-                temp_steps_number = action.get('steps_number')
-                temp_steps_spacing = action.get('steps_spacing')
-                temp_steps_offset = action.get('steps_offset')
-                temp_treadmill_speed = action.get('treadmill_speed')
+                if treadmill_configs.steps_spacing != temp_steps_spacing:
+                    treadmill_configs.steps_spacing = temp_steps_spacing
 
+                if treadmill_configs.steps_offset != temp_steps_offset:
+                    treadmill_configs.steps_offset = temp_steps_offset
+
+                if treadmill_configs.treadmill_speed != temp_treadmill_speed:
+                    treadmill_configs.treadmill_speed = temp_treadmill_speed
+
+            elif treadmill == False:
+                treadmill_configs.ui_lock = True
                 treadmill_configs.steps_number = temp_steps_number
                 treadmill_configs.steps_spacing = temp_steps_spacing
                 treadmill_configs.steps_offset = temp_steps_offset
                 treadmill_configs.treadmill_speed = temp_treadmill_speed
+                treadmill_configs.ui_lock = False
 
         return {'FINISHED'}
 

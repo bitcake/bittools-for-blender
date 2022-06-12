@@ -1,25 +1,83 @@
 import bpy
 from bpy.types import Operator, PropertyGroup, Scene
-from bpy.props import IntProperty, FloatProperty
+from bpy.props import IntProperty, FloatProperty, BoolProperty
 from ..helpers import delete_hierarchy
 
-def update_treadmill(self, context):
+def update_steps_number(self, context):
     treadmill_configs = context.scene.treadmill_configs
+    active_action = context.object.animation_data.action if context.object.animation_data else False
+
+    if not active_action or treadmill_configs.ui_lock:
+        return
 
     bpy.ops.bitcake.treadmill(steps_number=treadmill_configs.steps_number,
+                              steps_spacing=active_action['steps_spacing'],
+                              steps_offset=active_action['steps_offset'],
+                              treadmill_speed=active_action['treadmill_speed']
+                              )
+
+    active_action['steps_number'] = treadmill_configs.steps_number
+
+    return
+
+def update_steps_spacing(self, context):
+    treadmill_configs = context.scene.treadmill_configs
+    active_action = context.object.animation_data.action if context.object.animation_data else False
+
+    if not active_action or treadmill_configs.ui_lock:
+        return
+
+    bpy.ops.bitcake.treadmill(steps_number=active_action['steps_number'],
                               steps_spacing=treadmill_configs.steps_spacing,
+                              steps_offset=active_action['steps_offset'],
+                              treadmill_speed=active_action['treadmill_speed']
+                              )
+
+    active_action['steps_spacing'] = treadmill_configs.steps_spacing
+
+    return
+
+def update_steps_offset(self, context):
+    treadmill_configs = context.scene.treadmill_configs
+    active_action = context.object.animation_data.action if context.object.animation_data else False
+
+    if not active_action or treadmill_configs.ui_lock:
+        return
+
+    bpy.ops.bitcake.treadmill(steps_number=active_action['steps_number'],
+                              steps_spacing=active_action['steps_spacing'],
                               steps_offset=treadmill_configs.steps_offset,
+                              treadmill_speed=active_action['treadmill_speed']
+                              )
+
+    active_action['steps_offset'] = treadmill_configs.steps_offset
+
+    return
+
+def update_treadmill_speed(self, context):
+    treadmill_configs = context.scene.treadmill_configs
+    active_action = context.object.animation_data.action if context.object.animation_data else False
+
+    if not active_action or treadmill_configs.ui_lock:
+        return
+
+    bpy.ops.bitcake.treadmill(steps_number=active_action['steps_number'],
+                              steps_spacing=active_action['steps_spacing'],
+                              steps_offset=active_action['steps_offset'],
                               treadmill_speed=treadmill_configs.treadmill_speed
                               )
+
+    active_action['treadmill_speed'] = treadmill_configs.treadmill_speed
 
     return
 
 
 class BITCAKE_PROPS_treadmill_configs(PropertyGroup):
-     steps_number: IntProperty(name='Number of Steps', default=20, min=0, update=update_treadmill)
-     steps_spacing: FloatProperty(name='Steps Spacing', default=2, min=1, update=update_treadmill)
-     steps_offset: FloatProperty(name='Steps Offset', default=0, update=update_treadmill)
-     treadmill_speed: FloatProperty(name='treadmill Speed (m/s)', default=2, min=0, update=update_treadmill)
+     steps_number: IntProperty(name='Number of Steps', default=20, min=0, update=update_steps_number)
+     steps_spacing: FloatProperty(name='Steps Spacing', default=2, min=1, update=update_steps_spacing)
+     steps_offset: FloatProperty(name='Steps Offset', default=0, update=update_steps_offset)
+     treadmill_speed: FloatProperty(name='treadmill Speed (m/s)', default=2, min=0, update=update_treadmill_speed)
+     ui_lock: BoolProperty(name='UI Lock', default=False)
 
 
 class BITCAKE_OT_treadmill(Operator):
@@ -44,6 +102,10 @@ class BITCAKE_OT_treadmill(Operator):
     def execute(self, context):
         obj = context.object
         active_action = obj.animation_data.action if obj.animation_data else False
+
+        if active_action.name == 'Treadmill':
+            self.report({'ERROR'}, 'You cannot use this operator while on the Treadmill action itself, please choose another action and try again.')
+            return {'CANCELLED'}
 
         active_action['HasTreadmill'] = True
         active_action['steps_number'] = self.steps_number
@@ -93,7 +155,10 @@ class BITCAKE_OT_treadmill(Operator):
         key.interpolation = 'LINEAR'
 
         bpy.context.view_layer.objects.active = obj
+
         obj.animation_data.action = active_action
+
+        bpy.ops.outliner.orphans_purge()
 
         return {'FINISHED'}
 
@@ -206,11 +271,27 @@ def draw_panel(self, context):
     row = box.row(align=True)
 
     active_action = obj.animation_data.action if obj.animation_data else None
+
+    if active_action is None:
+        return
+
     treadmill = active_action.get('HasTreadmill')
 
     row.label(text='Treadmill Tool', icon='MOD_ARRAY')
     if not treadmill:
-        row.operator('bitcake.treadmill', icon='ADD', text="")
+        op = row.operator('bitcake.treadmill', icon='ADD', text="")
+
+        if treadmill is None:
+            op.steps_number = treadmill_configs.steps_number
+            op.steps_spacing = treadmill_configs.steps_spacing
+            op.steps_offset = treadmill_configs.steps_offset
+            op.treadmill_speed = treadmill_configs.treadmill_speed
+        else:
+            op.steps_number = active_action.get('steps_number')
+            op.steps_spacing = active_action.get('steps_spacing')
+            op.steps_offset = active_action.get('steps_offset')
+            op.treadmill_speed = active_action.get('treadmill_speed')
+
 
     else:
         row = row.row()
@@ -221,7 +302,6 @@ def draw_panel(self, context):
     if not treadmill:
         return
 
-    print(f'{treadmill_configs.steps_number}')
     row = box.row()
     row.prop(treadmill_configs, 'steps_number')
     row = box.row()
@@ -230,8 +310,6 @@ def draw_panel(self, context):
     row.prop(treadmill_configs, 'steps_offset')
     row = box.row()
     row.prop(treadmill_configs, 'treadmill_speed')
-
-    bpy.ops.outliner.orphans_purge()
 
     return
 
