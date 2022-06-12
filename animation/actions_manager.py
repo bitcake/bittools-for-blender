@@ -57,14 +57,25 @@ class BITCAKE_OT_actions_set(Operator):
                     bpy.ops.screen.animation_play()
 
             treadmill_col = context.scene.collection.children.get('Treadmill')
-            if treadmill_col:
-                treadmill = action.get('HasTreadmill')
+            treadmill = action.get('HasTreadmill')
 
-                if not treadmill:
-                    treadmill_col.hide_viewport = True
-                else:
-                    treadmill_col.hide_viewport = False
+            if treadmill_col is not None and treadmill:
+                treadmill_col.hide_viewport = False
+            elif treadmill_col is not None and not treadmill:
+                treadmill_col.hide_viewport = True
 
+            if treadmill:
+                treadmill_configs = context.scene.treadmill_configs
+
+                temp_steps_number = action.get('steps_number')
+                temp_steps_spacing = action.get('steps_spacing')
+                temp_steps_offset = action.get('steps_offset')
+                temp_treadmill_speed = action.get('treadmill_speed')
+
+                treadmill_configs.steps_number = temp_steps_number
+                treadmill_configs.steps_spacing = temp_steps_spacing
+                treadmill_configs.steps_offset = temp_steps_offset
+                treadmill_configs.treadmill_speed = temp_treadmill_speed
 
         return {'FINISHED'}
 

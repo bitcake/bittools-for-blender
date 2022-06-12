@@ -3,8 +3,9 @@ from bpy.types import Operator, PropertyGroup, Scene
 from bpy.props import IntProperty, FloatProperty
 from ..helpers import delete_hierarchy
 
-def recreate_treadmill(self, context):
+def update_treadmill(self, context):
     treadmill_configs = context.scene.treadmill_configs
+
     bpy.ops.bitcake.treadmill(steps_number=treadmill_configs.steps_number,
                               steps_spacing=treadmill_configs.steps_spacing,
                               steps_offset=treadmill_configs.steps_offset,
@@ -13,11 +14,12 @@ def recreate_treadmill(self, context):
 
     return
 
+
 class BITCAKE_PROPS_treadmill_configs(PropertyGroup):
-     steps_number: IntProperty(name='Number of Steps', default=20, min=0, update=recreate_treadmill)
-     steps_spacing: FloatProperty(name='Steps Spacing', default=2, min=1, update=recreate_treadmill)
-     steps_offset: FloatProperty(name='Steps Offset', default=0, update=recreate_treadmill)
-     treadmill_speed: FloatProperty(name='treadmill Speed (m/s)', default=2, min=0, update=recreate_treadmill)
+     steps_number: IntProperty(name='Number of Steps', default=20, min=0, update=update_treadmill)
+     steps_spacing: FloatProperty(name='Steps Spacing', default=2, min=1, update=update_treadmill)
+     steps_offset: FloatProperty(name='Steps Offset', default=0, update=update_treadmill)
+     treadmill_speed: FloatProperty(name='treadmill Speed (m/s)', default=2, min=0, update=update_treadmill)
 
 
 class BITCAKE_OT_treadmill(Operator):
@@ -42,7 +44,12 @@ class BITCAKE_OT_treadmill(Operator):
     def execute(self, context):
         obj = context.object
         active_action = obj.animation_data.action if obj.animation_data else False
+
         active_action['HasTreadmill'] = True
+        active_action['steps_number'] = self.steps_number
+        active_action['steps_spacing'] = self.steps_spacing
+        active_action['steps_offset'] = self.steps_offset
+        active_action['treadmill_speed'] = self.treadmill_speed
 
         col = create_treadmill_collection()
 
@@ -129,6 +136,7 @@ class BITCAKE_OT_remove_treadmill(Operator):
 def create_treadmill_collection():
     treadmill_col = bpy.context.scene.collection.children.get('Treadmill')
     if treadmill_col:
+        treadmill_col.hide_viewport = False # Turn on View
         return treadmill_col
 
     treadmill_col = bpy.context.blend_data.collections.new(name='Treadmill')
@@ -187,6 +195,7 @@ def draw_panel(self, context):
 
     treadmill_configs = context.scene.treadmill_configs
     obj = context.object
+    treadmill_col = context.scene.collection.children.get('Treadmill')
 
     if obj is None:
         return
@@ -202,12 +211,17 @@ def draw_panel(self, context):
     row.label(text='Treadmill Tool', icon='MOD_ARRAY')
     if not treadmill:
         row.operator('bitcake.treadmill', icon='ADD', text="")
+
     else:
+        row = row.row()
+        if treadmill_col:
+            row.prop(treadmill_col, 'hide_viewport', icon='HIDE_OFF', text="")
         row.operator('bitcake.remove_treadmill', icon='REMOVE', text="")
 
     if not treadmill:
         return
 
+    print(f'{treadmill_configs.steps_number}')
     row = box.row()
     row.prop(treadmill_configs, 'steps_number')
     row = box.row()
@@ -216,6 +230,8 @@ def draw_panel(self, context):
     row.prop(treadmill_configs, 'steps_offset')
     row = box.row()
     row.prop(treadmill_configs, 'treadmill_speed')
+
+    bpy.ops.outliner.orphans_purge()
 
     return
 
