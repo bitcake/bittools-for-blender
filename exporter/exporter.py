@@ -270,9 +270,16 @@ def construct_registered_project_export_directory(self):
     # Search the .blend Path for BitCake's folder structure
     # Change _WIP folder to Art then construct the rest of the path
     for part in blend_path.parts:
+
         if wip is True:
             split_part = part.split('_')
-            pathway.append(split_part[-1])
+            # If folder name starts with a number, remove it, otherwise join again.
+            if split_part[0].isnumeric():
+                split_part.pop(0)
+                pathway.append('_'.join(split_part))
+            else:
+                pathway.append('_'.join(split_part))
+
         if part.__contains__('_WIP'):
             pathway.append('Art')
             wip = True
