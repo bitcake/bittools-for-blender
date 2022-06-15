@@ -2,21 +2,29 @@ import bpy
 import re
 import os
 from pathlib import Path
-from ..helpers import get_addon_prefs, get_published_path
+from ..helpers import get_addon_prefs, get_published_path, is_inside_published
 from bpy.types import Operator
 
 class BITCAKE_OT_incremental_save(Operator):
     bl_idname = "bitcake.incremental_save"
     bl_label = "Incremental Save"
     bl_description = "Increases or Adds a number count at the end of the file and saves it!"
-    bl_options = {'INTERNAL', 'UNDO'}
+    bl_options = {'UNDO'}
 
     @classmethod
     def poll(cls, context):
         return True
 
     def execute(self, context):
-        filepath = Path(bpy.data.filepath)
+        filepath = bpy.data.filepath
+
+        # If file has never been saved don't run
+        if filepath == '':
+            return {'CANCELLED'}
+
+        filepath = Path(filepath)
+        if is_inside_published(filepath.parent):
+            return {'CANCELLED'}
 
         incremental_name = increment_filename(filepath)
 
@@ -39,7 +47,16 @@ class BITCAKE_OT_increment_and_master_save(Operator):
         return True
 
     def execute(self, context):
-        filepath = Path(bpy.data.filepath)
+        filepath = bpy.data.filepath
+
+        # If file has never been saved don't run
+        if filepath == '':
+            return {'CANCELLED'}
+
+        filepath = Path(filepath)
+        if is_inside_published(filepath.parent):
+            return {'CANCELLED'}
+
         published_path = get_published_path()
 
         incremental_name = increment_filename(filepath)
@@ -92,6 +109,12 @@ def master_filename(filename):
     return master_name
 
 
+def every_2_seconds():
+    print("Hello World")
+    # bpy.ops.bitcake.incremental_save()
+    return 5.0
+
+
 def draw_panel(self, context):
     layout = self.layout
 
@@ -122,6 +145,7 @@ def register():
         kmi = km.keymap_items.new(BITCAKE_OT_increment_and_master_save.bl_idname, type='S', value='PRESS', ctrl=True, alt=True, shift=True)
         addon_keymaps.append((km, kmi))
 
+    # bpy.app.timers.register(every_2_seconds)
 
 def unregister():
     for cls in classes:
@@ -130,3 +154,5 @@ def unregister():
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
+
+    # bpy.app.timers.unregister(every_2_seconds)

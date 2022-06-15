@@ -80,7 +80,7 @@ def get_published_path():
     return published_path
 
 def get_published_folder_name_inside_a_dir(directory):
-    """Finds wether or not a Published folder exists inside a directory and returns it. In case none found, creates its name and returns it."""
+    """Finds wether or not a Published folder exists inside a directory and returns it. In case none found, creates a mirror Path inside the Published folder returns it."""
     addon_prefs = get_addon_prefs()
     sep = addon_prefs.separator
     pub = addon_prefs.published
@@ -115,6 +115,24 @@ def get_published_folder_name_inside_a_dir(directory):
 
         else:
             return pub
+
+
+def is_inside_published(directory):
+    """Finds wether or not a Published folder exists inside a Path and returns True. In case none found returns false."""
+    addon_prefs = get_addon_prefs()
+    sep = addon_prefs.separator
+    pub = addon_prefs.published
+    dirs = directory.parts
+
+    for folder in dirs:
+        split_parts = folder.split(sep)
+
+        for part in split_parts:
+            if part == pub:
+                return True
+
+    return False
+
 
 def is_object_arp(obj):
     """Returns whether the object is an Auto-Rig Pro armature."""
