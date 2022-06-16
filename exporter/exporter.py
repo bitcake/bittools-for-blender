@@ -50,7 +50,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             return {'CANCELLED'}
 
         # If file has never been saved...
-        if bpy.data.filepath == '':
+        if not bpy.data.is_saved:
             self.report({'ERROR'}, 'This file has never been saved, please save this file in an appropriate WIP folder.')
             return {'CANCELLED'}
 

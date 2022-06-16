@@ -53,6 +53,9 @@ class BitCakeToolsPreferences(AddonPreferences):
 
     #Scene Setup
     fps: IntProperty(name='Scene FPS', default=30, min=24, max=120, update=scene_setup.update_scene_fps)
+    auto_save: BoolProperty(name="Auto Incremental-Save", default=True, description='Turn on or off auto incremental saving')
+    auto_save_time: IntProperty(name="Auto Save Timer (Minutes)", default=30, min=10, description='Set the time for auto-saving')
+
 
     def draw(self, context):
         layout = self.layout
@@ -73,6 +76,9 @@ class BitCakeToolsPreferences(AddonPreferences):
 
         column2.label(text='Scene Configs')
         column2.prop(self, "fps")
+        row = column2.row(align=True)
+        row.prop(self, "auto_save", text='Auto Save', icon='FILE_NEW')
+        row.prop(self, "auto_save_time", text='Timer (mins)')
 
 
 classes = (BitCakeToolsPreferences,)

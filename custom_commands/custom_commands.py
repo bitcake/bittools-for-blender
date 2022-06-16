@@ -18,8 +18,8 @@ class BITCAKE_OT_incremental_save(Operator):
     def execute(self, context):
         filepath = bpy.data.filepath
 
-        # If file has never been saved don't run
-        if filepath == '':
+        # If file has never been saved or there aren't any changes don't run
+        if not bpy.data.is_saved or not bpy.data.is_dirty:
             return {'CANCELLED'}
 
         filepath = Path(filepath)
@@ -49,8 +49,8 @@ class BITCAKE_OT_increment_and_master_save(Operator):
     def execute(self, context):
         filepath = bpy.data.filepath
 
-        # If file has never been saved don't run
-        if filepath == '':
+        # If file has never been saved or there aren't any changes don't run
+        if not bpy.data.is_saved or not bpy.data.is_dirty:
             return {'CANCELLED'}
 
         filepath = Path(filepath)
@@ -109,10 +109,13 @@ def master_filename(filename):
     return master_name
 
 
-def every_2_seconds():
-    print("Hello World")
-    # bpy.ops.bitcake.incremental_save()
-    return 5.0
+def auto_incremental_save():
+    addon_prefs = get_addon_prefs()
+
+    if addon_prefs.auto_save:
+        bpy.ops.bitcake.incremental_save()
+
+    return addon_prefs.auto_save_time * 60
 
 
 def draw_panel(self, context):
@@ -145,7 +148,7 @@ def register():
         kmi = km.keymap_items.new(BITCAKE_OT_increment_and_master_save.bl_idname, type='S', value='PRESS', ctrl=True, alt=True, shift=True)
         addon_keymaps.append((km, kmi))
 
-    # bpy.app.timers.register(every_2_seconds)
+    bpy.app.timers.register(auto_incremental_save)
 
 def unregister():
     for cls in classes:
@@ -155,4 +158,4 @@ def unregister():
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
 
-    # bpy.app.timers.unregister(every_2_seconds)
+    bpy.app.timers.unregister(auto_incremental_save)
