@@ -177,6 +177,8 @@ class BITCAKE_OT_universal_exporter(Operator):
         # Save! :D
         bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
+        self.report({'INFO'}, "Export Complete!")
+
         return {'FINISHED'}
 
 
@@ -380,7 +382,12 @@ def construct_animation_configs_json(self, context, obj):
 
     markers_json['ActionsData'] = []
     for action in bpy.data.actions:
-        action_marker = {"Name": action.name, "Markers": [], "StartEndFrames": [], "Loop": action.use_cyclic}
+        action_marker = {"Name": action.name,
+                         "Markers": [],
+                         "StartEndFrames": [],
+                         "Speed": None,
+                         "Loop": action.use_cyclic}
+
         for marker in action.pose_markers:
             marker_dict = {"Name": marker.name, "Frame": marker.frame}
             action_marker['Markers'].append(marker_dict)
@@ -391,6 +398,10 @@ def construct_animation_configs_json(self, context, obj):
         else:
             action_marker['StartEndFrames'].append(int(action.curve_frame_range[0]))
             action_marker['StartEndFrames'].append(int(action.curve_frame_range[1]))
+
+        speed = action.get('treadmill_speed')
+        if speed:
+            action_marker['Speed'] = speed
 
         markers_json['ActionsData'].append(action_marker)
 
