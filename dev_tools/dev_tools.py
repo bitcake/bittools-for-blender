@@ -5,8 +5,6 @@ import bpy
 from bpy.types import Operator
 from ..helpers import is_wip_in_path
 
-import pprint
-
 class BITCAKE_OT_dev_operator(Operator):
     bl_idname = "bitcake.dev_operator"
     bl_label = "Test Stuff"
@@ -21,8 +19,6 @@ class BITCAKE_OT_dev_operator(Operator):
         bpy.ops.export_scene.fbx(
             filepath=r"D:\GitProjects\Bitstrap\Assets\_Internal\Art\Environment\World_01\TutorialBasement\Modeling\ourmodel.fbx",
             embed_textures=True)
-
-        print('PENUS')
 
         return {'FINISHED'}
 
@@ -47,38 +43,8 @@ def construct_registered_project_published_export_directory(self):
 
     # Construct final directory and return it
     constructed_directory = Path().joinpath(*pathway) # Unpacks the list as arguments
-    print(constructed_directory)
+
     return constructed_directory
-
-
-def clear_weights_on_opposite_side(context):
-    start_time = time.time()
-
-    vertices = context.object.data.vertices
-    active_vertex_group = context.object.vertex_groups.active
-    left_to_right = context.scene.rigging_configs.left_to_right
-
-    for verts in vertices.items():
-        if left_to_right:
-            if verts[1].co[0] < -0.0001:
-                active_vertex_group.remove([verts[0]])
-        else:
-            if verts[1].co[0] > 0.0001:
-                active_vertex_group.remove([verts[0]])
-
-        if  0.0001 >= verts[1].co[0] >= -0.0001:
-            verts[1].select = True
-            try:
-                new_weight = active_vertex_group.weight(verts[0]) / 2
-                active_vertex_group.add([verts[0]], new_weight, 'REPLACE')
-            except RuntimeError:
-                continue
-
-    executionTime = (time.time() - start_time)
-    print('Execution time in seconds: ' + str(executionTime))
-
-    return
-
 
 
 def draw_panel(self, context):

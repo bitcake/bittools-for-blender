@@ -29,7 +29,6 @@ class BITCAKE_OT_mirror_weights_all_vertex_groups(Operator):
             if current_side is None:
                 self.report({'ERROR'}, f"Bone named {vertex_group[0]} cannot be mirror'd. Make sure its naming has the correct Side Keywords that are separated by the correct separator.")
             elif configs.mirror_middle and current_side == configs.middle:
-                print(f'MIRRORANDO O MEIO! Aqui a joint atual {vertex_group[0]}')
                 clear_weights_on_opposite_side(context, vertex_group[1])
                 mirror_vertex_group_middle(context, vertex_group[1])
             elif current_side == side_to_mirror:

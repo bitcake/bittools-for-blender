@@ -169,7 +169,6 @@ def unregister_project(project):
             file.unlink()
             return
         except FileNotFoundError:
-            print("registered_projects.json not found!")
             return
 
     with open(file, 'w') as projects_file:

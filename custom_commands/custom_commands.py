@@ -85,7 +85,6 @@ def increment_filename(path):
         split_stem.pop()
         split_stem.append(str(num))
         incremental_name = sep.join(split_stem)
-        print(incremental_name)
 
     else:
         addon_prefs = get_addon_prefs()
@@ -137,6 +136,8 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    bpy.app.timers.register(auto_incremental_save)
+
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon
     if kc:
@@ -148,14 +149,16 @@ def register():
         kmi = km.keymap_items.new(BITCAKE_OT_increment_and_master_save.bl_idname, type='S', value='PRESS', ctrl=True, alt=True, shift=True)
         addon_keymaps.append((km, kmi))
 
-    bpy.app.timers.register(auto_incremental_save)
 
 def unregister():
+    try:
+        bpy.app.timers.unregister(auto_incremental_save)
+    except ValueError:
+        pass
+
     for cls in classes:
         bpy.utils.unregister_class(cls)
 
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
-
-    bpy.app.timers.unregister(auto_incremental_save)

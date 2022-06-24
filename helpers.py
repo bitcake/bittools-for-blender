@@ -262,6 +262,16 @@ def get_collider_prefixes():
 
     return collider_prefixes
 
+def get_object_prefixes():
+    context = bpy.context
+    exporter_configs = context.scene.exporter_configs
+
+    objects_prefixes = [exporter_configs.static_mesh_prefix,
+                        exporter_configs.skeletal_mesh_prefix,
+                        exporter_configs.camera_prefix]
+
+    return objects_prefixes
+
 def get_all_child_of_child(obj):
     children = list(obj.children)
     all_children = []

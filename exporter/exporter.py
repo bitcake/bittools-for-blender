@@ -5,7 +5,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_anim_configs_file_path, get_current_engine, get_published_path, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
+from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 class BITCAKE_OT_universal_exporter(Operator):
@@ -283,7 +283,7 @@ def construct_registered_project_export_directory(self):
             else:
                 pathway.append('_'.join(split_part))
 
-        if part.__contains__('_WIP'):
+        if part.__contains__('WIP'):
             pathway.append('Art')
             wip = True
 
@@ -300,46 +300,61 @@ def construct_registered_project_export_directory(self):
     return constructed_directory
 
 def rename_with_prefix(context, obj):
-    """Renames current obj and all its children."""
+    """Renames parent obj and all its children."""
 
-    if obj.parent is None:
-        all_children = get_all_child_of_child(obj)
+    if obj.parent:
+        return
 
-        for child in all_children:
-            prefix = get_correct_prefix(context, child)
-            # Checks if object already has correct prefix in name
-            if not check_object_name_for_prefix(context, prefix, child):
-                child.name = prefix + child.name
+    panel_prefs = context.scene.exporter_configs
+    separator = panel_prefs.separator
 
     prefix = get_correct_prefix(context, obj)
-    # Checks if object already has correct prefix in name
-    if not check_object_name_for_prefix(context, prefix, obj):
-        obj.name = prefix + obj.name
+    if not object_has_correct_prefix(context, prefix, obj):
+        obj.name = f"{prefix}{separator}{obj.name}"
+
+    all_children = get_all_child_of_child(obj)
+    collider_prefixes = get_collider_prefixes()
+
+    collider_index = 0
+    for child in all_children:
+        prefix = get_correct_prefix(context, child)
+
+        if prefix in collider_prefixes:
+            child.name = f"{prefix}{separator}{obj.name}{separator}{str(collider_index).zfill(2)}"
+            collider_index += 1
+        else:
+            # Checks if object already has correct prefix in name
+            if not object_has_correct_prefix(context, prefix, child):
+                child.name = prefix + child.name
+
 
 def get_correct_prefix(context, obj):
+    panel_prefs = context.scene.exporter_configs
+    separator = panel_prefs.separator
+
     # Create list of Collider Prefixes to use so that Colliders don't get renamed
     collider_prefixes = get_collider_prefixes()
 
-    # Get user-defined prefixes
-    panel_prefs = context.scene.exporter_configs
-    separator = panel_prefs.separator
-    sm_prefix = panel_prefs.static_mesh_prefix
-    sk_prefix = panel_prefs.skeletal_mesh_prefix
+    # Get user-defined object prefixes
+    object_prefixes = get_object_prefixes()
 
     # If object is correctly named, return its prefix
     split_name = obj.name.split(separator)
-    prefixes = collider_prefixes + [sm_prefix, sk_prefix]
+    prefixes = collider_prefixes + object_prefixes
     for prefix in prefixes:
         if split_name[0] == prefix:
             return prefix
 
     # Return correct prefix for each case
+    # Check get_object_prefixes for each index, this is bad, should be a dict instead?
     if obj.type == 'ARMATURE':
-        return sk_prefix + separator
+        return object_prefixes[1]
+    if obj.type == 'CAMERA':
+        return object_prefixes[2]
     else:
-        return sm_prefix + separator
+        return object_prefixes[0]
 
-def check_object_name_for_prefix(context, prefix, obj):
+def object_has_correct_prefix(context, prefix, obj):
     panel_prefs = context.scene.exporter_configs
     separator = panel_prefs.separator
 
