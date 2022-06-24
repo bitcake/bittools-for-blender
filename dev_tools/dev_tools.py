@@ -1,9 +1,11 @@
 from pathlib import Path
+from textwrap import indent
 import time
 import bpy
 from bpy.types import Operator
-
 from ..helpers import is_wip_in_path
+
+import pprint
 
 class BITCAKE_OT_dev_operator(Operator):
     bl_idname = "bitcake.dev_operator"
@@ -16,14 +18,11 @@ class BITCAKE_OT_dev_operator(Operator):
         return True
 
     def execute(self, context):
-        c = bpy.context
-        bones = c.object.data.bones
+        bpy.ops.export_scene.fbx(
+            filepath=r"D:\GitProjects\Bitstrap\Assets\_Internal\Art\Environment\World_01\TutorialBasement\Modeling\ourmodel.fbx",
+            embed_textures=True)
 
-        for bone in bones.items():
-            print(f'TAMO ALTERANDO O BONE {bone[1].name} QUE TEM O TIPO DE INHERIT SCALE {bone[1].inherit_scale}')
-            bone[1].inherit_scale = 'FULL'
-            print(f'{bone[1].name} AGORA TEM O TIPO DE INHERIT SCALE {bone[1].inherit_scale}')
-
+        print('PENUS')
 
         return {'FINISHED'}
 

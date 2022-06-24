@@ -114,6 +114,7 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             if not panel_prefs.export_textures and obj.type == 'MESH':
                 unlink_materials(obj)
+                create_fake_materials(obj)
 
             # Deal with linked objects (multi user)
             if obj.data is not None and obj.data.users > 1:
@@ -409,7 +410,6 @@ def construct_animation_configs_json(self, context, obj):
 
 def unlink_materials(obj):
     if obj.override_library is not None and obj.type != 'EMPTY':
-        print(f'OBJETO {obj.name} TEM LIBRARY OVERRIDE')
         obj.data.override_create(remap_local_usages=True)
 
     try:
@@ -424,8 +424,12 @@ def unlink_materials(obj):
 
     return
 
+def create_fake_materials(obj):
+    for index, material in enumerate(obj.material_slots):
+        mat = bpy.data.materials.new(name=f'{obj.name}_{material.name}_{index}')
+        obj.material_slots[index].material = mat
+
 def relink_materials(obj, materials):
-    print(f'LISTA DE MATERIAIS DESSE OBJETO {obj} AQUI: {materials}')
     if materials == []:
         return
 
