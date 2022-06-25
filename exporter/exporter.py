@@ -325,8 +325,7 @@ def rename_with_prefix(context, obj):
         else:
             # Checks if object already has correct prefix in name
             if not object_has_correct_prefix(context, prefix, child):
-                child.name = prefix + child.name
-
+                child.name = f"{prefix}{separator}{child.name}"
 
 def get_correct_prefix(context, obj):
     panel_prefs = context.scene.exporter_configs
