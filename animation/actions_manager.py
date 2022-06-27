@@ -38,7 +38,7 @@ class BITCAKE_OT_actions_set(Operator):
                 # Action was already active, stop editing
                 obj.animation_data.action = None
             else:
-                clear_pose(obj)
+                # clear_pose(obj)
                 obj.animation_data.action = action
 
                 # Set preview range. Use start and end markers if they exist
@@ -230,7 +230,12 @@ def draw_panel(self, context):
     if obj is None:
         return
 
-    active_action = obj.animation_data.action if obj.animation_data else None
+    active_action = None
+    if obj.animation_data and obj.animation_data.action is not None:
+        active_action = obj.animation_data.action
+    elif len(bpy.data.actions.items()) > 0:
+        active_action = bpy.data.actions.items()[0][1]
+
     if active_action is None:
         row = box.row()
         row.alert = True
