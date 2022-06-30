@@ -1,8 +1,15 @@
 import bpy
 import mathutils
+from bpy.types import PropertyGroup, Scene
+from bpy.props import BoolProperty
 from mathutils import Vector
 from bpy.types import Operator
 from ..helpers import get_addon_prefs, get_current_engine
+
+
+class BITCAKE_PROPS_collider_configs(PropertyGroup):
+    collider_visibility: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
+
 
 class BITCAKE_OT_toggle_all_colliders_visibility(Operator):
     bl_idname = "bitcake.toggle_all_colliders_visibility"
@@ -14,7 +21,11 @@ class BITCAKE_OT_toggle_all_colliders_visibility(Operator):
         return context.mode == 'OBJECT'
 
     def execute(self, context):
-        toggle_all_colliders_visibility()
+        visibility = context.scene.collider_configs.collider_visibility
+
+        toggle_all_colliders_visibility(visibility)
+
+        context.scene.collider_configs.collider_visibility = not visibility
 
         return {'FINISHED'}
 
@@ -609,10 +620,15 @@ def draw_panel(self, context):
     layout = self.layout
 
     current_engine = get_current_engine()
+    collider_visibility = context.scene.collider_configs.collider_visibility
 
+    if collider_visibility:
+        icon = 'HIDE_ON'
+    else:
+        icon = 'HIDE_OFF'
 
     row = layout.row()
-    row.operator('bitcake.toggle_all_colliders_visibility', text='Toggle Colliders Visibility', icon='HIDE_OFF')
+    row.operator('bitcake.toggle_all_colliders_visibility', text='Toggle Colliders Visibility', icon=icon)
 
     layout.separator()
     row = layout.row()
@@ -629,7 +645,8 @@ def draw_panel(self, context):
     return
 
 
-classes = (BITCAKE_OT_toggle_all_colliders_visibility,
+classes = (BITCAKE_PROPS_collider_configs,
+           BITCAKE_OT_toggle_all_colliders_visibility,
            BITCAKE_OT_add_box_collider,
            BITCAKE_OT_add_sphere_collider,
            BITCAKE_OT_add_convex_collider,
@@ -640,7 +657,11 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    Scene.collider_configs = bpy.props.PointerProperty(type=BITCAKE_PROPS_collider_configs)
+
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+
+    del Scene.collider_configs
