@@ -1,6 +1,4 @@
 from pathlib import Path
-from textwrap import indent
-import time
 import bpy
 from bpy.types import Operator
 from ..helpers import is_wip_in_path
@@ -16,9 +14,26 @@ class BITCAKE_OT_dev_operator(Operator):
         return True
 
     def execute(self, context):
-        bpy.ops.export_scene.fbx(
-            filepath=r"D:\GitProjects\Bitstrap\Assets\_Internal\Art\Environment\World_01\TutorialBasement\Modeling\ourmodel.fbx",
-            embed_textures=True)
+        obj = context.object
+
+        collider_material = None
+        for mat_name, material in bpy.data.materials.items():
+            if mat_name == "BitTools_Collider_Material":
+                collider_material = material
+
+        if collider_material is None:
+            mat = bpy.data.materials.new(name='BitTools_Collider_Material')
+            mat.blend_method = 'BLEND'
+            mat.use_nodes = True
+            principled = mat.node_tree.nodes['Principled BSDF']
+            principled.inputs['Base Color'].default_value = (0.19, 0.22, 0.8, 1)
+            principled.inputs['Alpha'].default_value = 0.35
+            collider_material = mat
+
+        if len(obj.material_slots) < 1:
+            obj.data.materials.append(collider_material)
+        else:
+            obj.material_slots[0].material = collider_material
 
         return {'FINISHED'}
 

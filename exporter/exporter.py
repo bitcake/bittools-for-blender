@@ -602,6 +602,42 @@ def batch_process_objs_paths_and_export(self, context, objects_list, export_dire
 
     return
 
+def construct_dummy_export_directory():
+    blend_path = Path(bpy.path.abspath('//'))
+    wip = False
+    pathway = []
+
+    # Get the current project's project_structure.json object to get its folder structure
+    structure_json = get_current_project_structure_json()
+    if structure_json is None:
+        return "project_structure.json not found"
+
+    # First, add the parent folder where all assets in the project reside
+    pathway.append(structure_json['folderName'])
+
+    # Search the .blend Path for BitCake's folder structure
+    # Change _WIP folder to Art then construct the rest of the path
+    for part in blend_path.parts:
+
+        if wip is True:
+            split_part = part.split('_')
+            # If folder name starts with a number, remove it, otherwise join again.
+            if split_part[0].isnumeric():
+                split_part.pop(0)
+                pathway.append('_'.join(split_part))
+            else:
+                pathway.append('_'.join(split_part))
+
+        if part.__contains__('WIP'):
+            pathway.append('Art')
+            wip = True
+
+    # Construct final directory and return it
+    current_project_path = Path(get_current_project_assets_path())
+    constructed_directory = current_project_path.joinpath(*pathway) # Unpacks the list as arguments
+
+    return constructed_directory
+
 
 def get_engine_configs(panel_prefs):
     engine_configs_file = get_engine_configs_path()
@@ -635,6 +671,11 @@ def draw_panel(self, context):
         row = layout.row(align=True)
         row.alert = configs.filename_alert
         row.prop(configs, 'non_batch_filename', toggle=1)
+
+    # box = layout.box()
+    # box.label(text='Current Export Directory:')
+    # directory = construct_dummy_export_directory()
+    # box.label(text=f'{directory}')
 
     row = layout.row()
     op = row.operator('bitcake.universal_exporter', text=f'{batch}Send to {current_engine} Project', icon_value=engine_logo.icon_id)

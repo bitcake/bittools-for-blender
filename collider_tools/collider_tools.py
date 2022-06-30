@@ -1,4 +1,3 @@
-import logging
 import bpy
 import mathutils
 from mathutils import Vector
@@ -38,8 +37,11 @@ class BITCAKE_OT_add_box_collider(Operator):
             if not bound_box:
                 self.report({"ERROR"}, "No vertices selected! Please select some vertices and try again.")
                 return {'CANCELLED'}
+            else:
+                create_or_add_collider_material(bound_box)
+
         else:
-            create_bound_box_from_selected_objects()
+            bound_box = create_bound_box_from_selected_objects()
 
         return {'FINISHED'}
 
@@ -63,8 +65,9 @@ class BITCAKE_OT_add_sphere_collider(Operator):
             if not sphere:
                 self.report({"ERROR"}, "No vertices selected! Please select some vertices and try again.")
                 return {'CANCELLED'}
+            else:
+                create_or_add_collider_material(sphere)
         else:
-            logging.info(context.mode)
             create_sphere_from_selected_objects()
 
         return {'FINISHED'}
@@ -89,8 +92,10 @@ class BITCAKE_OT_add_convex_collider(Operator):
             if not hull:
                 self.report({"ERROR"}, "No vertices selected! Please select some vertices and try again.")
                 return {'CANCELLED'}
+            else:
+                create_or_add_collider_material(hull)
         else:
-            create_convex_hull_from_selected_objects(self, context)
+            hull = create_convex_hull_from_selected_objects(self, context)
 
         return {'FINISHED'}
 
@@ -114,6 +119,8 @@ class BITCAKE_OT_add_mesh_collider(Operator):
             if not mesh:
                 self.report({"ERROR"}, "No vertices selected! Please select some vertices and try again.")
                 return {'CANCELLED'}
+            else:
+                create_or_add_collider_material(mesh)
         else:
             create_mesh_collider_from_selected_objects(self, context)
 
@@ -259,6 +266,8 @@ def create_convex_hull_from_selected_objects(self, context):
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
 
+        create_or_add_collider_material(context.view_layer.objects.active)
+
     return
 
 
@@ -281,6 +290,8 @@ def create_mesh_collider_from_selected_objects(self, context):
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
         colliders.append(current_obj)
+
+        create_or_add_collider_material(obj)
 
     for col in colliders:
         col.select_set(True)
@@ -394,7 +405,9 @@ def create_sphere_from_selected_objects():
         prefix = get_collider_prefixes()['sphere']
         sphere.name = prefix + '_' + active_object.name
 
-    return sphere
+        create_or_add_collider_material(sphere)
+
+    return
 
 
 def apply_transform_reverse_hierarchy(obj):
@@ -511,6 +524,8 @@ def create_bound_box_from_selected_objects():
         new_object.select_set(True)
         bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
 
+        create_or_add_collider_material(new_object)
+
     return
 
 
@@ -559,6 +574,29 @@ def find_center_from_vertices(vertices, obj):
     global_bbox_center = obj.matrix_world @ local_bbox_center
 
     return global_bbox_center
+
+
+def create_or_add_collider_material(obj):
+    collider_material = None
+    for mat_name, material in bpy.data.materials.items():
+        if mat_name == "BitTools_Collider_Material":
+            collider_material = material
+
+    if collider_material is None:
+        mat = bpy.data.materials.new(name='BitTools_Collider_Material')
+        mat.blend_method = 'BLEND'
+        mat.use_nodes = True
+        principled = mat.node_tree.nodes['Principled BSDF']
+        principled.inputs['Base Color'].default_value = (0.19, 0.22, 0.8, 1)
+        principled.inputs['Alpha'].default_value = 0.35
+        collider_material = mat
+
+    if len(obj.material_slots) < 1:
+        obj.data.materials.append(collider_material)
+    else:
+        obj.material_slots[0].material = collider_material
+
+    return
 
 
 def draw_panel(self, context):
