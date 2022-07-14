@@ -171,7 +171,7 @@ class BITCAKE_OT_remove_treadmill(Operator):
     @classmethod
     def poll(cls, context):
         obj = context.object
-        if obj and obj.animation_data.action is not None:
+        if obj and obj.animation_data.action is not None and context.mode == 'OBJECT':
             return True
         else:
             return False
@@ -299,7 +299,10 @@ def draw_panel(self, context):
             row.prop(treadmill_col, 'hide_viewport', icon='HIDE_OFF', text="")
         row.operator('bitcake.remove_treadmill', icon='REMOVE', text="")
 
-    if not treadmill:
+    if not treadmill or context.mode != 'OBJECT':
+        row = box.row()
+        row.alert = True
+        row.label(text='You need to be in Object Mode')
         return
 
     row = box.row()
