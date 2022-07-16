@@ -21,6 +21,7 @@ You'll then go to File > Clone (Ctrl+N) and use the following settings:
 Notice how Fork automatically puts the Repo's URL in the first field.
 
 Put your repository in the following folder:
+
 C:\Users\YOURUSER\AppData\Roaming\Blender Foundation\Blender\3.1\scripts\addons\
 You can acess it more easily by typing %appdata% in the file explorer bar.
 
