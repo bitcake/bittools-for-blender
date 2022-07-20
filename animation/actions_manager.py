@@ -233,8 +233,6 @@ def draw_panel(self, context):
     active_action = None
     if obj.animation_data and obj.animation_data.action is not None:
         active_action = obj.animation_data.action
-    elif len(bpy.data.actions.items()) > 0:
-        active_action = bpy.data.actions.items()[0][1]
 
     if active_action is None:
         row = box.row()
