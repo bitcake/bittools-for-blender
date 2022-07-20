@@ -154,11 +154,11 @@ class BITCAKE_OT_treadmill(Operator):
         key = fc.keyframe_points.insert(context.scene.render.fps, self.treadmill_speed)
         key.interpolation = 'LINEAR'
 
-        bpy.context.view_layer.objects.active = obj
-
-        obj.animation_data.action = active_action
-
-        bpy.ops.outliner.orphans_purge()
+        try:
+            bpy.context.view_layer.objects.active = obj
+            obj.animation_data.action = active_action
+        except ReferenceError:
+            pass
 
         return {'FINISHED'}
 
@@ -244,12 +244,12 @@ def create_treadmill_step(collection):
 
 
 def create_treadmill_group(collection):
+    # First change active collection to create empty directly on the correct Collection
     # Creates an empty and puts it inside the treadmill collection correctly
+    bpy.context.view_layer.active_layer_collection = bpy.context.view_layer.layer_collection.children[collection.name]
     bpy.ops.object.empty_add(type='ARROWS', align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
     treadmill_group = bpy.context.object
-    bpy.context.collection.objects.unlink(treadmill_group)
     treadmill_group.name = 'Treadmill Mover'
-    collection.objects.link(treadmill_group)
 
     return treadmill_group
 
