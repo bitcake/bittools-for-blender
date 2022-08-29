@@ -58,7 +58,7 @@ class BITCAKE_OT_mirror_weights_active_vertex_group(Operator):
         side_to_mirror = get_mirror_side(active_vg.name)
         if side_to_mirror is None:
             self.report({'ERROR'}, "Bone cannot be mirror'd. Make sure its naming has the correct Side Keywords that are separated by the correct separator.")
-            return {'CANCELED'}
+            return {'CANCELLED'}
         elif side_to_mirror == configs.middle:
             clear_weights_on_opposite_side(context, active_vg)
             mirror_vertex_group_middle(context, active_vg)
