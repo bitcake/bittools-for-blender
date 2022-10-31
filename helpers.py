@@ -134,6 +134,15 @@ def is_inside_published(directory):
     return False
 
 
+def is_collider(obj):
+    collider_prefixes = get_collider_prefixes()
+    obj_prefix = obj.name.split("_")
+    if obj_prefix[0] in collider_prefixes:
+        return True
+
+    return False
+
+
 def is_object_arp(obj):
     """Returns whether the object is an Auto-Rig Pro armature."""
     return obj and obj.type == 'ARMATURE' and "c_pos" in obj.data.bones

@@ -1,6 +1,5 @@
 import bpy
 from bpy.types import Operator
-from bpy.props import StringProperty, BoolProperty
 
 from ..helpers import clear_pose
 

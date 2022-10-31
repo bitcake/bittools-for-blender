@@ -5,7 +5,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
+from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, is_collider, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 class BITCAKE_OT_universal_exporter(Operator):
@@ -209,7 +209,12 @@ def make_objects_list(context):
 def append_child_colliders(obj_list):
     for obj in obj_list:
         children = get_all_child_of_child(obj)
+
         for child in children:
+            # If collider is already in the list, ignore it
+            if child in obj_list:
+                continue
+
             if get_all_colliders().__contains__(child):
                 # If object has collider, unhide it, select it, add it to list
                 child.hide_set(False)
