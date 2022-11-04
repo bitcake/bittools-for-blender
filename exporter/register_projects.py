@@ -1,5 +1,5 @@
-from ntpath import join
 import os
+import shutil
 import bpy
 import json
 from pathlib import Path
@@ -7,7 +7,7 @@ from bpy.types import Operator
 from bpy_extras.io_utils import ImportHelper
 
 from ..exporter.exporter_configs import check_project_for_settings
-from ..helpers import get_current_project_assets_path, get_exporter_configs, get_generic_project_structure_json, get_registered_projects_path
+from ..helpers import get_current_project_assets_path, get_exporter_configs, get_generic_project_structure_json, get_generic_project_structure_json_path, get_registered_projects_path
 
 
 class BITCAKE_OT_register_project(Operator, ImportHelper):
@@ -73,6 +73,7 @@ class BITCAKE_OT_create_project_structure_from_main_folder(Operator, ImportHelpe
             self.report({'ERROR'}, message=f"This folder must be inside the current Project's /{current_asset.parts[-1]}/ folder and CANNOT be the /{current_asset.parts[-1]}/ itself!")
             return {'CANCELLED'}
 
+        # Create a new project_structure.json file with the correct Main folder
         structure_json = get_generic_project_structure_json()
         structure_json['folderName'] = str(dir_path.relative_to(current_asset))
         created_json_path = current_asset / 'project_structure.json'
@@ -106,6 +107,11 @@ class BITCAKE_OT_create_project_structure(Operator):
         structure_json = get_generic_project_structure_json()
 
         build_folder_paths(structure_json, current_asset)
+
+        # Copy the generic project_structure.json into the /Asset/ folder
+        generic_json_path = get_generic_project_structure_json_path()
+        created_json_path = current_asset / 'project_structure.json'
+        shutil.copy(generic_json_path, created_json_path)
 
         exporter_configs.project_has_settings = True
 
@@ -206,6 +212,7 @@ def build_folder_paths(project_structure, folder_path):
 
 def draw_panel(self, context):
     exporter_configs = get_exporter_configs()
+    current_project = exporter_configs.registered_projects
 
     layout = self.layout
     row = layout.row()
@@ -214,7 +221,7 @@ def draw_panel(self, context):
     row.prop(exporter_configs, 'registered_projects')
     row.operator('bitcake.register_project', icon='ADD', text='')
 
-    if not exporter_configs.registered_projects == 'NONE':
+    if (not current_project == 'NONE') and (not current_project == ''):
         row.operator('bitcake.unregister_project', icon='REMOVE', text='')
 
     row = layout.row()

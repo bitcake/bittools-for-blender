@@ -198,14 +198,19 @@ def get_current_project_assets_path():
 
     return projects_json[active_project]['assets']
 
-def get_generic_project_structure_json():
-    """Returns a json Object from the BitTools generic project_structure.json file"""
-
+def get_generic_project_structure_json_path():
+    """Returns the Path to the json Object of the BitTools generic project_structure.json"""
     for mod in addon_utils.modules():
         if mod.bl_info['name'] == __package__:
             addon_path = Path(mod.__file__)
 
     project_structure_json_path = Path(addon_path.parent / 'configs' / 'project_structure.json')
+
+    return project_structure_json_path
+
+def get_generic_project_structure_json():
+    """Returns a json Object from the BitTools generic project_structure.json file"""
+    project_structure_json_path = get_generic_project_structure_json_path()
     project_structure_json = json.load(project_structure_json_path.open())
 
     return project_structure_json
