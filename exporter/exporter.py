@@ -114,7 +114,8 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             if not panel_prefs.export_textures and obj.type == 'MESH':
                 unlink_materials(obj)
-                create_fake_materials(obj)
+                # Cannot remember why I was creating fake materials for... TODO: Check if necessary and delete below
+                # create_fake_materials(obj)
 
             # Deal with linked objects (multi user)
             if obj.data is not None and obj.data.users > 1:
@@ -122,6 +123,7 @@ class BITCAKE_OT_universal_exporter(Operator):
                 bpy.ops.object.make_single_user(object=True, obdata=True, material=True, animation=False, obdata_animation=True)
 
             if panel_prefs.apply_transform:
+                bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
                 bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
         # Only Select objects inside the list before exporting
