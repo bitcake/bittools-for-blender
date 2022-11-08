@@ -115,7 +115,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             if not panel_prefs.export_textures and obj.type == 'MESH':
                 unlink_materials(obj)
                 # Cannot remember why I was creating fake materials for... TODO: Check if necessary and delete below
-                # create_fake_materials(obj)
+                create_fake_materials(obj)
 
             # Deal with linked objects (multi user)
             if obj.data is not None and obj.data.users > 1:
