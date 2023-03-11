@@ -72,7 +72,13 @@ def duplicate(obj, data=True, actions=True, parent=True):
     if parent:
         obj_copy.parent = obj
 
-    obj_copy.matrix_parent_inverse = obj.matrix_world.inverted()
+    if obj.parent is None:
+        obj_copy.matrix_parent_inverse = obj.matrix_world.inverted()
+    else:
+        print("NOIS")
+        obj_copy.matrix_world = obj.parent.matrix_world
+        print(obj.parent.matrix_world.inverted())
+
 
     for collection in obj.users_collection:
         collection.objects.link(obj_copy)
