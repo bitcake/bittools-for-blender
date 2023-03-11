@@ -21,39 +21,43 @@ class BITCAKE_OT_dev_operator(Operator):
     def execute(self, context):
         obj = context.active_object
         selection = context.selected_objects
+        scene_data = bpy.data.objects
 
         for obj in selection:
             if not obj.get('LOD'):
                 obj['LOD'] = 0
 
-        scene_data = bpy.data.objects
-        for child in obj.children_recursive:
-            if child.get('LOD'):
-                scene_data.remove(child)
+            for child_obj in obj.children_recursive:
+                if child_obj.get('LOD') is not None:
+                    if child_obj.get('LOD') > 0:
+                        scene_data.remove(child_obj)
 
-        for lod in range(self.lod_number):
-            if obj.get('LOD') is not 0:
-                continue
+                        if child_obj in selection:
+                            selection.remove(child_obj)
 
-            obj_copy = duplicate(obj)
-            current_lod = lod + 1
+        for obj in selection:
+            for lod in range(self.lod_number):
+                if obj.get('LOD') != 0:
+                    continue
 
-            is_lod = obj_copy.get('LOD')
-            if not is_lod:
-                obj_copy['LOD'] = current_lod
+                obj_copy = duplicate(obj)
+                current_lod = lod + 1
 
-            print(obj_copy.name)
-            obj_name = obj_copy.name.split('.')
-            obj_copy.name = obj_name[0] + '_LOD' + str(current_lod)
+                is_lod = obj_copy.get('LOD')
+                if not is_lod:
+                    obj_copy['LOD'] = current_lod
 
-            decimate = obj_copy.modifiers.get('Decimate')
-            if not decimate:
-                decimate = obj_copy.modifiers.new('Decimate', 'DECIMATE')
+                obj_name = obj_copy.name.split('.')
+                obj_copy.name = obj_name[0] + '_LOD' + str(current_lod)
 
-            self.lod_ratio = self.lod_ratio / 2
-            decimate.ratio = self.lod_ratio
+                decimate = obj_copy.modifiers.get('Decimate')
+                if not decimate:
+                    decimate = obj_copy.modifiers.new('Decimate', 'DECIMATE')
 
-        self.lod_ratio = 1
+                self.lod_ratio = self.lod_ratio / 2
+                decimate.ratio = self.lod_ratio
+
+            self.lod_ratio = 1
 
 
         return {'FINISHED'}
@@ -89,20 +93,26 @@ def draw_panel(self, context):
 
     layout.separator()
     obj = context.active_object
+    selection = context.selected_objects
 
     if obj is None:
         return
 
-    mod = obj.modifiers.get('Decimate')
-    if mod is not None:
-        row = layout.row()
-        row.prop(mod, 'ratio', text=f"LOD{str(obj.get('LOD'))}")
 
-    for child in obj.children_recursive:
-        mod = child.modifiers.get('Decimate')
-        if mod is not None:
+    displayed_objs = []
+    for obj in selection:
+        if obj.get('LOD') is not None:
+            if obj.get('LOD') > 0 or obj.parent is not None:
+                continue
             row = layout.row()
-            row.prop(mod, 'ratio', text=f"LOD{str(child.get('LOD'))}")
+            row.label(text=f'{obj.name} LODs Ratio')
+
+        for child in obj.children_recursive:
+            mod = child.modifiers.get('Decimate')
+            if mod is not None and child not in displayed_objs:
+                row = layout.row()
+                row.prop(mod, 'ratio', text=f"{child.name}")
+                displayed_objs.append(child)
 
     return
 
