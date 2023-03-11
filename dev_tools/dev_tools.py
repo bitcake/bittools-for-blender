@@ -14,28 +14,33 @@ class BITCAKE_OT_dev_operator(Operator):
         return True
 
     def execute(self, context):
-        obj = context.object
+        obj = context.active_object
 
-        collider_material = None
-        for mat_name, material in bpy.data.materials.items():
-            if mat_name == "BitTools_Collider_Material":
-                collider_material = material
+        print(obj)
 
-        if collider_material is None:
-            mat = bpy.data.materials.new(name='BitTools_Collider_Material')
-            mat.blend_method = 'BLEND'
-            mat.use_nodes = True
-            principled = mat.node_tree.nodes['Principled BSDF']
-            principled.inputs['Base Color'].default_value = (0.19, 0.22, 0.8, 1)
-            principled.inputs['Alpha'].default_value = 0.35
-            collider_material = mat
-
-        if len(obj.material_slots) < 1:
-            obj.data.materials.append(collider_material)
-        else:
-            obj.material_slots[0].material = collider_material
+        obj_copy = duplicate(obj)
+        decimate = obj_copy.modifiers.new('Decimate', 'DECIMATE')
+        decimate.ratio = 0.5
 
         return {'FINISHED'}
+
+
+def duplicate(obj, data=True, actions=True, parent=True):
+    obj_copy = obj.copy()
+    if data:
+        obj_copy.data = obj_copy.data.copy()
+    if actions and obj_copy.animation_data:
+        obj_copy.animation_data.action = obj_copy.animation_data.action.copy()
+    if parent:
+        obj_copy.parent = obj
+
+    obj_copy.matrix_parent_inverse = obj.matrix_world.inverted()
+
+    for collection in obj.users_collection:
+        collection.objects.link(obj_copy)
+
+    return obj_copy
+
 
 def construct_registered_project_published_export_directory(self):
     blend_path = Path(bpy.path.abspath('//'))
