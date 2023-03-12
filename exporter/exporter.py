@@ -104,6 +104,7 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             # Save original name and rename current object according to rules
             rename_with_prefix(context, obj)
+            rename_if_lod(obj)
 
             # Create the json object if object has animation events
             markers_json = construct_animation_configs_json(self, context, obj)
@@ -333,6 +334,15 @@ def rename_with_prefix(context, obj):
             # Checks if object already has correct prefix in name
             if not object_has_correct_prefix(context, prefix, child):
                 child.name = f"{prefix}{separator}{child.name}"
+
+
+def rename_if_lod(obj):
+    """Renames obj if it's the LOD0."""
+
+    if obj.get('LOD') == 0:
+        obj.name = obj.name + '_LOD0'
+
+    return
 
 def get_correct_prefix(context, obj):
     panel_prefs = context.scene.exporter_configs

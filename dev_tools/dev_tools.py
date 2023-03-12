@@ -1,7 +1,9 @@
-from pathlib import Path
 import bpy
-from bpy.types import Operator
-from ..helpers import is_wip_in_path
+from bpy.types import Operator, PropertyGroup, Scene
+from bpy.props import IntProperty, FloatProperty
+
+class BITCAKE_PROPS_lod_configs(PropertyGroup):
+    lod_number: IntProperty(name='Number of LODs', default=2, min=0, max=10)
 
 class BITCAKE_OT_dev_operator(Operator):
     bl_idname = "bitcake.dev_operator"
@@ -9,76 +11,132 @@ class BITCAKE_OT_dev_operator(Operator):
     bl_description = "Test stuuuuff"
     bl_options = {'INTERNAL', 'UNDO'}
 
+    lod_number: IntProperty(default=0)
+    lod_ratio: FloatProperty(default=1)
+
     @classmethod
     def poll(cls, context):
         return True
 
     def execute(self, context):
-        obj = context.object
+        obj = context.active_object
+        selection = context.selected_objects
+        scene_data = bpy.data.objects
 
-        collider_material = None
-        for mat_name, material in bpy.data.materials.items():
-            if mat_name == "BitTools_Collider_Material":
-                collider_material = material
+        for obj in selection:
+            if not obj.get('LOD'):
+                obj['LOD'] = 0
 
-        if collider_material is None:
-            mat = bpy.data.materials.new(name='BitTools_Collider_Material')
-            mat.blend_method = 'BLEND'
-            mat.use_nodes = True
-            principled = mat.node_tree.nodes['Principled BSDF']
-            principled.inputs['Base Color'].default_value = (0.19, 0.22, 0.8, 1)
-            principled.inputs['Alpha'].default_value = 0.35
-            collider_material = mat
+            for child_obj in obj.children_recursive:
+                if child_obj.get('LOD') is not None:
+                    if child_obj.get('LOD') > 0:
+                        scene_data.remove(child_obj)
 
-        if len(obj.material_slots) < 1:
-            obj.data.materials.append(collider_material)
-        else:
-            obj.material_slots[0].material = collider_material
+                        if child_obj in selection:
+                            selection.remove(child_obj)
+
+        for obj in selection:
+            for lod in range(self.lod_number):
+                if obj.get('LOD') != 0:
+                    continue
+
+                obj_copy = duplicate(obj)
+                current_lod = lod + 1
+
+                is_lod = obj_copy.get('LOD')
+                if not is_lod:
+                    obj_copy['LOD'] = current_lod
+
+                obj_name = obj_copy.name.split('.')
+                obj_copy.name = obj_name[0] + '_LOD' + str(current_lod)
+
+                decimate = obj_copy.modifiers.get('Decimate')
+                if not decimate:
+                    decimate = obj_copy.modifiers.new('Decimate', 'DECIMATE')
+
+                self.lod_ratio = self.lod_ratio / 2
+                decimate.ratio = self.lod_ratio
+
+            self.lod_ratio = 1
+
 
         return {'FINISHED'}
 
-def construct_registered_project_published_export_directory(self):
-    blend_path = Path(bpy.path.abspath('//'))
-    pathway = []
 
-    # If no WIP folder found then fail
-    if not is_wip_in_path():
-        self.report({"ERROR"},
-                    "The .blend path is not contained inside a proper BitCake Pipeline hierarchy, please make sure your hierarchy's root folder contains the word 'WIP' like in c:/BitTools/02_WIP/Environment")
-        return {'CANCELLED'}
+def duplicate(obj, data=True, actions=True, parent=True):
+    obj_copy = obj.copy()
+    if data:
+        obj_copy.data = obj_copy.data.copy()
+    if actions and obj_copy.animation_data:
+        obj_copy.animation_data.action = obj_copy.animation_data.action.copy()
+    if parent:
+        obj_copy.parent = obj
 
-    # Search the .blend Path for BitCake's folder structure
-    # Change _WIP folder to Art then construct the rest of the path
-    for part in blend_path.parts:
-        pathway.append(part)
-        if part.__contains__('02_WIP'):
-            pathway.pop()
-            pathway.append('03_Published')
+    if obj.parent is None:
+        obj_copy.matrix_parent_inverse = obj.matrix_world.inverted()
+    else:
+        print("NOIS")
+        obj_copy.matrix_world = obj.parent.matrix_world
+        print(obj.parent.matrix_world.inverted())
 
 
-    # Construct final directory and return it
-    constructed_directory = Path().joinpath(*pathway) # Unpacks the list as arguments
+    for collection in obj.users_collection:
+        collection.objects.link(obj_copy)
 
-    return constructed_directory
+    return obj_copy
 
 
 def draw_panel(self, context):
+    lod_configs = context.scene.lod_configs
+
     layout = self.layout
 
     row = layout.row()
-    row.operator('bitcake.dev_operator', text='Test Butten')
+    row.prop(lod_configs, 'lod_number')
+    row = layout.row()
+    op = row.operator('bitcake.dev_operator', text='Generate LODs')
+    op.lod_number = lod_configs.lod_number
+
+    layout.separator()
+    obj = context.active_object
+    selection = context.selected_objects
+
+    if obj is None:
+        return
+
+
+    displayed_objs = []
+    for obj in selection:
+        if obj.get('LOD') is not None:
+            if obj.get('LOD') > 0 or obj.parent is not None:
+                continue
+            row = layout.row()
+            row.label(text=f'{obj.name} LODs Ratio')
+
+        for child in obj.children_recursive:
+            mod = child.modifiers.get('Decimate')
+            if mod is not None and child not in displayed_objs:
+                row = layout.row()
+                row.prop(mod, 'ratio', text=f"{child.name}")
+                displayed_objs.append(child)
 
     return
 
 
-classes = (BITCAKE_OT_dev_operator,)
+classes = (BITCAKE_OT_dev_operator,
+           BITCAKE_PROPS_lod_configs)
 
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    Scene.lod_configs = bpy.props.PointerProperty(type=BITCAKE_PROPS_lod_configs)
+
+
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+
+    del Scene.lod_configs
