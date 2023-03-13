@@ -17,6 +17,11 @@ class BitCakeToolsPreferences(AddonPreferences):
         default=True,
     )
 
+    toggle_lod_tools: BoolProperty(
+        name="LOD Tools",
+        default=True,
+    )
+
     toggle_rigging_tools: BoolProperty(
         name="Rigging Tools",
         default=True,
@@ -66,6 +71,7 @@ class BitCakeToolsPreferences(AddonPreferences):
         column.prop(self, "toggle_animation_tools")
         column.prop(self, "toggle_collider_tools")
         column.prop(self, "toggle_custom_commands")
+        column.prop(self, "toggle_lod_tools")
         column.prop(self, "toggle_rigging_tools")
         column.prop(self, "toggle_dev_tools")
 

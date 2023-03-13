@@ -5,8 +5,8 @@ from bpy.props import IntProperty, FloatProperty
 class BITCAKE_PROPS_lod_configs(PropertyGroup):
     lod_number: IntProperty(name='Number of LODs', default=2, min=0, max=10)
 
-class BITCAKE_OT_dev_operator(Operator):
-    bl_idname = "bitcake.dev_operator"
+class BITCAKE_OT_lod_maker(Operator):
+    bl_idname = "bitcake.lod_maker"
     bl_label = "Test Stuff"
     bl_description = "Test stuuuuff"
     bl_options = {'INTERNAL', 'UNDO'}
@@ -90,13 +90,38 @@ def draw_panel(self, context):
     layout = self.layout
 
     row = layout.row()
-    op = row.operator('bitcake.dev_operator', text='Test Butten')
+    row.prop(lod_configs, 'lod_number')
+    row = layout.row()
+    op = row.operator('bitcake.lod_maker', text='Generate LODs')
     op.lod_number = lod_configs.lod_number
+
+    layout.separator()
+    obj = context.active_object
+    selection = context.selected_objects
+
+    if obj is None:
+        return
+
+
+    displayed_objs = []
+    for obj in selection:
+        if obj.get('LOD') is not None:
+            if obj.get('LOD') > 0 or obj.parent is not None:
+                continue
+            row = layout.row()
+            row.label(text=f'{obj.name} LODs Ratio')
+
+        for child in obj.children_recursive:
+            mod = child.modifiers.get('Decimate')
+            if mod is not None and child not in displayed_objs:
+                row = layout.row()
+                row.prop(mod, 'ratio', text=f"{child.name}")
+                displayed_objs.append(child)
 
     return
 
 
-classes = (BITCAKE_OT_dev_operator,
+classes = (BITCAKE_OT_lod_maker,
            BITCAKE_PROPS_lod_configs)
 
 
@@ -104,8 +129,12 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    Scene.lod_configs = bpy.props.PointerProperty(type=BITCAKE_PROPS_lod_configs)
+
 
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+
+    del Scene.lod_configs

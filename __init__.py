@@ -35,6 +35,7 @@ module_names = [
     'custom_commands',
     'collider_tools',
     'exporter',
+    'lod_tools',
     'rigging_tools',
     'dev_tools',
 ]
