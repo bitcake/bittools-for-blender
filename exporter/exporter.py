@@ -8,6 +8,7 @@ from pathlib import Path
 from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, is_collider, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
+
 class BITCAKE_OT_universal_exporter(Operator):
     bl_idname = "bitcake.universal_exporter"
     bl_label = "Send to Engine"
@@ -113,19 +114,15 @@ class BITCAKE_OT_universal_exporter(Operator):
             if panel_prefs.origin_transform and obj.parent is None:
                 obj.location = 0, 0, 0
 
-            if not panel_prefs.export_textures and obj.type == 'MESH':
-                unlink_materials(obj)
-                # Cannot remember why I was creating fake materials for... TODO: Check if necessary and delete below
-                create_fake_materials(obj)
-
             # Deal with linked objects (multi user)
             if obj.data is not None and obj.data.users > 1:
                 obj_original_info_dict[obj]['linked_mesh'] = obj.data.original
-                bpy.ops.object.make_single_user(object=True, obdata=True, material=True, animation=False, obdata_animation=True)
+                bpy.ops.object.make_single_user(object=True, obdata=True, material=False, animation=False, obdata_animation=True)
 
             if panel_prefs.apply_transform:
                 bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
                 bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+
 
         # Only Select objects inside the list before exporting
         toggle_all_colliders_visibility(True)
@@ -465,7 +462,8 @@ def relink_materials(obj, materials):
         return
 
     for index, slot in enumerate(obj.material_slots):
-        slot.material = materials[index][1]
+        if slot.material is None:
+            slot.material = materials[index][1]
 
     return
 
