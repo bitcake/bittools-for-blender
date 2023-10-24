@@ -120,8 +120,9 @@ class BITCAKE_OT_universal_exporter(Operator):
                 bpy.ops.object.make_single_user(object=True, obdata=True, material=False, animation=False, obdata_animation=True)
 
             if panel_prefs.apply_transform:
-                bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
-                bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+                if not [armature for armature in obj.modifiers if armature.type == 'ARMATURE']:
+                    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+                    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
 
         # Only Select objects inside the list before exporting
