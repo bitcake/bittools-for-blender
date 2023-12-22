@@ -302,13 +302,14 @@ def create_mesh_collider_from_selected_objects(self, context):
         prefix = get_collider_prefixes()['mesh']
         current_obj.name = prefix + '_' + obj.name
         current_obj.parent = obj
-        current_obj.matrix_parent_inverse = obj.matrix_world.inverted()
+        current_obj.matrix_parent_inverse = obj.matrix_local.inverted()
+        current_obj.data.materials.clear()
 
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
         colliders.append(current_obj)
 
-        create_or_add_collider_material(obj)
+        create_or_add_collider_material(current_obj)
 
     for col in colliders:
         col.select_set(True)
