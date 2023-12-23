@@ -95,6 +95,11 @@ class BITCAKE_OT_universal_exporter(Operator):
                                            'location': obj.location.copy(),
                                            }
 
+            #First let's clean all the unused materials from this object
+            overriden_context = {'active_object': obj}
+            with bpy.context.temp_override(active_object = overriden_context):
+                bpy.ops.object.material_slot_remove_unused()
+
             # Let's save all object's materials to return them back later
             obj_material = []
             if obj.type == 'MESH':
@@ -461,7 +466,7 @@ def create_fake_materials(obj):
 def relink_materials(obj, materials):
     if materials == []:
         return
-
+    print(f"NOME DO OBJETO É {obj}")
     for index, slot in enumerate(obj.material_slots):
         if slot.material is None:
             slot.material = materials[index][1]
