@@ -466,7 +466,7 @@ def create_fake_materials(obj):
 def relink_materials(obj, materials):
     if materials == []:
         return
-    print(f"NOME DO OBJETO É {obj}")
+
     for index, slot in enumerate(obj.material_slots):
         if slot.material is None:
             slot.material = materials[index][1]
