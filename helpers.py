@@ -308,6 +308,17 @@ def select_object_hierarchy(obj):
 
     return
 
+
+def set_correct_child_matrix(parentObj, childObj):
+    if parentObj.parent is None:
+        childObj.matrix_parent_inverse = parentObj.matrix_world.inverted()
+    else:
+        childObj.matrix_world = parentObj.parent.matrix_world
+        childObj.matrix_local.identity()
+
+    return
+
+
 def delete_hierarchy(parent_obj_name):
     bpy.ops.object.select_all(action='DESELECT')
     obj = bpy.data.objects.get(parent_obj_name)

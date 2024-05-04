@@ -4,7 +4,7 @@ from bpy.types import PropertyGroup, Scene
 from bpy.props import BoolProperty
 from mathutils import Vector
 from bpy.types import Operator
-from ..helpers import get_addon_prefs, get_current_engine
+from ..helpers import get_addon_prefs, get_current_engine, set_correct_child_matrix
 
 
 class BITCAKE_PROPS_collider_configs(PropertyGroup):
@@ -106,6 +106,7 @@ class BITCAKE_OT_add_convex_collider(Operator):
             else:
                 create_or_add_collider_material(hull)
         else:
+            print("TOAQUI")
             hull = create_convex_hull_from_selected_objects(self, context)
 
         return {'FINISHED'}
@@ -249,7 +250,9 @@ def create_convex_hull_from_selected_vertices(self, context):
     prefix = get_collider_prefixes()['convex']
     current_obj.name = prefix + '_' + obj.name
     current_obj.parent = obj
-    current_obj.matrix_parent_inverse = obj.matrix_world.inverted()
+
+    set_correct_child_matrix(obj, current_obj)
+
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
     current_obj.select_set(True)
@@ -272,12 +275,13 @@ def create_convex_hull_from_selected_objects(self, context):
             v.select = True
 
         bpy.ops.object.mode_set(mode='EDIT')
-
         bpy.ops.mesh.convex_hull()
+
         prefix = get_collider_prefixes()['convex']
         current_obj.name = prefix + '_' + obj.name
         current_obj.parent = obj
-        current_obj.matrix_parent_inverse = obj.matrix_world.inverted()
+
+        set_correct_child_matrix(obj, current_obj)
 
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -302,7 +306,9 @@ def create_mesh_collider_from_selected_objects(self, context):
         prefix = get_collider_prefixes()['mesh']
         current_obj.name = prefix + '_' + obj.name
         current_obj.parent = obj
-        current_obj.matrix_parent_inverse = obj.matrix_local.inverted()
+
+        set_correct_child_matrix(obj, current_obj)
+
         current_obj.data.materials.clear()
 
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -339,7 +345,9 @@ def create_mesh_collider_from_selected_vertices(self, context):
     prefix = get_collider_prefixes()['mesh']
     current_obj.name = prefix + '_' + obj.name
     current_obj.parent = obj
-    current_obj.matrix_parent_inverse = obj.matrix_world.inverted()
+
+    set_correct_child_matrix(obj, current_obj)
+
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
     current_obj.select_set(True)
@@ -360,8 +368,10 @@ def create_sphere_from_selected_vertices():
     bounding_box_center = find_center_from_vertices(bounding_box[0], active_object)
 
     bounds_limit = mathutils.Vector(bounding_box[0][0])
-    bounds_limit = (bounds_limit + active_object.location)
+    bounds_limit = (bounds_limit + bounding_box_center)
     radius = bounds_limit - bounding_box_center
+
+    print(radius.length)
 
     cursor = bpy.context.scene.cursor
     cursor.location = bounding_box_center
@@ -376,6 +386,7 @@ def create_sphere_from_selected_vertices():
     master_collection.objects.unlink(sphere)
     collection.objects.link(sphere)
     sphere.parent = active_object
+
     bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
 
     prefix = get_collider_prefixes()['sphere']
@@ -462,11 +473,11 @@ def create_bound_box_from_selected_vertices():
 
     bounding_box = create_mesh(name, (bounding_box[0], bounding_box[1], bounding_box[2]), active_object)
 
-    cursor = bpy.context.scene.cursor
-    cursor.location = active_object.location
-    bounding_box.select_set(True)
-    bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
-    bounding_box.select_set(False)
+    set_correct_child_matrix(active_object, bounding_box)
+
+    if active_object.parent is None:
+        bounding_box.location = active_object.location
+        bounding_box.rotation_euler = active_object.rotation_euler
 
     return bounding_box
 
@@ -511,7 +522,6 @@ def define_bounding_box_from_bounds(bounds):
 
 
 def create_bound_box_from_selected_objects():
-    cursor = bpy.context.scene.cursor
     selection = bpy.context.selected_objects
 
     for obj in selection:
@@ -520,7 +530,6 @@ def create_bound_box_from_selected_objects():
 
         active_object = obj
         active_object_collection = obj.users_collection[0]
-        cursor.location = active_object.location
         bpy.ops.object.select_all(action='DESELECT')
 
         # I had to check each vertice by hand to figure out which one was which
@@ -537,12 +546,16 @@ def create_bound_box_from_selected_objects():
         prefix = get_collider_prefixes()['box']
         name = prefix + '_' + active_object.name
 
-        new_object = create_mesh(name, (vertices, edges, faces), active_object)
+        bounding_box = create_mesh(name, (vertices, edges, faces), active_object)
+        bounding_box.select_set(True)
 
-        new_object.select_set(True)
-        bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
+        set_correct_child_matrix(active_object, bounding_box)
 
-        create_or_add_collider_material(new_object)
+        if active_object.parent is None:
+            bounding_box.location = active_object.location
+            bounding_box.rotation_euler = active_object.rotation_euler
+
+        create_or_add_collider_material(bounding_box)
 
     return
 
