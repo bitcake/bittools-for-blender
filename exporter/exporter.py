@@ -100,7 +100,10 @@ class BITCAKE_OT_universal_exporter(Operator):
                 overriden_context = {'active_object': obj}
                 with bpy.context.temp_override(active_object = overriden_context):
                     print(overriden_context)
-                    bpy.ops.object.material_slot_remove_unused()
+                    try:
+                        bpy.ops.object.material_slot_remove_unused()
+                    except RuntimeError:
+                        continue
 
             # Let's save all object's materials to return them back later
             obj_material = []
@@ -542,6 +545,7 @@ def exporter(path):
         apply_scale_options=configs['apply_scale'],
         use_space_transform=configs['space_transform'],
         bake_space_transform=False,
+        use_mesh_modifiers=True,
         use_armature_deform_only=True,
         use_custom_props=True,
         add_leaf_bones=configs['add_leaf_bones'],
