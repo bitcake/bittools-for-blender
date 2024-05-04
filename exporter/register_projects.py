@@ -21,7 +21,7 @@ class BITCAKE_OT_register_project(Operator, ImportHelper):
 
     def execute(self, context):
         dir_path = Path(self.filepath)
-        if dir_path.is_file() or dir_path.suffix != '':
+        if dir_path.is_file() or dir_path.suffix != '' or dir_path.name == 'Assets' or dir_path.name == 'Content':
             dir_path = dir_path.parent
 
         cocos = dir_path / 'project.json'
