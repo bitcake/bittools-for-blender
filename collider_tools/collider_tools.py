@@ -1,7 +1,7 @@
 import bpy
 import mathutils
 from bpy.types import PropertyGroup, Scene
-from bpy.props import BoolProperty
+from bpy.props import BoolProperty, EnumProperty
 from mathutils import Vector
 from bpy.types import Operator
 from ..helpers import get_addon_prefs, get_current_engine, set_correct_child_matrix
@@ -9,6 +9,9 @@ from ..helpers import get_addon_prefs, get_current_engine, set_correct_child_mat
 
 class BITCAKE_PROPS_collider_configs(PropertyGroup):
     collider_visibility: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
+    collider_types: EnumProperty(items=[('COLLIDER', 'Collider', 'Standard Collider', 'MESH_CUBE', 0),
+                                            ('MOV_BLOCKER', 'Movement Blocker', "Movement Blocker Collider", 'SNAP_VOLUME', 1),
+                                            ('SLIPPERY', 'Slippery', "Slippery Collider", 'META_CUBE', 2)], default='COLLIDER')
 
 
 class BITCAKE_OT_toggle_all_colliders_visibility(Operator):
@@ -247,8 +250,8 @@ def create_convex_hull_from_selected_vertices(self, context):
     bpy.ops.mesh.convex_hull()
 
     current_obj = bpy.context.active_object
-    prefix = get_collider_prefixes()['convex']
-    current_obj.name = prefix + '_' + obj.name
+    
+    current_obj.name = get_prefix_for_collider('convex') + obj.name
     current_obj.parent = obj
 
     set_correct_child_matrix(obj, current_obj)
@@ -277,8 +280,7 @@ def create_convex_hull_from_selected_objects(self, context):
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.convex_hull()
 
-        prefix = get_collider_prefixes()['convex']
-        current_obj.name = prefix + '_' + obj.name
+        current_obj.name = get_prefix_for_collider('convex') + obj.name
         current_obj.parent = obj
 
         set_correct_child_matrix(obj, current_obj)
@@ -303,8 +305,7 @@ def create_mesh_collider_from_selected_objects(self, context):
         bpy.ops.object.duplicate()
         current_obj = bpy.context.object
 
-        prefix = get_collider_prefixes()['mesh']
-        current_obj.name = prefix + '_' + obj.name
+        current_obj.name = get_prefix_for_collider('mesh') + obj.name
         current_obj.parent = obj
 
         set_correct_child_matrix(obj, current_obj)
@@ -342,8 +343,7 @@ def create_mesh_collider_from_selected_vertices(self, context):
     bpy.ops.object.mode_set(mode='EDIT')
 
     current_obj = bpy.context.active_object
-    prefix = get_collider_prefixes()['mesh']
-    current_obj.name = prefix + '_' + obj.name
+    current_obj.name = get_prefix_for_collider('mesh') + obj.name
     current_obj.parent = obj
 
     set_correct_child_matrix(obj, current_obj)
@@ -389,8 +389,7 @@ def create_sphere_from_selected_vertices():
 
     bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
 
-    prefix = get_collider_prefixes()['sphere']
-    sphere.name = prefix + '_' + active_object.name
+    sphere.name = get_prefix_for_collider('sphere') + active_object.name
 
     return sphere
 
@@ -431,8 +430,7 @@ def create_sphere_from_selected_objects():
         sphere.parent = active_object
         bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
 
-        prefix = get_collider_prefixes()['sphere']
-        sphere.name = prefix + '_' + active_object.name
+        sphere.name = get_prefix_for_collider('sphere') + active_object.name
 
         create_or_add_collider_material(sphere)
 
@@ -468,8 +466,7 @@ def create_bound_box_from_selected_vertices():
     bounding_box = define_bounding_box_from_bounds(bounds)
 
     active_object = bpy.context.active_object
-    prefix = get_collider_prefixes()['box']
-    name = prefix + '_' + active_object.name
+    name = get_prefix_for_collider('box') + active_object.name
 
     bounding_box = create_mesh(name, (bounding_box[0], bounding_box[1], bounding_box[2]), active_object)
 
@@ -543,8 +540,7 @@ def create_bound_box_from_selected_objects():
                  (1, 5, 6, 2),
                  (0, 3, 7, 4), ]
 
-        prefix = get_collider_prefixes()['box']
-        name = prefix + '_' + active_object.name
+        name = get_prefix_for_collider('box') + active_object.name
 
         bounding_box = create_mesh(name, (vertices, edges, faces), active_object)
         bounding_box.select_set(True)
@@ -588,9 +584,30 @@ def get_collider_prefixes():
                          'capsule': addon_prefs.capsule_collider_prefix,
                          'sphere': addon_prefs.sphere_collider_prefix,
                          'convex': addon_prefs.convex_collider_prefix,
-                         'mesh': addon_prefs.mesh_collider_prefix}
+                         'mesh': addon_prefs.mesh_collider_prefix,
+                         'standard': addon_prefs.standard_collider_prefix,
+                         'movement': addon_prefs.movement_collider_prefix,
+                         'slippery': addon_prefs.slippery_collider_prefix}
 
     return collider_prefixes
+
+def get_prefix_for_collider(shape):
+    """Returns the correct, formated prefix (with separator) for a given collider"""
+
+    prefixes = get_collider_prefixes()
+    prefix = prefixes[shape]
+
+    collider_type = bpy.context.scene.collider_configs.collider_types
+
+    if collider_type == 'COLLIDER':
+        prefix = prefix + '_' + prefixes['standard'] + '_'
+    elif collider_type == 'MOV_BLOCKER':
+        prefix = prefix + '_' + prefixes['movement'] + '_'
+    else:
+        prefix = prefix + '_' + prefixes['slippery'] + '_'
+    
+    return prefix
+
 
 
 def find_bounding_box_center_from_obj(obj):
@@ -637,6 +654,7 @@ def draw_panel(self, context):
             addon_prefs.sphere_collider_prefix,
             addon_prefs.convex_collider_prefix,
             addon_prefs.mesh_collider_prefix]
+
     layout = self.layout
 
     current_engine = get_current_engine()
@@ -651,6 +669,9 @@ def draw_panel(self, context):
     row.operator('bitcake.toggle_all_colliders_visibility', text='Toggle Colliders Visibility', icon=icon)
 
     layout.separator()
+    layout.label(text='Collider Type')
+    row = layout.row(align=True)
+    row.prop(context.scene.collider_configs, 'collider_types')
     row = layout.row()
     row.operator('bitcake.add_box_collider', text=f'Add Box Collider ({pcol[0]})', icon='CUBE')
     row = layout.row()

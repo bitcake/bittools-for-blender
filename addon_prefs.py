@@ -48,6 +48,9 @@ class BitCakeToolsPreferences(AddonPreferences):
     sphere_collider_prefix: StringProperty(name='Sphere Collider Prefix', default='USP')
     convex_collider_prefix: StringProperty(name='Convex Collider Prefix', default='UCX')
     mesh_collider_prefix: StringProperty(name='Mesh Collider Prefix', default='UME')
+    standard_collider_prefix: StringProperty(name='Standard Collider Prefix', default='COL')
+    movement_collider_prefix: StringProperty(name='Movement Blocker Collider Prefix', default='MVB')
+    slippery_collider_prefix: StringProperty(name='Slippery Collider Prefix', default='SLP')
 
     # Folder Paths (NOT user changeable)
     static_mesh_path: StringProperty(name='Static Mesh Path', default='/Art/StaticMeshes/',)
