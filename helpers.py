@@ -3,8 +3,10 @@ import addon_utils
 import json
 import bpy
 import os
+
 from pathlib import Path
 from mathutils import Vector, Quaternion, Euler
+from . import bl_info
 
 # Some of those helpers are from the GRET Plugin, check it out.
 
@@ -31,6 +33,13 @@ arp_default_pose_values = {
 }
 default_pose_values = {}
 
+def panel_category_name():
+    name = bl_info["name"]
+    version = bl_info["version"]
+    v_maj = version[0]
+    v_min = version[1]
+    v_pch = version[2]
+    return f'{name} {v_maj}.{v_min}.{v_pch}'
 
 def is_wip_in_path():
     """Receives a Path object and checks if there's a WIP folder in one of the parent folders"""

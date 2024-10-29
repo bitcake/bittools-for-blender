@@ -1,6 +1,6 @@
 import bpy
 from bpy.types import Panel
-from ..helpers import get_addon_prefs
+from ..helpers import get_addon_prefs, panel_category_name
 
 modules = [
     'rigging_configs',
@@ -16,7 +16,7 @@ class BITCAKE_PT_rigging_tools(Panel):
     bl_label = "Rigging Tools"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "BitTools"
+    bl_category = panel_category_name()
 
     draw_funcs = []
 

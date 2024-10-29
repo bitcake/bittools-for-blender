@@ -3,7 +3,7 @@ bl_info = {
     "author": "Eduardo Lamhut",
     "version": (0, 3, 1),
     "blender": (3, 0, 0),
-    "location": "3D View > Properties> BitTools",
+    "location": "3D View > Properties > BitTools",
     "description": "Toolset to help BitCake Artists work with various engines",
     "tracker_url": "www.bitcakestudio.com",
     "doc_url": "www.bitcakestudio.com",

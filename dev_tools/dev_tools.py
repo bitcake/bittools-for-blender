@@ -1,6 +1,7 @@
 import bpy
 from bpy.types import Operator, PropertyGroup, Scene
 from bpy.props import IntProperty, FloatProperty
+from ..helpers import panel_category_name
 
 class BITCAKE_PROPS_lod_configs(PropertyGroup):
     lod_number: IntProperty(name='Number of LODs', default=2, min=0, max=10)
@@ -19,6 +20,10 @@ class BITCAKE_OT_dev_operator(Operator):
         return True
 
     def execute(self, context):
+        print("TEST BUTTON")
+        return {"FINISHED"}
+        # TODO: remove all of this test code
+
         obj = context.active_object
         selection = context.selected_objects
         scene_data = bpy.data.objects
@@ -87,10 +92,9 @@ def duplicate(obj, data=True, actions=True, parent=True):
 def draw_panel(self, context):
     lod_configs = context.scene.lod_configs
 
-    layout = self.layout
-
-    row = layout.row()
-    op = row.operator('bitcake.dev_operator', text='Test Butten')
+    self.layout.row().label(text=panel_category_name())
+    self.layout.row().label(text=f'package: {__package__}')
+    op = self.layout.row().operator('bitcake.dev_operator', text='Test Butten')
     op.lod_number = lod_configs.lod_number
 
     return

@@ -1,6 +1,6 @@
 import bpy
 from bpy.types import Panel
-
+from ..helpers import get_addon_prefs, panel_category_name
 
 modules = [
     'exporter_configs',
@@ -17,7 +17,7 @@ class BITCAKE_PT_universal_exporter(Panel):
     bl_label = "Universal Exporter"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "BitTools"
+    bl_category = panel_category_name()
 
     draw_funcs = []
 
