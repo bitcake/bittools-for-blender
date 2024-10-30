@@ -91,9 +91,12 @@ class BITCAKE_OT_universal_exporter(Operator):
         for obj in objects_list:
 
             # Add some base obj information first
-            obj_original_info_dict[obj] = {'name': obj.name,
-                                           'location': obj.location.copy(),
-                                           }
+            obj_original_info_dict[obj] = {
+                'name': obj.name,
+                'location': obj.location.copy(),
+                'rotation_euler': obj.rotation_euler.copy(),
+                'scale': obj.scale.copy(),
+            }
 
             #First let's clean all the unused materials from this object
             if obj.type != 'EMPTY':
@@ -132,7 +135,6 @@ class BITCAKE_OT_universal_exporter(Operator):
             if panel_prefs.apply_transform:
                 if not [armature for armature in obj.modifiers if armature.type == 'ARMATURE']:
                     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
-                    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
 
         # Only Select objects inside the list before exporting
@@ -168,6 +170,8 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             obj.name = obj_original_info_dict[obj]['name']
             obj.location = obj_original_info_dict[obj]['location']
+            obj.rotation_euler = obj_original_info_dict[obj]['rotation_euler']
+            obj.scale = obj_original_info_dict[obj]['scale']
 
             if 'linked_mesh' in obj_original_info_dict[obj]:
                 obj.data.user_remap(obj_original_info_dict[obj]['linked_mesh'])
