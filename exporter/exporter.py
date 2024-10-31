@@ -100,13 +100,16 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             #First let's clean all the unused materials from this object
             if obj.type != 'EMPTY':
-                overriden_context = {'active_object': obj}
-                with bpy.context.temp_override(active_object = overriden_context):
-                    print(overriden_context)
-                    try:
-                        bpy.ops.object.material_slot_remove_unused()
-                    except RuntimeError:
-                        continue
+                if obj.material_slots:
+                    overriden_context = {'active_object': obj}
+                    with bpy.context.temp_override(active_object = overriden_context):
+                        print(overriden_context)
+                        try:
+                            bpy.ops.object.material_slot_remove_unused()
+                        except RuntimeError:
+                            pass
+                else:
+                    print(f"obj '{obj.name}' has no material slots")
 
             # Let's save all object's materials to return them back later
             obj_material = []
