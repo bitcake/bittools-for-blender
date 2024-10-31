@@ -1,1 +1,7 @@
 indent_with_tabs false
+
+set vscode_open_current_buffer {
+    set path [quote "[buffer_path]:[cursor_line]"]
+    spawn "code.cmd --goto $path"
+}
+autocomplete_command vscode_open_current_buffer
