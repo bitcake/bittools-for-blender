@@ -165,7 +165,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             # Re-hide all colliders for good measure
             toggle_all_colliders_visibility(False)
             # Save! :D
-            #bpy.ops.wm.save_mainfile(filepath=str(original_path))
+            bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
             return {'FINISHED'}
 
@@ -209,7 +209,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             bpy.ops.object.mode_set(mode='POSE', toggle=False)
 
         # Save! :D
-        #bpy.ops.wm.save_mainfile(filepath=str(original_path))
+        bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
         self.report({'INFO'}, "Export Complete!")
 
