@@ -281,7 +281,10 @@ def get_collider_prefixes():
                          exporter_configs.capsule_collider_prefix,
                          exporter_configs.sphere_collider_prefix,
                          exporter_configs.convex_collider_prefix,
-                         exporter_configs.mesh_collider_prefix]
+                         exporter_configs.mesh_collider_prefix,
+                         exporter_configs.standard_collider_prefix,
+                         exporter_configs.movement_collider_prefix,
+                         exporter_configs.slippery_collider_prefix]
 
     return collider_prefixes
 

@@ -334,8 +334,9 @@ def rename_with_prefix(context, obj):
     collider_index = 0
     for child in all_children:
         prefix = get_correct_prefix(context, child)
+        prefix_split = prefix.split(separator)
 
-        if prefix in collider_prefixes:
+        if prefix_split[0] in collider_prefixes:
             child.name = f"{prefix}{separator}{obj.name}{separator}{str(collider_index).zfill(2)}"
             collider_index += 1
         else:
@@ -365,9 +366,18 @@ def get_correct_prefix(context, obj):
     # If object is correctly named, return its prefix
     split_name = obj.name.split(separator)
     prefixes = collider_prefixes + object_prefixes
+    col_prefix = ['','']
     for prefix in prefixes:
         if split_name[0] == prefix:
-            return prefix
+            col_prefix[0] = prefix
+        if len(split_name) > 1:
+            if split_name[1] == prefix:
+                col_prefix[1] = prefix
+    if col_prefix[0]:
+        prefix = col_prefix[0]
+        if col_prefix[1]:
+            prefix = prefix + separator + col_prefix[1]
+        return prefix
 
     # Return correct prefix for each case
     # Check get_object_prefixes for each index, this is bad, should be a dict instead?
