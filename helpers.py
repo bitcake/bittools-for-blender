@@ -273,8 +273,6 @@ def select_and_make_active(context, obj):
     bpy.data.objects[obj.name].select_set(True)
     context.view_layer.objects.active = obj
 
-    return
-
 def get_collider_prefixes():
     exporter_configs = get_addon_prefs()
     collider_prefixes = [exporter_configs.box_collider_prefix,

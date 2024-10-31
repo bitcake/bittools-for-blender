@@ -117,7 +117,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             select_and_make_active(context, obj)
 
             # Save original name and rename current object according to rules
-            rename_with_prefix(context, obj)
+            rename_with_prefix(context, obj, obj_original_info_dict)
             rename_if_lod(obj)
 
             # Create the json object if object has animation events
@@ -134,6 +134,10 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             if panel_prefs.apply_transform:
                 if not [armature for armature in obj.modifiers if armature.type == 'ARMATURE']:
+                    original_data_name = obj.data.name
+                    original_data = obj.data.copy()
+                    obj_original_info_dict[obj]['original_data_name'] = original_data_name
+                    obj_original_info_dict[obj]['original_data'] = original_data
                     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
 
@@ -158,7 +162,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             # Re-hide all colliders for good measure
             toggle_all_colliders_visibility(False)
             # Save! :D
-            bpy.ops.wm.save_mainfile(filepath=str(original_path))
+            #bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
             return {'FINISHED'}
 
@@ -168,16 +172,27 @@ class BITCAKE_OT_universal_exporter(Operator):
             if index == 0:
                 continue
 
-            obj.name = obj_original_info_dict[obj]['name']
-            obj.location = obj_original_info_dict[obj]['location']
-            obj.rotation_euler = obj_original_info_dict[obj]['rotation_euler']
-            obj.scale = obj_original_info_dict[obj]['scale']
+            saved_props = obj_original_info_dict[obj]
 
-            if 'linked_mesh' in obj_original_info_dict[obj]:
-                obj.data.user_remap(obj_original_info_dict[obj]['linked_mesh'])
+            if 'name' in saved_props:
+                obj.name = saved_props['name']
+            if 'location' in saved_props:
+                obj.location = saved_props['location']
+            if 'rotation_euler' in saved_props:
+                obj.rotation_euler = saved_props['rotation_euler']
+            if 'scale' in saved_props:
+                obj.scale = saved_props['scale']
 
-            if 'materials' in obj_original_info_dict[obj]:
-                relink_materials(obj, obj_original_info_dict[obj]['materials'])
+            if 'original_data' in saved_props:
+                obj.data.name = obj.data.name + '_exported'
+                obj.data = saved_props['original_data']
+                obj.data.name = saved_props['original_data_name']
+
+            if 'linked_mesh' in saved_props:
+                obj.data.user_remap(saved_props['linked_mesh'])
+
+            if 'materials' in saved_props:
+                relink_materials(obj, saved_props['materials'])
 
         # Deletes all data created in the process that has no users to clean the file
         bpy.ops.outliner.orphans_purge()
@@ -191,7 +206,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             bpy.ops.object.mode_set(mode='POSE', toggle=False)
 
         # Save! :D
-        bpy.ops.wm.save_mainfile(filepath=str(original_path))
+        #bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
         self.report({'INFO'}, "Export Complete!")
 
@@ -319,7 +334,7 @@ def construct_registered_project_export_directory(self):
 
     return constructed_directory
 
-def rename_with_prefix(context, obj):
+def rename_with_prefix(context, obj, obj_original_info_dict):
     """Renames parent obj and all its children."""
 
     if obj.parent:
@@ -338,6 +353,9 @@ def rename_with_prefix(context, obj):
     collider_index = 0
     for child in all_children:
         prefix = get_correct_prefix(context, child)
+
+        if not child in obj_original_info_dict:
+            obj_original_info_dict[child] = {'name': child.name}
 
         if prefix in collider_prefixes:
             child.name = f"{prefix}{separator}{obj.name}{separator}{str(collider_index).zfill(2)}"
