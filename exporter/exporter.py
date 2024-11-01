@@ -136,7 +136,7 @@ class BITCAKE_OT_universal_exporter(Operator):
                 bpy.ops.object.make_single_user(object=True, obdata=True, material=False, animation=False, obdata_animation=True)
 
             if panel_prefs.apply_transform:
-                if not [armature for armature in obj.modifiers if armature.type == 'ARMATURE']:
+                if not [armature for armature in obj.modifiers if armature.type == 'ARMATURE'] and obj.data:
                     original_data_name = obj.data.name
                     original_data = obj.data.copy()
                     obj_original_info_dict[obj]['original_data_name'] = original_data_name
