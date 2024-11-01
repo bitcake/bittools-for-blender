@@ -362,8 +362,11 @@ def rename_with_prefix(context, obj, obj_original_info_dict):
 
         prefix_split = prefix.split(separator)
 
-        if prefix_split[0] in collider_prefixes:
-            child.name = f"{prefix}{separator}{obj_original_info_dict[obj]['name']}{separator}{str(collider_index).zfill(2)}"
+        if prefix_split[0] in collider_prefixes :
+            if child.parent in obj_original_info_dict:
+                child.name = f"{prefix}{separator}{obj_original_info_dict[child.parent]['name']}{separator}{str(collider_index).zfill(2)}"
+            else:
+                child.name = f"{prefix}{separator}{obj_original_info_dict[obj]['name']}{separator}{str(collider_index).zfill(2)}"
             collider_index += 1
         else:
             # Checks if object already has correct prefix in name
