@@ -124,6 +124,12 @@ class BITCAKE_OT_universal_exporter(Operator):
             rename_with_prefix(context, obj, obj_original_info_dict)
             rename_if_lod(obj)
 
+            # Use the collider tags to check if object is a collider, and remove its materials
+            collider_prefixes = get_collider_prefixes()
+            split_name = obj.name.split(panel_prefs.separator)
+            if split_name[0] in collider_prefixes:
+                unlink_materials(obj)
+
             # Create the json object if object has animation events
             markers_json = construct_animation_configs_json(self, context, obj)
 
