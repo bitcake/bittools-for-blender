@@ -149,15 +149,8 @@ class BITCAKE_OT_universal_exporter(Operator):
         toggle_all_colliders_visibility(True)
 
         # Process all types of paths then export accordingly
-        if self.use_custom_dir and not self.is_batch:
-            process_objs_paths_and_export(self, obj_original_info_dict, objects_list, export_directory, markers_json)
-
-        elif self.use_custom_dir and self.is_batch:
+        if self.is_batch:
             batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json)
-
-        elif not self.use_custom_dir and self.is_batch:
-            batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json)
-
         else:
             process_objs_paths_and_export(self, obj_original_info_dict, objects_list, export_directory, markers_json)
 
@@ -579,6 +572,15 @@ def exporter(path):
 
     export_nla = panel_prefs.export_nla_strips
 
+    # remember what material each slot has
+    obj_material_slots = {}
+    for obj in bpy.context.selected_objects:
+        slots_materials = {}
+        for slot in obj.material_slots:
+            slots_materials[slot] = slot.material
+            slot.material = None
+        obj_material_slots[obj] = slots_materials
+
     # Export file
     teste = bpy.ops.export_scene.fbx(
         filepath=str(path),
@@ -603,6 +605,12 @@ def exporter(path):
         axis_forward=configs['forward_axis'],
         axis_up=configs['up_axis'],
     )
+
+    # restore all slot materials
+    for obj in obj_material_slots:
+        slots_materials = obj_material_slots[obj]
+        for slot in slots_materials:
+            slot.material = slots_materials[slot]
 
     return
 
