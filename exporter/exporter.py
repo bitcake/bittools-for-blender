@@ -578,14 +578,15 @@ def exporter(path):
 
     export_nla = panel_prefs.export_nla_strips
 
-    # remember what material each slot has
-    obj_material_slots = {}
+    # remember what textures each material uses
+    node_to_texture = {}
     for obj in bpy.context.selected_objects:
-        slots_materials = {}
-        for slot in obj.material_slots:
-            slots_materials[slot] = slot.material
-            slot.material = None
-        obj_material_slots[obj] = slots_materials
+        if obj.data:
+            for material in obj.data.materials:
+                for node in material.node_tree.nodes:
+                    if node.type == "TEX_IMAGE":
+                        node_to_texture[node] = node.image
+                        node.image = None
 
     # Export file
     teste = bpy.ops.export_scene.fbx(
@@ -612,11 +613,9 @@ def exporter(path):
         axis_up=configs['up_axis'],
     )
 
-    # restore all slot materials
-    for obj in obj_material_slots:
-        slots_materials = obj_material_slots[obj]
-        for slot in slots_materials:
-            slot.material = slots_materials[slot]
+    # restore all materials textures
+    for node in node_to_texture:
+        node.image = node_to_texture[node]
 
     return
 
