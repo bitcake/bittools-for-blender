@@ -88,9 +88,9 @@ class BITCAKE_OT_universal_exporter(Operator):
         # Init dict in case we'll need to revert Original Transforms.
         # It's important that 'active_object' is the first key.
         obj_original_info_dict = {'active_object': context.active_object,}
-        for obj in objects_list:
 
-            # Add some base obj information first
+        for obj in objects_list:
+            # Add some base obj information before anything else
             obj_original_info_dict[obj] = {
                 'name': obj.name,
                 'location': obj.location.copy(),
@@ -98,7 +98,8 @@ class BITCAKE_OT_universal_exporter(Operator):
                 'scale': obj.scale.copy(),
             }
 
-            #First let's clean all the unused materials from this object
+        for obj in objects_list:
+            # First let's clean all the unused materials from this object
             if obj.type != 'EMPTY':
                 if obj.material_slots:
                     overriden_context = {'active_object': obj}
@@ -142,7 +143,7 @@ class BITCAKE_OT_universal_exporter(Operator):
                 bpy.ops.object.make_single_user(object=True, obdata=True, material=False, animation=False, obdata_animation=True)
 
             if panel_prefs.apply_transform:
-                if not [armature for armature in obj.modifiers if armature.type == 'ARMATURE']:
+                if not [armature for armature in obj.modifiers if armature.type == 'ARMATURE'] and obj.data:
                     original_data_name = obj.data.name
                     original_data = obj.data.copy()
                     obj_original_info_dict[obj]['original_data_name'] = original_data_name
