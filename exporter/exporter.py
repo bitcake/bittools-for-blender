@@ -5,7 +5,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, is_collider, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy
+from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, is_collider, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy, select_children_additive
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 
@@ -625,6 +625,10 @@ def process_objs_paths_and_export(self, original_info_dict, objects_list, export
     panel_prefs = bpy.context.scene.exporter_configs
 
     select_objects_in_list(objects_list)
+    
+    for object in objects_list:
+        select_children_additive(object)
+    
     # Create the filename based on this .blend name
     filename = panel_prefs.non_batch_filename + '.fbx'
     if filename == '':

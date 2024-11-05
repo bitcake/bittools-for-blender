@@ -318,6 +318,12 @@ def select_object_hierarchy(obj):
 
     return
 
+def select_children_additive(obj):
+    obj.select_set(True)
+    children = get_all_child_of_child(obj)
+    for child in children:
+        child.select_set(True)
+    return
 
 def set_correct_child_matrix(parentObj, childObj):
     if parentObj.parent is None:
