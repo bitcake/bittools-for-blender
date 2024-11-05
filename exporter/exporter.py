@@ -668,8 +668,6 @@ def batch_process_objs_paths_and_export(self, context, objects_list, export_dire
     for obj in objects_list:
         if obj_ancestor_in_objects_set(objects_set, obj):
             continue
-        #if obj.parent is not None:
-            #continue
 
         # Selects the object and all its hierachy
         select_object_hierarchy(obj)
