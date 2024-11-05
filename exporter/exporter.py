@@ -583,10 +583,11 @@ def exporter(path):
     for obj in bpy.context.selected_objects:
         if obj.data:
             for material in obj.data.materials:
-                for node in material.node_tree.nodes:
-                    if node.type == "TEX_IMAGE":
-                        node_to_texture[node] = node.image
-                        node.image = None
+                if material and material.node_tree:
+                    for node in material.node_tree.nodes:
+                        if node.type == "TEX_IMAGE":
+                            node_to_texture[node] = node.image
+                            node.image = None
 
     # Export file
     teste = bpy.ops.export_scene.fbx(
