@@ -626,16 +626,33 @@ def find_center_from_vertices(vertices, obj):
 
 def create_or_add_collider_material(obj):
     collider_material = None
-    for mat_name, material in bpy.data.materials.items():
-        if mat_name == "BitTools_Collider_Material":
-            collider_material = material
+    #for mat_name, material in bpy.data.materials.items():
+    #    if mat_name == "BitTools_Collider_Material":
+    #        collider_material = material
+
+    collider_type_button = bpy.context.scene.collider_configs.collider_types
+    type = ''
+    if collider_type_button == 'COLLIDER':
+        type = 'COL'
+    elif collider_type_button == 'MOV_BLOCKER':
+        type = 'MVB'
+    else:
+        type = 'SLP'
 
     if collider_material is None:
         mat = bpy.data.materials.new(name='BitTools_Collider_Material')
         mat.blend_method = 'BLEND'
         mat.use_nodes = True
         principled = mat.node_tree.nodes['Principled BSDF']
-        principled.inputs['Base Color'].default_value = (0.19, 0.22, 0.8, 1)
+        if type == 'COL':
+            principled.inputs['Base Color'].default_value = (0.19, 0.22, 0.8, 1)
+            mat.diffuse_color = (0.19, 0.22, 0.8, 1)
+        elif type == 'MVB':
+            principled.inputs['Base Color'].default_value = (0.8, 0.195, 0.3, 1)
+            mat.diffuse_color = (0.8, 0.195, 0.3, 1)
+        else:
+            principled.inputs['Base Color'].default_value = (0.12, 0.8, 0.12, 1)
+            mat.diffuse_color = (0.12, 0.8, 0.12, 1)
         principled.inputs['Alpha'].default_value = 0.35
         collider_material = mat
 
