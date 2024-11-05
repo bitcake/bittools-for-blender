@@ -646,13 +646,30 @@ def process_objs_paths_and_export(self, original_info_dict, objects_list, export
 
     return
 
+def obj_ancestor_in_objects_set(objects_set, obj):
+    result = False
+    obj = obj.parent
+    while obj:
+        result = obj in objects_set
+        if result:
+            break
+        obj = obj.parent
+    return result
+
 def batch_process_objs_paths_and_export(self, context, objects_list, export_directory, markers_json):
     """Process each object in the list, constructs each path, creates Animation Markers Json and Exports Files"""
     panel_prefs = bpy.context.scene.exporter_configs
 
+    objects_set = {}
+
     for obj in objects_list:
-        if obj.parent is not None:
+        objects_set[obj] = True
+
+    for obj in objects_list:
+        if obj_ancestor_in_objects_set(objects_set, obj):
             continue
+        #if obj.parent is not None:
+            #continue
 
         # Selects the object and all its hierachy
         select_object_hierarchy(obj)
