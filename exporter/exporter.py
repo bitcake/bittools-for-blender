@@ -5,7 +5,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy, select_children_additive
+from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_collider_prefixes, select_object_hierarchy, select_object_hierarchy_additive
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 
@@ -241,14 +241,12 @@ def make_objects_list(context):
 
 def append_child_colliders(obj_list):
     for obj in obj_list:
-        children = get_all_child_of_child(obj)
-
-        for child in children:
+        for child in obj.children_recursive:
             # If collider is already in the list, ignore it
             if child in obj_list:
                 continue
 
-            if get_all_colliders().__contains__(child):
+            if child in get_all_colliders():
                 # If object has collider, unhide it, select it, add it to list
                 child.hide_set(False)
                 child.hide_viewport = False
@@ -350,11 +348,10 @@ def rename_with_prefix(context, obj, obj_original_info_dict):
     if not object_has_correct_prefix(context, prefix, obj):
         obj.name = f"{prefix}{separator}{obj.name}"
 
-    all_children = get_all_child_of_child(obj)
     collider_prefixes = get_collider_prefixes()
 
     collider_index = 0
-    for child in all_children:
+    for child in obj.children_recursive:
         prefix = get_correct_prefix(context, child)
 
         if not child in obj_original_info_dict:
@@ -625,10 +622,10 @@ def process_objs_paths_and_export(self, original_info_dict, objects_list, export
     panel_prefs = bpy.context.scene.exporter_configs
 
     select_objects_in_list(objects_list)
-    
+
     for object in objects_list:
-        select_children_additive(object)
-    
+        select_object_hierarchy_additive(object)
+
     # Create the filename based on this .blend name
     filename = panel_prefs.non_batch_filename + '.fbx'
     if filename == '':

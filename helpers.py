@@ -286,6 +286,7 @@ def get_collider_prefixes():
 
     return collider_prefixes
 
+
 def get_object_prefixes():
     context = bpy.context
     exporter_configs = context.scene.exporter_configs
@@ -296,34 +297,21 @@ def get_object_prefixes():
 
     return objects_prefixes
 
-def get_all_child_of_child(obj):
-    children = list(obj.children)
-    all_children = []
-
-    while len(children):
-        child = children.pop()
-        all_children.append(child)
-        children.extend(child.children)
-
-    return all_children
 
 def select_object_hierarchy(obj):
-    children = get_all_child_of_child(obj)
     bpy.ops.object.select_all(action='DESELECT')
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
 
-    for child in children:
+    for child in obj.children_recursive:
         child.select_set(True)
 
-    return
 
-def select_children_additive(obj):
+def select_object_hierarchy_additive(obj):
     obj.select_set(True)
-    children = get_all_child_of_child(obj)
-    for child in children:
+    for child in obj.children_recursive:
         child.select_set(True)
-    return
+
 
 def set_correct_child_matrix(parentObj, childObj):
     if parentObj.parent is None:
@@ -332,7 +320,6 @@ def set_correct_child_matrix(parentObj, childObj):
         childObj.matrix_world = parentObj.parent.matrix_world
         childObj.matrix_local.identity()
 
-    return
 
 
 def delete_hierarchy(parent_obj_name):
