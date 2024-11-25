@@ -14,7 +14,7 @@ class BITCAKE_PROPS_collider_configs(PropertyGroup):
         ('MOV_BLOCKER', 'Movement Blocker (MVB)', "Movement Blocker Collider (prefix: MVB)", 'SNAP_VOLUME', 1),
         ('SLIPPERY', 'Slippery (SLP)', "Slippery Collider (prefix: SLP)", 'META_CUBE', 2)
     ]
-    collider_types: EnumProperty(items=items, default='COLLIDER')
+    collider_type: EnumProperty(items=items, default='COLLIDER')
 
 
 class BITCAKE_OT_toggle_all_colliders_visibility(Operator):
@@ -600,7 +600,7 @@ def get_prefix_for_collider(shape):
     prefixes = get_collider_prefixes()
     prefix = prefixes[shape]
 
-    collider_type = bpy.context.scene.collider_configs.collider_types
+    collider_type = bpy.context.scene.collider_configs.collider_type
 
     if collider_type == 'COLLIDER':
         prefix = prefix + '_' + prefixes['standard'] + '_'
@@ -628,7 +628,7 @@ def find_center_from_vertices(vertices, obj):
 
 
 def create_or_add_collider_material(obj):
-    collider_type_button = bpy.context.scene.collider_configs.collider_types
+    collider_type_button = bpy.context.scene.collider_configs.collider_type
     type = ''
     if collider_type_button == 'COLLIDER':
         type = 'COL'
@@ -686,7 +686,7 @@ def draw_panel(self, context):
     layout.separator()
     layout.label(text='Collider Type')
     row = layout.row(align=True)
-    row.prop(context.scene.collider_configs, 'collider_types')
+    row.prop(context.scene.collider_configs, 'collider_type', text="")
     row = layout.row()
     row.operator('bitcake.add_box_collider', text=f'Add Box Collider ({pcol[0]})', icon='CUBE')
     row = layout.row()
