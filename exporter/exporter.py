@@ -5,7 +5,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_collider_prefixes, select_object_hierarchy, select_object_hierarchy_additive
+from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_collider_prefixes, select_object_hierarchy, select_object_hierarchy_additive, name_prefix
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 
@@ -126,8 +126,7 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             # Use the collider tags to check if object is a collider, and remove its materials
             collider_prefixes = get_collider_prefixes()
-            split_name = obj.name.split(panel_prefs.separator)
-            if split_name[0] in collider_prefixes:
+            if name_prefix(obj.name) in collider_prefixes:
                 unlink_materials(obj)
 
             # Create the json object if object has animation events
@@ -144,11 +143,20 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             if panel_prefs.apply_transform:
                 if not [armature for armature in obj.modifiers if armature.type == 'ARMATURE'] and obj.data:
+                    child_colliders = {}
+                    for child in obj.children_recursive:
+                        if name_prefix(child.name) in collider_prefixes:
+                            child_colliders[child] = child.parent
+                            child.parent = None
+
                     original_data_name = obj.data.name
                     original_data = obj.data.copy()
                     obj_original_info_dict[obj]['original_data_name'] = original_data_name
                     obj_original_info_dict[obj]['original_data'] = original_data
                     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+
+                    for child in child_colliders:
+                        child.parent = child_colliders[child]
 
 
         # Only Select objects inside the list before exporting

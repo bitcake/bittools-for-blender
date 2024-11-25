@@ -135,7 +135,6 @@ def is_inside_published(directory):
 
     for folder in dirs:
         split_parts = folder.split(sep)
-
         for part in split_parts:
             if part == pub:
                 return True
@@ -143,13 +142,13 @@ def is_inside_published(directory):
     return False
 
 
+def name_prefix(name):
+    return name.split(bpy.context.scene.exporter_configs.separator)[0]
+
 def is_collider(obj):
     collider_prefixes = get_collider_prefixes()
-    obj_prefix = obj.name.split("_")
-    if obj_prefix[0] in collider_prefixes:
-        return True
-
-    return False
+    obj_prefix = obj.name.split("_")[0]
+    return (obj_prefix in collider_prefixes)
 
 
 def is_object_arp(obj):
@@ -275,15 +274,16 @@ def select_and_make_active(context, obj):
 
 def get_collider_prefixes():
     exporter_configs = get_addon_prefs()
-    collider_prefixes = [exporter_configs.box_collider_prefix,
-                         exporter_configs.capsule_collider_prefix,
-                         exporter_configs.sphere_collider_prefix,
-                         exporter_configs.convex_collider_prefix,
-                         exporter_configs.mesh_collider_prefix,
-                         exporter_configs.standard_collider_prefix,
-                         exporter_configs.movement_collider_prefix,
-                         exporter_configs.slippery_collider_prefix]
-
+    collider_prefixes = [
+        exporter_configs.box_collider_prefix,
+        exporter_configs.capsule_collider_prefix,
+        exporter_configs.sphere_collider_prefix,
+        exporter_configs.convex_collider_prefix,
+        exporter_configs.mesh_collider_prefix,
+        exporter_configs.standard_collider_prefix,
+        exporter_configs.movement_collider_prefix,
+        exporter_configs.slippery_collider_prefix
+    ]
     return collider_prefixes
 
 
@@ -291,9 +291,11 @@ def get_object_prefixes():
     context = bpy.context
     exporter_configs = context.scene.exporter_configs
 
-    objects_prefixes = [exporter_configs.static_mesh_prefix,
-                        exporter_configs.skeletal_mesh_prefix,
-                        exporter_configs.camera_prefix]
+    objects_prefixes = [
+        exporter_configs.static_mesh_prefix,
+        exporter_configs.skeletal_mesh_prefix,
+        exporter_configs.camera_prefix
+    ]
 
     return objects_prefixes
 
