@@ -9,9 +9,12 @@ from ..helpers import get_addon_prefs, get_current_engine, set_correct_child_mat
 
 class BITCAKE_PROPS_collider_configs(PropertyGroup):
     collider_visibility: BoolProperty(name="Selected", description="Only exports selected objects", default=False)
-    collider_types: EnumProperty(items=[('COLLIDER', 'Collider', 'Standard Collider', 'MESH_CUBE', 0),
-                                            ('MOV_BLOCKER', 'Movement Blocker', "Movement Blocker Collider", 'SNAP_VOLUME', 1),
-                                            ('SLIPPERY', 'Slippery', "Slippery Collider", 'META_CUBE', 2)], default='COLLIDER')
+    items = [
+        ('COLLIDER', 'Collider (COL)', 'Standard Collider (prefix: COL)', 'MESH_CUBE', 0),
+        ('MOV_BLOCKER', 'Movement Blocker (MVB)', "Movement Blocker Collider (prefix: MVB)", 'SNAP_VOLUME', 1),
+        ('SLIPPERY', 'Slippery (SLP)', "Slippery Collider (prefix: SLP)", 'META_CUBE', 2)
+    ]
+    collider_types: EnumProperty(items=items, default='COLLIDER')
 
 
 class BITCAKE_OT_toggle_all_colliders_visibility(Operator):
@@ -603,9 +606,9 @@ def get_prefix_for_collider(shape):
         prefix = prefix + '_' + prefixes['standard'] + '_'
     elif collider_type == 'MOV_BLOCKER':
         prefix = prefix + '_' + prefixes['movement'] + '_'
-    else:
+    elif collider_type == 'SLIPPERY':
         prefix = prefix + '_' + prefixes['slippery'] + '_'
-    
+
     return prefix
 
 
@@ -625,43 +628,38 @@ def find_center_from_vertices(vertices, obj):
 
 
 def create_or_add_collider_material(obj):
-    collider_material = None
-    #for mat_name, material in bpy.data.materials.items():
-    #    if mat_name == "BitTools_Collider_Material":
-    #        collider_material = material
-
     collider_type_button = bpy.context.scene.collider_configs.collider_types
     type = ''
     if collider_type_button == 'COLLIDER':
         type = 'COL'
     elif collider_type_button == 'MOV_BLOCKER':
         type = 'MVB'
-    else:
+    elif collider_type_button == 'SLIPPERY':
         type = 'SLP'
 
+    collider_material_name = f'M_{type}_BitTools'
+    collider_material = bpy.data.materials.get(collider_material_name)
+
     if collider_material is None:
-        mat = bpy.data.materials.new(name='BitTools_Collider_Material')
-        mat.blend_method = 'BLEND'
-        mat.use_nodes = True
-        principled = mat.node_tree.nodes['Principled BSDF']
+        collider_material = bpy.data.materials.new(name=collider_material_name)
+        collider_material.blend_method = 'BLEND'
+        collider_material.use_nodes = True
+        principled = collider_material.node_tree.nodes['Principled BSDF']
         if type == 'COL':
             principled.inputs['Base Color'].default_value = (0.19, 0.22, 0.8, 1)
-            mat.diffuse_color = (0.19, 0.22, 0.8, 1)
+            collider_material.diffuse_color = (0.19, 0.22, 0.8, 1)
         elif type == 'MVB':
             principled.inputs['Base Color'].default_value = (0.8, 0.195, 0.3, 1)
-            mat.diffuse_color = (0.8, 0.195, 0.3, 1)
-        else:
+            collider_material.diffuse_color = (0.8, 0.195, 0.3, 1)
+        elif type == 'SLP':
             principled.inputs['Base Color'].default_value = (0.12, 0.8, 0.12, 1)
-            mat.diffuse_color = (0.12, 0.8, 0.12, 1)
+            collider_material.diffuse_color = (0.12, 0.8, 0.12, 1)
         principled.inputs['Alpha'].default_value = 0.35
-        collider_material = mat
 
-    if len(obj.material_slots) < 1:
+    if len(obj.material_slots) <= 0:
         obj.data.materials.append(collider_material)
     else:
         obj.material_slots[0].material = collider_material
-
-    return
 
 
 def draw_panel(self, context):
@@ -699,8 +697,6 @@ def draw_panel(self, context):
     if current_engine == 'Unity':
         row = layout.row()
         row.operator('bitcake.add_mesh_collider', text=f'Add Mesh Collider ({pcol[4]})', icon='MESH_MONKEY')
-
-    return
 
 
 classes = (BITCAKE_PROPS_collider_configs,

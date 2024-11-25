@@ -5,7 +5,7 @@ import json
 from bpy.types import Operator
 from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
-from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, is_collider, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy, select_children_additive
+from ..helpers import get_anim_configs_file_path, get_current_engine, get_object_prefixes, get_published_path, select_and_make_active, get_engine_configs_path, get_current_project_assets_path, get_current_project_structure_json, get_all_child_of_child, get_collider_prefixes, select_object_hierarchy, select_children_additive
 from ..collider_tools.collider_tools import toggle_all_colliders_visibility, get_all_colliders
 
 
