@@ -4,7 +4,7 @@ from bpy.types import PropertyGroup, Scene
 from bpy.props import BoolProperty, EnumProperty
 from mathutils import Vector
 from bpy.types import Operator
-from ..helpers import get_addon_prefs, get_current_engine, set_correct_child_matrix, parent_to
+from ..helpers import get_addon_prefs, get_current_engine, parent_to
 
 
 class BITCAKE_PROPS_collider_configs(PropertyGroup):
@@ -28,12 +28,10 @@ class BITCAKE_OT_toggle_all_colliders_visibility(Operator):
 
     def execute(self, context):
         visibility = context.scene.collider_configs.collider_visibility
-
         toggle_all_colliders_visibility(visibility)
-
         context.scene.collider_configs.collider_visibility = not visibility
-
         return {'FINISHED'}
+
 
 class BITCAKE_OT_add_box_collider(Operator):
     bl_idname = "bitcake.add_box_collider"
@@ -257,8 +255,6 @@ def create_convex_hull_from_selected_vertices(self, context):
     current_obj.name = get_prefix_for_collider('convex') + obj.name
     parent_to(current_obj, obj)
 
-    set_correct_child_matrix(obj, current_obj)
-
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
     current_obj.select_set(True)
@@ -286,8 +282,6 @@ def create_convex_hull_from_selected_objects(self, context):
         current_obj.name = get_prefix_for_collider('convex') + obj.name
         parent_to(current_obj, obj)
 
-        set_correct_child_matrix(obj, current_obj)
-
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action='DESELECT')
@@ -310,8 +304,6 @@ def create_mesh_collider_from_selected_objects(self, context):
 
         current_obj.name = get_prefix_for_collider('mesh') + obj.name
         parent_to(current_obj, obj)
-
-        set_correct_child_matrix(obj, current_obj)
 
         current_obj.data.materials.clear()
 
@@ -348,8 +340,6 @@ def create_mesh_collider_from_selected_vertices(self, context):
     current_obj = bpy.context.active_object
     current_obj.name = get_prefix_for_collider('mesh') + obj.name
     parent_to(current_obj, obj)
-
-    set_correct_child_matrix(obj, current_obj)
 
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
@@ -455,10 +445,6 @@ def apply_transform_reverse_hierarchy(obj):
             bpy.context.view_layer.objects.active = obj
             please = True
 
-    # Restore Original Selection
-
-    return
-
 
 def create_bound_box_from_selected_vertices():
     verts = get_vertices_from_selection()
@@ -472,13 +458,6 @@ def create_bound_box_from_selected_vertices():
     name = get_prefix_for_collider('box') + active_object.name
 
     bounding_box = create_mesh(name, (bounding_box[0], bounding_box[1], bounding_box[2]), active_object)
-
-    set_correct_child_matrix(active_object, bounding_box)
-
-    if active_object.parent is None:
-        bounding_box.location = active_object.location
-        bounding_box.rotation_euler = active_object.rotation_euler
-
     return bounding_box
 
 
@@ -493,29 +472,32 @@ def get_bounds(vertex_list):
     Returns a list of tuples containing the min and max values of each axis in the bounds of a vertex list."""
     points = [points.co for points in vertex_list]
     x_co, y_co, z_co = zip(*points)
-
     return [(min(x_co), min(y_co), min(z_co)), (max(x_co), max(y_co), max(z_co))]
 
 
 def define_bounding_box_from_bounds(bounds):
     min_bounds = bounds[0]
     max_bounds = bounds[1]
-    vertices = [(min_bounds[0], min_bounds[1], min_bounds[2]),
-                (min_bounds[0], max_bounds[1], min_bounds[2]),
-                (max_bounds[0], max_bounds[1], min_bounds[2]),
-                (max_bounds[0], min_bounds[1], min_bounds[2]),
-                (min_bounds[0], min_bounds[1], max_bounds[2]),
-                (min_bounds[0], max_bounds[1], max_bounds[2]),
-                (max_bounds[0], max_bounds[1], max_bounds[2]),
-                (max_bounds[0], min_bounds[1], max_bounds[2]), ]
+    vertices = [
+        (min_bounds[0], min_bounds[1], min_bounds[2]),
+        (min_bounds[0], max_bounds[1], min_bounds[2]),
+        (max_bounds[0], max_bounds[1], min_bounds[2]),
+        (max_bounds[0], min_bounds[1], min_bounds[2]),
+        (min_bounds[0], min_bounds[1], max_bounds[2]),
+        (min_bounds[0], max_bounds[1], max_bounds[2]),
+        (max_bounds[0], max_bounds[1], max_bounds[2]),
+        (max_bounds[0], min_bounds[1], max_bounds[2]),
+    ]
 
     edges = []
-    faces = [(0, 1, 2, 3),
-             (4, 5, 1, 0),
-             (5, 4, 7, 6),
-             (3, 2, 6, 7),
-             (0, 3, 7, 4),
-             (5, 6, 2, 1)]
+    faces = [
+        (0, 1, 2, 3),
+        (4, 5, 1, 0),
+        (5, 4, 7, 6),
+        (3, 2, 6, 7),
+        (0, 3, 7, 4),
+        (5, 6, 2, 1),
+    ]
 
     return (vertices, edges, faces)
 
@@ -549,15 +531,7 @@ def create_bound_box_from_selected_objects():
         bounding_box = create_mesh(name, (vertices, edges, faces), active_object)
         bounding_box.select_set(True)
 
-        #set_correct_child_matrix(active_object, bounding_box)
-
-        #if active_object.parent is None:
-            #bounding_box.location = active_object.location
-            #bounding_box.rotation_euler = active_object.rotation_euler
-
         create_or_add_collider_material(bounding_box)
-
-    return
 
 
 def create_mesh(name, pydata, parent=None):
@@ -584,14 +558,16 @@ def get_collider_prefixes():
     'box', 'capsule', 'sphere', 'convex', 'mesh' WARNING: Does not contain separator"""
 
     addon_prefs = get_addon_prefs()
-    collider_prefixes = {'box': addon_prefs.box_collider_prefix,
-                         'capsule': addon_prefs.capsule_collider_prefix,
-                         'sphere': addon_prefs.sphere_collider_prefix,
-                         'convex': addon_prefs.convex_collider_prefix,
-                         'mesh': addon_prefs.mesh_collider_prefix,
-                         'standard': addon_prefs.standard_collider_prefix,
-                         'movement': addon_prefs.movement_collider_prefix,
-                         'slippery': addon_prefs.slippery_collider_prefix}
+    collider_prefixes = {
+        'box': addon_prefs.box_collider_prefix,
+        'capsule': addon_prefs.capsule_collider_prefix,
+        'sphere': addon_prefs.sphere_collider_prefix,
+        'convex': addon_prefs.convex_collider_prefix,
+        'mesh': addon_prefs.mesh_collider_prefix,
+        'standard': addon_prefs.standard_collider_prefix,
+        'movement': addon_prefs.movement_collider_prefix,
+        'slippery': addon_prefs.slippery_collider_prefix,
+    }
 
     return collider_prefixes
 
@@ -624,7 +600,6 @@ def find_bounding_box_center_from_obj(obj):
 def find_center_from_vertices(vertices, obj):
     local_bbox_center = sum((Vector(b) for b in vertices), Vector()) / len(vertices)
     global_bbox_center = obj.matrix_world @ local_bbox_center
-
     return global_bbox_center
 
 
