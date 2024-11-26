@@ -121,7 +121,7 @@ class BITCAKE_OT_universal_exporter(Operator):
             select_and_make_active(context, obj)
 
             # Save original name and rename current object according to rules
-            rename_with_prefix(context, obj, obj_original_info_dict)
+            rename_with_prefix(self, context, obj, obj_original_info_dict)
             rename_if_lod(obj)
 
             # Use the collider tags to check if object is a collider, and remove its materials
@@ -143,20 +143,20 @@ class BITCAKE_OT_universal_exporter(Operator):
 
             if panel_prefs.apply_transform:
                 if not [armature for armature in obj.modifiers if armature.type == 'ARMATURE'] and obj.data:
-                    child_colliders = {}
-                    for child in obj.children_recursive:
+                    selected_child_colliders = []
+                    for child in bpy.context.selected_objects:
                         if name_prefix(child.name) in collider_prefixes:
-                            child_colliders[child] = child.parent
-                            child.parent = None
+                            selected_child_colliders.append(child)
+                            child.select_set(False)
 
                     original_data_name = obj.data.name
                     original_data = obj.data.copy()
                     obj_original_info_dict[obj]['original_data_name'] = original_data_name
                     obj_original_info_dict[obj]['original_data'] = original_data
-                    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+                    bpy.ops.object.transform_apply(location=False, rotation=True, scale=True, properties=True)
 
-                    for child in child_colliders:
-                        child.parent = child_colliders[child]
+                    for child in selected_child_colliders:
+                        child.select_set(True)
 
 
         # Only Select objects inside the list before exporting
@@ -343,7 +343,14 @@ def construct_registered_project_export_directory(self):
 
     return constructed_directory
 
-def rename_with_prefix(context, obj, obj_original_info_dict):
+def rename_object(self, obj, target_name):
+    original_name = obj.name
+    obj.name = target_name
+    if obj.name != target_name:
+        self.report({"ERROR"}, f"Failed to rename object '{original_name}' to '{target_name}' for export")
+
+
+def rename_with_prefix(self, context, obj, obj_original_info_dict):
     """Renames parent obj and all its children."""
 
     if obj.parent:
@@ -354,7 +361,7 @@ def rename_with_prefix(context, obj, obj_original_info_dict):
 
     prefix = get_correct_prefix(context, obj)
     if not object_has_correct_prefix(context, prefix, obj):
-        obj.name = f"{prefix}{separator}{obj.name}"
+        rename_object(self, obj, f"{prefix}{separator}{obj.name}")
 
     collider_prefixes = get_collider_prefixes()
 
@@ -369,14 +376,14 @@ def rename_with_prefix(context, obj, obj_original_info_dict):
 
         if prefix_split[0] in collider_prefixes :
             if child.parent in obj_original_info_dict:
-                child.name = f"{prefix}{separator}{obj_original_info_dict[child.parent]['name']}{separator}{str(collider_index).zfill(2)}"
+                rename_object(self, child, f"{prefix}{separator}{obj_original_info_dict[child.parent]['name']}{separator}{str(collider_index).zfill(2)}")
             else:
-                child.name = f"{prefix}{separator}{obj_original_info_dict[obj]['name']}{separator}{str(collider_index).zfill(2)}"
+                rename_object(self, child, f"{prefix}{separator}{obj_original_info_dict[obj]['name']}{separator}{str(collider_index).zfill(2)}")
             collider_index += 1
         else:
             # Checks if object already has correct prefix in name
             if not object_has_correct_prefix(context, prefix, child):
-                child.name = f"{prefix}{separator}{child.name}"
+                rename_object(self, child, f"{prefix}{separator}{child.name}")
 
 
 def rename_if_lod(obj):

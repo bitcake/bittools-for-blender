@@ -145,10 +145,10 @@ def is_inside_published(directory):
 def name_prefix(name):
     return name.split(bpy.context.scene.exporter_configs.separator)[0]
 
-def is_collider(obj):
-    collider_prefixes = get_collider_prefixes()
-    obj_prefix = obj.name.split("_")[0]
-    return (obj_prefix in collider_prefixes)
+
+def parent_to(obj, parent):
+    obj.parent = parent
+    obj.matrix_parent_inverse.identity()
 
 
 def is_object_arp(obj):

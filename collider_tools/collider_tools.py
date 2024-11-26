@@ -4,7 +4,7 @@ from bpy.types import PropertyGroup, Scene
 from bpy.props import BoolProperty, EnumProperty
 from mathutils import Vector
 from bpy.types import Operator
-from ..helpers import get_addon_prefs, get_current_engine, set_correct_child_matrix
+from ..helpers import get_addon_prefs, get_current_engine, set_correct_child_matrix, parent_to
 
 
 class BITCAKE_PROPS_collider_configs(PropertyGroup):
@@ -253,9 +253,9 @@ def create_convex_hull_from_selected_vertices(self, context):
     bpy.ops.mesh.convex_hull()
 
     current_obj = bpy.context.active_object
-    
+
     current_obj.name = get_prefix_for_collider('convex') + obj.name
-    current_obj.parent = obj
+    parent_to(current_obj, obj)
 
     set_correct_child_matrix(obj, current_obj)
 
@@ -284,7 +284,7 @@ def create_convex_hull_from_selected_objects(self, context):
         bpy.ops.mesh.convex_hull()
 
         current_obj.name = get_prefix_for_collider('convex') + obj.name
-        current_obj.parent = obj
+        parent_to(current_obj, obj)
 
         set_correct_child_matrix(obj, current_obj)
 
@@ -309,7 +309,7 @@ def create_mesh_collider_from_selected_objects(self, context):
         current_obj = bpy.context.object
 
         current_obj.name = get_prefix_for_collider('mesh') + obj.name
-        current_obj.parent = obj
+        parent_to(current_obj, obj)
 
         set_correct_child_matrix(obj, current_obj)
 
@@ -347,7 +347,7 @@ def create_mesh_collider_from_selected_vertices(self, context):
 
     current_obj = bpy.context.active_object
     current_obj.name = get_prefix_for_collider('mesh') + obj.name
-    current_obj.parent = obj
+    parent_to(current_obj, obj)
 
     set_correct_child_matrix(obj, current_obj)
 
@@ -388,7 +388,7 @@ def create_sphere_from_selected_vertices():
     master_collection = bpy.context.collection
     master_collection.objects.unlink(sphere)
     collection.objects.link(sphere)
-    sphere.parent = active_object
+    parent_to(sphere, active_object)
 
     bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
 
@@ -430,7 +430,7 @@ def create_sphere_from_selected_objects():
             master_collection.objects.unlink(sphere)
 
         collection.objects.link(sphere)
-        sphere.parent = active_object
+        parent_to(sphere, active_object)
         bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
 
         sphere.name = get_prefix_for_collider('sphere') + active_object.name
@@ -485,7 +485,6 @@ def create_bound_box_from_selected_vertices():
 def get_vertices_from_selection():
     bpy.ops.object.mode_set(mode='OBJECT')
     verts = [vert for vert in bpy.context.object.data.vertices if vert.select]
-
     return verts
 
 
@@ -536,23 +535,25 @@ def create_bound_box_from_selected_objects():
         # Then I build that faces array by drawing and plotting each loop
         vertices = active_object.bound_box
         edges = []
-        faces = [(0, 1, 2, 3),
-                 (0, 4, 5, 1),
-                 (4, 7, 6, 5),
-                 (7, 3, 2, 6),
-                 (1, 5, 6, 2),
-                 (0, 3, 7, 4), ]
+        faces = [
+            (0, 1, 2, 3),
+            (0, 4, 5, 1),
+            (4, 7, 6, 5),
+            (7, 3, 2, 6),
+            (1, 5, 6, 2),
+            (0, 3, 7, 4),
+        ]
 
         name = get_prefix_for_collider('box') + active_object.name
 
         bounding_box = create_mesh(name, (vertices, edges, faces), active_object)
         bounding_box.select_set(True)
 
-        set_correct_child_matrix(active_object, bounding_box)
+        #set_correct_child_matrix(active_object, bounding_box)
 
-        if active_object.parent is None:
-            bounding_box.location = active_object.location
-            bounding_box.rotation_euler = active_object.rotation_euler
+        #if active_object.parent is None:
+            #bounding_box.location = active_object.location
+            #bounding_box.rotation_euler = active_object.rotation_euler
 
         create_or_add_collider_material(bounding_box)
 
@@ -571,7 +572,7 @@ def create_mesh(name, pydata, parent=None):
 
     if parent:
         collection = parent.users_collection[0]
-        new_object.parent = parent
+        parent_to(new_object, parent)
 
     collection.objects.link(new_object)
 
