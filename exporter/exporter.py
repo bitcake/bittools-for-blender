@@ -598,29 +598,32 @@ def exporter(self, path):
                     node.image = None
 
     # Export file
-    teste = bpy.ops.export_scene.fbx(
-        filepath=str(path),
-        apply_scale_options=configs['apply_scale'],
-        use_space_transform=configs['space_transform'],
-        bake_space_transform=False,
-        use_mesh_modifiers=True,
-        use_armature_deform_only=True,
-        use_custom_props=True,
-        add_leaf_bones=configs['add_leaf_bones'],
-        primary_bone_axis=configs['primary_bone'],
-        secondary_bone_axis=configs['secondary_bone'],
-        bake_anim=panel_prefs.animation_export,
-        bake_anim_use_nla_strips=export_nla,
-        bake_anim_step=configs['anim_sampling'],
-        bake_anim_simplify_factor=configs['anim_simplify'],
-        bake_anim_force_startend_keying=True,
-        use_selection=True,
-        use_active_collection=False,
-        path_mode='COPY',
-        embed_textures=False,
-        axis_forward=configs['forward_axis'],
-        axis_up=configs['up_axis'],
-    )
+    try:
+        teste = bpy.ops.export_scene.fbx(
+            filepath=str(path),
+            apply_scale_options=configs['apply_scale'],
+            use_space_transform=configs['space_transform'],
+            bake_space_transform=False,
+            use_mesh_modifiers=True,
+            use_armature_deform_only=True,
+            use_custom_props=True,
+            add_leaf_bones=configs['add_leaf_bones'],
+            primary_bone_axis=configs['primary_bone'],
+            secondary_bone_axis=configs['secondary_bone'],
+            bake_anim=panel_prefs.animation_export,
+            bake_anim_use_nla_strips=export_nla,
+            bake_anim_step=configs['anim_sampling'],
+            bake_anim_simplify_factor=configs['anim_simplify'],
+            bake_anim_force_startend_keying=True,
+            use_selection=True,
+            use_active_collection=False,
+            path_mode='COPY',
+            embed_textures=False,
+            axis_forward=configs['forward_axis'],
+            axis_up=configs['up_axis'],
+        )
+    except err:
+        self.report({"ERROR"}, f"error while exporting: '{err}'")
 
     # restore all materials textures
     for node in node_to_texture:
