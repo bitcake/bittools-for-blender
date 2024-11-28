@@ -372,7 +372,7 @@ def rename_with_prefix(self, context, obj, obj_original_info_dict):
 
         prefix_split = prefix.split(separator)
 
-        if prefix_split[0] in collider_prefixes :
+        if prefix_split[0] in collider_prefixes:
             if child.parent in obj_original_info_dict:
                 rename_object(self, child, f"{prefix}{separator}{obj_original_info_dict[child.parent]['name']}{separator}{str(collider_index).zfill(2)}")
             else:

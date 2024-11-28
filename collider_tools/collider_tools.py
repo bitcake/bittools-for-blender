@@ -164,15 +164,13 @@ def toggle_all_colliders_visibility(force_on_off=None):
 
 
 def get_all_colliders():
-    collider_prefixes = get_collider_prefixes().values()
+    collider_prefixes = get_collider_prefixes()
     all_objects = bpy.context.scene.objects
 
     all_colliders_list = []
     for obj in all_objects:
-        split = obj.name.split('_')
-
         # Checks if Prefix exists in Collider Prefixes, if so add object to collider list
-        if split[0] in collider_prefixes:
+        if name_prefix(obj.name) in collider_prefixes:
             all_colliders_list.append(obj)
 
     return all_colliders_list
@@ -536,6 +534,7 @@ def create_bound_box_from_selected_objects():
 
 def create_mesh(name, pydata, parent=None):
     """Function takes in a name string, a tuple of (vertices, edges, faces) and optionally a Parent object."""
+
     new_mesh = bpy.data.meshes.new(name)
     new_mesh.from_pydata(pydata[0], pydata[1], pydata[2])
     new_mesh.update()
