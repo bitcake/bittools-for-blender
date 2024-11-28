@@ -113,10 +113,8 @@ class BITCAKE_OT_universal_exporter(Operator):
                     print(f"obj '{obj.name}' has no material slots")
 
             # Let's save all object's materials to return them back later
-            obj_material = []
             if obj.type == 'MESH':
-                obj_material = obj.data.materials.items().copy()
-                obj_original_info_dict[obj]['materials'] = obj_material
+                obj_original_info_dict[obj]['materials'] = obj.data.materials.items().copy()
 
             select_and_make_active(context, obj)
 
@@ -584,7 +582,7 @@ def get_collection_hierarchy_list_as_path(context, obj):
 
     return collection_hierarchy
 
-def exporter(path):
+def exporter(self, path):
     panel_prefs = bpy.context.scene.exporter_configs
     configs = get_engine_configs(panel_prefs)
 
@@ -592,14 +590,12 @@ def exporter(path):
 
     # remember what textures each material uses
     node_to_texture = {}
-    for obj in bpy.context.selected_objects:
-        if obj.data:
-            for material in obj.data.materials:
-                if material and material.node_tree:
-                    for node in material.node_tree.nodes:
-                        if node.type == "TEX_IMAGE":
-                            node_to_texture[node] = node.image
-                            node.image = None
+    for material in bpy.data.materials:
+        if material and material.node_tree:
+            for node in material.node_tree.nodes:
+                if node.type == "TEX_IMAGE":
+                    node_to_texture[node] = node.image
+                    node.image = None
 
     # Export file
     teste = bpy.ops.export_scene.fbx(
@@ -628,7 +624,11 @@ def exporter(path):
 
     # restore all materials textures
     for node in node_to_texture:
-        node.image = node_to_texture[node]
+        texture = node_to_texture[node]
+        if texture:
+            node.image = texture
+        else:
+            self.report({"ERROR"}, f"node '{node}' lost reference to its texture")
 
     return
 
@@ -652,7 +652,7 @@ def process_objs_paths_and_export(self, original_info_dict, objects_list, export
     # Pass the Json Dict and dump it to create the actual file in the directory
     create_animation_markers_json_file(constructed_path, markers_json)
     # Finally, export the file
-    exporter(constructed_path)
+    exporter(self, constructed_path)
 
     # Copy the created FBX to its published folder
     if not self.use_custom_dir:
@@ -702,7 +702,7 @@ def batch_process_objs_paths_and_export(self, context, objects_list, export_dire
         # Pass the Json Dict and dump it to create the actual file in the directory
         create_animation_markers_json_file(constructed_path, markers_json)
         # Finally, export the file
-        exporter(constructed_path)
+        exporter(self, constructed_path)
 
         # Copy the created FBX to its published folder
         if not self.use_custom_dir:
