@@ -4,7 +4,7 @@ from bpy.types import PropertyGroup, Scene
 from bpy.props import BoolProperty, EnumProperty
 from mathutils import Vector
 from bpy.types import Operator
-from ..helpers import get_addon_prefs, get_current_engine, parent_to
+from ..helpers import get_addon_prefs, get_current_engine, parent_to, name_prefix
 
 
 class BITCAKE_PROPS_collider_configs(PropertyGroup):
