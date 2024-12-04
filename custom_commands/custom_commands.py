@@ -74,6 +74,44 @@ class BITCAKE_OT_increment_and_master_save(Operator):
         return {'FINISHED'}
 
 
+class BITCAKE_OT_deduplicate_materials(Operator):
+    bl_idname = "bitcake.deduplicate_materials"
+    bl_label = "Deduplicate Materials"
+    bl_description = "Remove all materials that have the same name as another (except by the .NNN suffix). Will also delete the duplicates"
+    bl_options = {'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        pattern = re.compile(r"(.*)\.\d{3}$")
+        duplicate_to_base_material = {} # iterate over all materials in the project
+        for material in bpy.data.materials:
+            match = pattern.match(material.name)
+            if match:
+                base_name = match.group(1)
+                base_material = bpy.data.materials.get(base_name)
+                duplicate_to_base_material[material] = base_material
+
+        for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                mesh = obj.data
+                for i, slot in enumerate(mesh.materials):
+                    original_material = duplicate_to_base_material.get(slot)
+                    if original_material:
+                        mesh.materials[i] = original_material
+
+        duplicate_count = len(duplicate_to_base_material)
+
+        for duplicate in duplicate_to_base_material:
+            if duplicate.users == 0:
+                bpy.data.materials.remove(duplicate)
+
+        self.report(type={'INFO'} , message=f"Removed {duplicate_count} duplicated materials")
+        return {'FINISHED'}
+
+
 def increment_filename(path):
     addon_prefs = get_addon_prefs()
     sep = addon_prefs.separator
@@ -124,12 +162,18 @@ def draw_panel(self, context):
     row.operator('bitcake.incremental_save', text='Incremental Save')
     row = layout.row()
     row.operator('bitcake.increment_and_master_save', text='Incremental Save and Send to Published')
+    row = layout.row()
+    row.operator('bitcake.deduplicate_materials', text='Deduplicate Materials')
 
     return
 
 
-classes = (BITCAKE_OT_incremental_save,
-           BITCAKE_OT_increment_and_master_save,)
+classes = (
+    BITCAKE_OT_incremental_save,
+    BITCAKE_OT_increment_and_master_save,
+    BITCAKE_OT_deduplicate_materials,
+)
+
 addon_keymaps = []
 
 def register():
