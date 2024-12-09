@@ -98,6 +98,8 @@ class BITCAKE_OT_universal_exporter(Operator):
                 'scale': obj.scale.copy(),
             }
 
+        collider_prefixes = get_collider_prefixes()
+
         for obj in objects_list:
             # First let's clean all the unused materials from this object
             if obj.type != 'EMPTY':
@@ -123,7 +125,6 @@ class BITCAKE_OT_universal_exporter(Operator):
             rename_if_lod(obj)
 
             # Use the collider tags to check if object is a collider, and remove its materials
-            collider_prefixes = get_collider_prefixes()
             if name_prefix(obj.name) in collider_prefixes:
                 unlink_materials(obj)
 
@@ -246,13 +247,14 @@ def make_objects_list(context):
     return objects_list
 
 def append_child_colliders(obj_list):
+    all_colliders = get_all_colliders()
     for obj in obj_list:
         for child in obj.children_recursive:
             # If collider is already in the list, ignore it
             if child in obj_list:
                 continue
 
-            if child in get_all_colliders():
+            if child in all_colliders:
                 # If object has collider, unhide it, select it, add it to list
                 child.hide_set(False)
                 child.hide_viewport = False

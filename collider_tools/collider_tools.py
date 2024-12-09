@@ -252,6 +252,7 @@ def create_convex_hull_from_selected_vertices(self, context):
 
     current_obj.name = get_prefix_for_collider('convex') + obj.name
     parent_to(current_obj, obj)
+    current_obj.matrix_local.identity()
 
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
@@ -279,6 +280,7 @@ def create_convex_hull_from_selected_objects(self, context):
 
         current_obj.name = get_prefix_for_collider('convex') + obj.name
         parent_to(current_obj, obj)
+        current_obj.matrix_local.identity()
 
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -302,6 +304,7 @@ def create_mesh_collider_from_selected_objects(self, context):
 
         current_obj.name = get_prefix_for_collider('mesh') + obj.name
         parent_to(current_obj, obj)
+        current_obj.matrix_local.identity()
 
         current_obj.data.materials.clear()
 
@@ -338,6 +341,7 @@ def create_mesh_collider_from_selected_vertices(self, context):
     current_obj = bpy.context.active_object
     current_obj.name = get_prefix_for_collider('mesh') + obj.name
     parent_to(current_obj, obj)
+    current_obj.matrix_local.identity()
 
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='DESELECT')
@@ -553,39 +557,42 @@ def create_mesh(name, pydata, parent=None):
 
 
 def get_collider_prefixes():
-    """Returns a dictionary containing all prefixes, access them with the strings:
-    'box', 'capsule', 'sphere', 'convex', 'mesh' WARNING: Does not contain separator"""
+    """Returns an array containing all prefixes"""
 
     addon_prefs = get_addon_prefs()
-    collider_prefixes = {
+    result = {
+        addon_prefs.box_collider_prefix,
+        addon_prefs.capsule_collider_prefix,
+        addon_prefs.sphere_collider_prefix,
+        addon_prefs.convex_collider_prefix,
+        addon_prefs.mesh_collider_prefix,
+    }
+    return result
+
+def get_prefix_for_collider(shape):
+    """Returns the correct, formated prefix (with separator) for a given collider"""
+
+    addon_prefs = get_addon_prefs()
+    prefixes = {
         'box': addon_prefs.box_collider_prefix,
         'capsule': addon_prefs.capsule_collider_prefix,
         'sphere': addon_prefs.sphere_collider_prefix,
         'convex': addon_prefs.convex_collider_prefix,
         'mesh': addon_prefs.mesh_collider_prefix,
-        'standard': addon_prefs.standard_collider_prefix,
-        'movement': addon_prefs.movement_collider_prefix,
-        'slippery': addon_prefs.slippery_collider_prefix,
     }
-
-    return collider_prefixes
-
-def get_prefix_for_collider(shape):
-    """Returns the correct, formated prefix (with separator) for a given collider"""
-
-    prefixes = get_collider_prefixes()
     prefix = prefixes[shape]
 
     collider_type = bpy.context.scene.collider_configs.collider_type
 
+    result = None
     if collider_type == 'COLLIDER':
-        prefix = prefix + '_' + prefixes['standard'] + '_'
+        result = prefix + '_' + addon_prefs.standard_collider_prefix + '_'
     elif collider_type == 'MOV_BLOCKER':
-        prefix = prefix + '_' + prefixes['movement'] + '_'
+        result = prefix + '_' + addon_prefs.movement_collider_prefix + '_'
     elif collider_type == 'SLIPPERY':
-        prefix = prefix + '_' + prefixes['slippery'] + '_'
+        result = prefix + '_' + addon_prefs.slippery_collider_prefix + '_'
 
-    return prefix
+    return result
 
 
 
