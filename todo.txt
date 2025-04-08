@@ -1,5 +1,7 @@
+Atomic Picnic\02_WIP\03_Environment\00_Resources\Bittools
+
 [ ] manter os coliders visíveis quando exportar
+[ ] ao adicionar colisão em partes da mesh, ela fica com material que não é de colisão
 [ ] ao exportar com o "Apply" selecionado, o collider pode assumir o transform do pai (nem sempre acontece)
 [ ] na hora de exportar, as vezes acontece erro em 'exporter/exporter.py:32' ("can't be selected because it is not in View Layer")
   solução temporária foi desparentear tudo e depois reparentear
-[ ] ao adicionar colisão em partes da mesh, ela fica com material que não é de colisão
