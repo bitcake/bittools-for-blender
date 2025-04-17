@@ -152,15 +152,12 @@ def toggle_all_colliders_visibility(force_on_off=None):
         if force_on_off is None:
             is_hidden = col.hide_viewport
 
-        #Try to hide (catch error if collection this object's in is disabled, so ignore it)
+        # Try to hide (catch error if collection this object's in is disabled, so ignore it)
         try:
             col.hide_set(not is_hidden)
             col.hide_viewport = not is_hidden
-
         except RuntimeError:
             pass
-
-    return
 
 
 def get_all_colliders():

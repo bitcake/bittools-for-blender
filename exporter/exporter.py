@@ -90,6 +90,11 @@ class BITCAKE_OT_universal_exporter(Operator):
         obj_original_info_dict = {'active_object': context.active_object,}
 
         for obj in objects_list:
+            # Fix desynced matrix parent inverse
+            saved_matrix_world = obj.matrix_world.copy()
+            obj.matrix_parent_inverse.identity()
+            obj.matrix_world = saved_matrix_world
+
             # Add some base obj information before anything else
             obj_original_info_dict[obj] = {
                 'name': obj.name,
@@ -159,7 +164,7 @@ class BITCAKE_OT_universal_exporter(Operator):
 
 
         # Only Select objects inside the list before exporting
-        toggle_all_colliders_visibility(True)
+        #toggle_all_colliders_visibility(True)
 
         # Process all types of paths then export accordingly
         if self.is_batch:
@@ -170,7 +175,7 @@ class BITCAKE_OT_universal_exporter(Operator):
         # If only apply transform was selected, end Operation
         if panel_prefs.apply_transform and not panel_prefs.origin_transform:
             # Re-hide all colliders for good measure
-            toggle_all_colliders_visibility(False)
+            #toggle_all_colliders_visibility(False)
             # Save! :D
             bpy.ops.wm.save_mainfile(filepath=str(original_path))
 
@@ -208,7 +213,7 @@ class BITCAKE_OT_universal_exporter(Operator):
         bpy.ops.outliner.orphans_purge()
 
         # Re-hide all colliders for good measure
-        toggle_all_colliders_visibility(False)
+        #toggle_all_colliders_visibility(False)
 
         # Go back to Pose Mode if that's what it was
         if original_context == 'POSE':
@@ -240,7 +245,7 @@ def make_objects_list(context):
 
     else:
         bpy.ops.object.select_all(action='DESELECT')
-        toggle_all_colliders_visibility(True)
+        #toggle_all_colliders_visibility(True)
         bpy.ops.object.select_all()
         objects_list = context.selected_objects
 
